@@ -1,6 +1,7 @@
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.pos_tags import POS_TAGS
 from engraf.atn.core import ATNState
+from engraf.utils.actions import diagnostic_stub
 
 # --- Build the Prepositional Phrase ATN ---
 
@@ -19,7 +20,7 @@ def build_pp_atn(ts: TokenStream):
     # Match NP (subnetwork)
     after_prep.add_arc(
         lambda tok: POS_TAGS.get(tok) in ('DET', 'ADJ', 'NOUN'),
-        None,  # patched with PP runner
+        diagnostic_stub,  # patched with PP runner
         end
     )
     return start, end

@@ -21,3 +21,15 @@ def test_np_failure():
     result = run_np(TokenStream("draw red cube".split()))
 
     assert result is None
+
+def test_np_with_preposition():
+    result = run_np(TokenStream("a large blue sphere over the green cube".split()))
+   
+    assert result is not None
+    assert result["noun"] == "sphere"
+    assert result["vector"].shape == (6,)
+    assert result["modifiers"] is not None
+    assert len(result["modifiers"]) == 1
+    assert result["modifiers"][0]["prep"] == "over"
+    assert result["modifiers"][0]["object"] == "cube"
+

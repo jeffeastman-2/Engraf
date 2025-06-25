@@ -3,6 +3,7 @@ from engraf.atn.core import run_atn, get_all_states
 from engraf.atn.np import build_np_atn
 from engraf.atn.pp import build_pp_atn
 from engraf.atn.vp import build_vp_atn
+from engraf.utils.actions import diagnostic_stub
 
 def make_run_np_into_ctx(ts: TokenStream):
     def run_np_into_ctx(ctx, tok):
@@ -59,10 +60,10 @@ def run_np(tokens):
         for i, arc in enumerate(state.arcs):
             test, action, next_state = arc
             print(f"    {state.name} → {next_state.name} | Action: {action}")
-            if action is None and next_state.name == "NP-PP":
+            if action is diagnostic_stub and next_state.name == "NP-PP":
                 patched = make_run_pp_into_ctx(ts)
                 state.arcs[i] = (test, patched, next_state)
-                print(f"    Patched action for NP-PP: {patched}")
+                print(f"        Patched action for NP-PP: {patched}")
     return run_atn(np_start, np_end, ts, ctx)
 
 def run_pp(tokens):
@@ -75,10 +76,10 @@ def run_pp(tokens):
         for i, arc in enumerate(state.arcs):
             test, action, next_state = arc
             print(f"    {state.name} → {next_state.name} | Action: {action}")
-            if action is None and next_state.name == "PP-END":
+            if action is diagnostic_stub and next_state.name == "PP-END":
                 patched = make_run_np_into_ctx(ts)
                 state.arcs[i] = (test, patched, next_state)
-                print(f"    Patched action for PP-END: {patched}")
+                print(f"        Patched action for PP-END: {patched}")
     return run_atn(pp_start, pp_end, ts, ctx)
 
 def run_vp(tokens):
