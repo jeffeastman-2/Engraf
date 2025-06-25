@@ -1,7 +1,7 @@
 import numpy as np
 from engraf.atn.np import build_np_atn
 from engraf.lexer.token_stream import TokenStream
-from engraf.atn.subnet import run_np
+from engraf.atn.subnet_np import run_np
  
 def test_simple_np():
     result = run_np(TokenStream("the red cube".split()))

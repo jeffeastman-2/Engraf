@@ -1,7 +1,6 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream
-from engraf.atn.subnet import run_pp
-from engraf.atn.pp import build_pp_atn
+from engraf.atn.subnet_pp import run_pp
 
 
 def test_pp_over_red_cube():

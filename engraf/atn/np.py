@@ -3,7 +3,7 @@ from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.pos_tags import POS_TAGS
 from engraf.lexer.vector_space import VECTOR_SPACE
 from engraf.atn.core import ATNState,noop
-from engraf.utils.actions import diagnostic_stub
+from engraf.utils.actions import make_run_pp_into_ctx
 
 
 # --- Build the Noun Phrase ATN ---
@@ -36,7 +36,8 @@ def build_np_atn(ts: TokenStream):
     noun.add_arc(lambda tok: tok is None, noop, end)
 
     # NOUN → PP (subnetwork)
-    noun.add_arc(lambda tok: POS_TAGS.get(tok) == 'PREP', diagnostic_stub, pp)
+    action = make_run_pp_into_ctx(ts)
+    noun.add_arc(lambda tok: POS_TAGS.get(tok) == 'PREP', action, pp)
 
     # PP → END
     pp.add_arc(lambda tok: tok is None, noop, end)
