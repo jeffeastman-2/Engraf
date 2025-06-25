@@ -11,6 +11,7 @@ def make_run_np_into_ctx(ts):
         ctx['object'] = result.get('noun')
         ctx['noun_phrase'] = result 
         ctx['vector'] = result.get('vector', None)
+        ctx['modifiers'] = result.get('modifiers', None)
     run_np_into_ctx._is_subnetwork = True
     return run_np_into_ctx
 

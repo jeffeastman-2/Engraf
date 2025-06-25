@@ -2,6 +2,7 @@ from engraf.atn.core import ATNState
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.pos_tags import POS_TAGS
 from engraf.atn.core import noop
+from engraf.utils.actions import make_run_np_into_ctx
 
 
 # --- Build the Verb Phrase ATN ---
@@ -16,9 +17,10 @@ def build_vp_atn(ts: TokenStream):
         after_verb
     )
     # NP (subnetwork)
+    action = make_run_np_into_ctx(ts)
     after_verb.add_arc(
         lambda tok: POS_TAGS.get(tok) in ('DET', 'ADJ', 'NOUN'),
-        None,  
+        action,  
         end
     )
     # Allow final transition if stream is exhausted
