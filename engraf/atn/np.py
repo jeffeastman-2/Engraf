@@ -1,7 +1,8 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.pos_tags import POS_TAGS
-from engraf.lexer.vector_space import VECTOR_SPACE
+from engraf.lexer.vector_space import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vector_space import vector_from_features
 from engraf.atn.core import ATNState,noop
 from engraf.utils.actions import make_run_pp_into_ctx
 
@@ -20,15 +21,18 @@ def build_np_atn(ts: TokenStream):
 
     # ADJ → ADJ / NOUN
     det.add_arc(lambda tok: POS_TAGS.get(tok) == 'ADJ',
-                lambda ctx, tok: ctx.setdefault('vector', np.zeros(6)).__iadd__(VECTOR_SPACE.get(tok, np.zeros(6))), adj)
+                lambda ctx, tok: ctx.setdefault('vector', 
+                vector_from_features()).__iadd__(SEMANTIC_VECTOR_SPACE.get(tok, vector_from_features())), adj)
     adj.add_arc(lambda tok: POS_TAGS.get(tok) == 'ADJ',
-                lambda ctx, tok: ctx.setdefault('vector', np.zeros(6)).__iadd__(VECTOR_SPACE.get(tok, np.zeros(6))), adj)
+                lambda ctx, tok: ctx.setdefault('vector', 
+                vector_from_features()).__iadd__(SEMANTIC_VECTOR_SPACE.get(tok, vector_from_features())), adj)
 
     # ADJ or DET → NOUN
     for state in [det, adj]:
         state.add_arc(lambda tok: POS_TAGS.get(tok) == 'NOUN',
                       lambda ctx, tok: (
-                          ctx.setdefault('vector', np.zeros(6)).__iadd__(VECTOR_SPACE.get(tok, np.zeros(6))),
+                          ctx.setdefault('vector', 
+                          vector_from_features()).__iadd__(SEMANTIC_VECTOR_SPACE.get(tok, vector_from_features())),
                           ctx.update({'noun': tok})
                       ), noun)
 

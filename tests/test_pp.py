@@ -1,6 +1,7 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_pp import run_pp
+from engraf.lexer.vector_space import VectorSpace, vector_from_features
 
 
 def test_pp_over_red_cube():
@@ -8,7 +9,7 @@ def test_pp_over_red_cube():
     assert result is not None
     assert result['prep'] == 'over'
     assert result['object'] == 'cube'
-    assert isinstance(result['vector'], np.ndarray)
+    assert isinstance(result['vector'], VectorSpace)
     assert result['noun_phrase']['noun'] == 'cube'
 
 
