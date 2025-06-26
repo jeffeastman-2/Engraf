@@ -22,7 +22,11 @@ def make_run_pp_into_ctx(ts):
         ctx.setdefault('modifiers', []).append({'prep': tok})
         modifier_ctx = ctx['modifiers'][-1]
         pp_start, pp_end = build_pp_atn(ts)
-        run_atn(pp_start, pp_end, ts, modifier_ctx)
+        result = run_atn(pp_start, pp_end, ts, modifier_ctx)
+        if result is not None:
+            modifier_ctx['object'] = result.get('object')
+            if "vector" not in ctx:
+                ctx["vector"] = result.get("vector")
     run_pp_into_ctx._is_subnetwork = True
     return run_pp_into_ctx
 

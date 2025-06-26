@@ -1,8 +1,7 @@
 import numpy as np
-from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_pp import run_pp
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
-
 
 def test_pp_over_red_cube():
     result = run_pp(TokenStream("over the red cube".split()))
@@ -27,3 +26,11 @@ def test_pp_under_large_blue_box():
     assert result['prep'] == 'under'
     assert result['object'] == 'box'
     assert result['noun_phrase']['noun'] == 'box'
+
+def test_pp_at_vector():
+    tokens = tokenize("at [3.0, 4.0, 5.0]")
+    result = run_pp(TokenStream(tokens))
+
+    assert result is not None
+    assert result['prep'] == 'at'
+    assert result['object'] == [3.0, 4.0, 5.0]

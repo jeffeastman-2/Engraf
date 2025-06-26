@@ -1,7 +1,8 @@
 import numpy as np
-from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_vp import run_vp
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
+from pprint import pprint
 
 def test_simple_vp():
     result = run_vp(TokenStream("draw a red cube".split()))
@@ -47,5 +48,24 @@ def test_vp_with_nested_pp():
     # Optional: ensure top-level and nested modifiers are the same object
     assert result["modifiers"] == np_mods
 
+def test_vp_with_explicit_vector():
+    tokens = TokenStream(tokenize("draw a tall blue cube at [3.0, 4.0, 5.0]"))
+    result = run_vp(tokens)
+    pprint(result)  # For debugging purposes, can be removed later
+    assert result is not None
+    assert result["verb"] == "draw"
+    assert result["object"] == "cube"
 
+    np_data = result["noun_phrase"]
+    assert np_data["noun"] == "cube"
+    assert isinstance(np_data["vector"], VectorSpace)
+    
+    mod = np_data["modifiers"][0]
+    assert mod["prep"] == "at"
+    assert mod["object"] == [3.0, 4.0, 5.0]
+
+    # Optional: check if the vector is untouched by the position spec
+    v = np_data["vector"]
+    assert v["scaleY"] == 2.5  # from "tall"
+    assert v["blue"] == 1.0    # from "blue"
 
