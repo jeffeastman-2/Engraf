@@ -29,14 +29,17 @@ def test_tokenize_number():
     tokens = tokenize("draw 2 cube")
     assert len(tokens) == 3
     assert_vector_has_pos(tokens[0], "verb")
-    assert_vector_has_pos(tokens[1], "det def number")
+    assert_vector_has_pos(tokens[1], "det def")
+    print(tokens[1])
+    # Check if the number is correctly parsed as a float
+    assert isinstance(tokens[1]["number"], float)
     assert tokens[1]["number"] == 2.0
     assert_vector_has_pos(tokens[2], "noun")
 
 def test_tokenize_with_float_number():
     tokens = tokenize("draw 3.5 sphere")
     assert len(tokens) == 3
-    assert_vector_has_pos(tokens[1], "det def number")
+    assert_vector_has_pos(tokens[1], "det def")
     assert tokens[1]["number"] == 3.5
 
 def test_tokenize_unknown_token_raises():

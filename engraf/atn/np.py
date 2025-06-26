@@ -32,7 +32,7 @@ def build_np_atn(ts: TokenStream):
                       lambda ctx, tok: (
                           ctx.setdefault('vector', 
                           vector_from_features("")).__iadd__(tok),
-                          ctx.update({'noun': tok})
+                          ctx.update({'noun': tok.word})
                       ), noun)
 
     # NOUN → END (simple NP)

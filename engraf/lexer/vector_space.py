@@ -13,13 +13,19 @@ VECTOR_DIMENSIONS = [
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
 
 class VectorSpace:
-    def __init__(self, array=None):
+    def __init__(self, array=None, word=None):
         if array is None:
             self.vector = np.zeros(VECTOR_LENGTH)
         else:
             if len(array) != VECTOR_LENGTH:
                 raise ValueError(f"Expected vector of length {VECTOR_LENGTH}, got {len(array)}")
             self.vector = np.array(array, dtype=float)
+        self.word = word  # NEW
+
+    # Add optional __str__ override for easier debugging
+    def __repr__(self):
+        vec_str = ', '.join(f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS)
+        return f"VectorSpace(word={self.word!r}, {{ {vec_str} }})"
 
     def to_array(self):
         return self.vector
@@ -37,9 +43,6 @@ class VectorSpace:
             idx = VECTOR_DIMENSIONS.index(key)
             self.vector[idx] = value
 
-    def __repr__(self):
-        return f"VectorSpace({{ {', '.join(f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS)} }})"
-
     def __iadd__(self, other):
         if isinstance(other, VectorSpace):
             self.vector += other.vector
@@ -52,7 +55,7 @@ class VectorSpace:
             return VectorSpace(self.vector + other.vector)
         else:
             raise TypeError("Can only add another VectorSpace instance")
-            
+
     def isa(self, category: str) -> bool:
         """Returns True if the category is 'active' in this vector."""
         try:
@@ -67,8 +70,8 @@ class VectorSpace:
 
 
 
-def vector_from_features(pos, loc=None, scale=None, rot=None, color=None):
-    vs = VectorSpace()
+def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=None):
+    vs = VectorSpace(word)
     for tag in pos.split():
         if tag in VECTOR_DIMENSIONS:
             vs[tag] = 1.0

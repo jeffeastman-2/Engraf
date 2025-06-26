@@ -12,7 +12,7 @@ def build_pp_atn(ts: TokenStream):
     # Match PREPOSITION (e.g., "on", "under")
     start.add_arc(
         lambda tok: tok.isa("prep"),
-        lambda ctx, tok: ctx.update({'prep': tok}),
+        lambda ctx, tok: ctx.update({'prep': tok.word}),
         after_prep
     )
 

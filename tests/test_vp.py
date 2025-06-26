@@ -49,7 +49,7 @@ def test_vp_with_nested_pp():
     assert result["modifiers"] == np_mods
 
 def test_vp_with_explicit_vector():
-    tokens = TokenStream(tokenize(tokenize("draw a tall blue cube at [3.0, 4.0, 5.0]")))
+    tokens = TokenStream(tokenize("draw a tall blue cube at [3.0, 4.0, 5.0]"))
     result = run_vp(tokens)
     pprint(result)  # For debugging purposes, can be removed later
     assert result is not None
@@ -62,7 +62,9 @@ def test_vp_with_explicit_vector():
     
     mod = np_data["modifiers"][0]
     assert mod["prep"] == "at"
-    assert mod["object"] == [3.0, 4.0, 5.0]
+    assert mod["object"]["locX"] == 3.0
+    assert mod["object"]["locY"] == 4.0
+    assert mod["object"]["locZ"] == 5.0
 
     # Optional: check if the vector is untouched by the position spec
     v = np_data["vector"]

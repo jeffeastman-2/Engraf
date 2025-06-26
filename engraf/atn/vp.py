@@ -12,7 +12,7 @@ def build_vp_atn(ts: TokenStream):
     # VERB
     start.add_arc(
         lambda tok: tok.isa("verb"),
-        lambda ctx, tok: ctx.update({'verb': tok}),
+        lambda ctx, tok: ctx.update({'verb': tok.word}),
         after_verb
     )
     # NP (subnetwork)

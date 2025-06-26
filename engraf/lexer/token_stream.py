@@ -57,6 +57,7 @@ def tokenize(sentence):
             \s*-?\d+(\.\d+)?\s*,     # y
             \s*-?\d+(\.\d+)?\s*      # z
             \]             # closing bracket
+            | -?\d+(?:\.\d+)?         # standalone number (int or float)
             | \w+          # normal word
             | [^\w\s]      # punctuation
         )""",
@@ -79,6 +80,7 @@ def tokenize(sentence):
         else:
             try:
                 vs = SEMANTIC_VECTOR_SPACE[tok.lower()]
+                vs.word = tok.lower()  # Store the original word for reference
                 result.append(vs)
             except KeyError:
                 raise ValueError(f"Unknown token: {tok}")

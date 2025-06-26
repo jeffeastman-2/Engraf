@@ -33,4 +33,6 @@ def test_pp_at_vector():
 
     assert result is not None
     assert result['prep'] == 'at'
-    assert result['object'] == [3.0, 4.0, 5.0]
+    assert result['object']["locX"] == 3.0
+    assert result['object']["locY"] == 4.0
+    assert result['object']["locZ"] == 5.0
