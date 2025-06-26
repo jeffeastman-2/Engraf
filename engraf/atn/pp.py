@@ -1,5 +1,4 @@
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.pos_tags import POS_TAGS
 from engraf.atn.core import ATNState
 from engraf.utils.actions import make_run_np_into_ctx
 
@@ -12,7 +11,7 @@ def build_pp_atn(ts: TokenStream):
 
     # Match PREPOSITION (e.g., "on", "under")
     start.add_arc(
-        lambda tok: isinstance(tok, str) and POS_TAGS.get(tok) == 'PREP',
+        lambda tok: tok.isa("prep"),
         lambda ctx, tok: ctx.update({'prep': tok}),
         after_prep
     )
@@ -20,15 +19,15 @@ def build_pp_atn(ts: TokenStream):
     # Match NP (subnetwork)
     action = make_run_np_into_ctx(ts)
     after_prep.add_arc(
-        lambda tok: isinstance(tok, str) and POS_TAGS.get(tok) in ('DET', 'ADJ', 'NOUN'),
+        lambda tok: tok.isa("det"),
         action,  
         end
     )
 
     # Match VECTOR (e.g., "[x, y, z]")
     after_prep.add_arc(
-        lambda tok: isinstance(tok, dict) and tok.get("type") == "VECTOR",
-        lambda ctx, tok: ctx.update({"object": tok["value"]}),
+        lambda tok: tok.isa("vector"),
+        lambda ctx, tok: ctx.update({"object": tok}),
         end
     )
 

@@ -44,7 +44,7 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
         matched = False
 
         for test, action, next_state in current.arcs:
-            print(f"Testing in {current.name} on '{tok}' → {next_state.name}")
+            print(f"Testing in {current.name} → {next_state.name}")
             if test(tok):
                 print(f"    Matched!")
                 if action is None:
@@ -53,7 +53,7 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
                 current = next_state
                  # ❗ Only advance if action is not a subnetwork runner
                 if action != noop and not getattr(action, "_is_subnetwork", False):
-                    ts.get()
+                    ts.advance()
                 matched = True
                 break
             else:

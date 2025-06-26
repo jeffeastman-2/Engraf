@@ -1,8 +1,12 @@
+from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE  
+from engraf.lexer.vector_space import VectorSpace
+import re
+
 class TokenStream:
-    def __init__(self, tokens):
+    def __init__(self, tokens: list[VectorSpace]):
         self.tokens = tokens
         self.position = 0
-        print(f"TokenStream initialized with tokens: {tokens}")
+        #print("TokenStream initialized with VectorSpace tokens:", self.tokens.__repr__())
 
     def __len__(self):
         return len(self.tokens)
@@ -10,26 +14,40 @@ class TokenStream:
     def __getitem__(self, index):
         return self.tokens[index]
 
+    def _to_vector(self, token: str) -> VectorSpace:
+        if token in SEMANTIC_VECTOR_SPACE:
+            return SEMANTIC_VECTOR_SPACE[token]
+        else:
+            # Default: return empty vector with no POS dimensions set
+            return VectorSpace(pos="")  # neutral/no POS
+
+    def __repr__(self):
+        return f"TokenStream(pos={self.position}, total={len(self.tokens)})"
 
     def peek(self):
         if self.position < len(self.tokens):
             return self.tokens[self.position]
         return None
 
-    def get(self):
+    def next(self):
         if self.position < len(self.tokens):
             tok = self.tokens[self.position]
             self.position += 1
             return tok
         return None
 
-    def mark(self):
-        return self.position
+    def reset(self):
+        self.position = 0
 
-    def rewind(self, mark):
-        self.position = mark
-        
+    def advance(self):
+        if self.position < len(self.tokens):
+            self.position += 1
+        else:
+            raise IndexError("TokenStream position out of bounds")
+
 import re
+from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vector_space import VectorSpace, vector_from_features
 
 def tokenize(sentence):
     pattern = re.compile(
@@ -48,12 +66,20 @@ def tokenize(sentence):
     tokens = pattern.findall(sentence)
     flat_tokens = [t[0] for t in tokens]
 
-    # Post-process vector literals into structured tokens
     result = []
     for tok in flat_tokens:
         if tok.startswith("[") and tok.endswith("]"):
             nums = re.findall(r"-?\d+(?:\.\d+)?", tok)
-            result.append({"type": "VECTOR", "value": list(map(float, nums))})
+            x, y, z = map(float, nums)
+            result.append(vector_from_features(loc=[x, y, z], pos="vector"))  
+        elif re.fullmatch(r"-?\d+(?:\.\d+)?", tok):  # match integers and floats
+            vs = vector_from_features(pos="det def number")
+            vs["number"] = float(tok)
+            result.append(vs)
         else:
-            result.append(tok.lower())
+            try:
+                vs = SEMANTIC_VECTOR_SPACE[tok.lower()]
+                result.append(vs)
+            except KeyError:
+                raise ValueError(f"Unknown token: {tok}")
     return result

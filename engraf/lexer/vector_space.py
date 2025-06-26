@@ -2,6 +2,8 @@ import numpy as np
 # --- Updated semantic vector space (6D: RGB + X/Y/Z size) ---
 
 VECTOR_DIMENSIONS = [
+    "verb", "tobe", "prep", "det", "def", "adv", "adj", "noun", 
+    "number", "vector",
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
     "rotX", "rotY", "rotZ",
@@ -50,6 +52,14 @@ class VectorSpace:
             return VectorSpace(self.vector + other.vector)
         else:
             raise TypeError("Can only add another VectorSpace instance")
+            
+    def isa(self, category: str) -> bool:
+        """Returns True if the category is 'active' in this vector."""
+        try:
+            idx = VECTOR_DIMENSIONS.index(category.lower())
+            return self.vector[idx] > 0.5  # threshold hardcoded here
+        except ValueError:
+            return False
 
     @property
     def shape(self):
@@ -57,33 +67,15 @@ class VectorSpace:
 
 
 
-def vector_from_features(loc=None, scale=None, rot=None, color=None):
+def vector_from_features(pos, loc=None, scale=None, rot=None, color=None):
     vs = VectorSpace()
+    for tag in pos.split():
+        if tag in VECTOR_DIMENSIONS:
+            vs[tag] = 1.0
+        else:
+            raise ValueError(f"Unknown POS tag '{tag}' in vector_from_features")
     if loc: vs["locX"], vs["locY"], vs["locZ"] = loc
     if scale: vs["scaleX"], vs["scaleY"], vs["scaleZ"] = scale
     if rot: vs["rotX"], vs["rotY"], vs["rotZ"] = rot
     if color: vs["red"], vs["green"], vs["blue"] = color
     return vs
-
-SEMANTIC_VECTOR_SPACE = {
-    'cube': vector_from_features(loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
-    'box': vector_from_features(loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
-    'sphere': vector_from_features(loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
-    'arch': vector_from_features(loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
-    'object': vector_from_features(loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
-    'red': vector_from_features(color=[1.0, 0.0, 0.0]),
-    'green': vector_from_features(color=[0.0, 1.0, 0.0]),
-    'blue': vector_from_features(color=[0.0, 0.0, 1.0]),
-    'yellow': vector_from_features(color=[1.0, 1.0, 0.0]),
-    'purple': vector_from_features(color=[0.5, 0.0, 0.5]),
-    'orange': vector_from_features(color=[1.0, 0.5, 0.0]),
-    'black': vector_from_features(color=[0.0, 0.0, 0.0]),
-    'white': vector_from_features(color=[1.0, 1.0, 1.0]),
-    'gray': vector_from_features(color=[0.5, 0.5, 0.5]),
-    'large': vector_from_features(scale=[2.0, 2.0, 2.0]),
-    'small': vector_from_features(scale=[-0.5, -0.5, -0.5]),
-    'tall': vector_from_features(scale=[0.0, 1.5, 0.0]),
-    'wide': vector_from_features(scale=[1.5, 0.0, 0.0]),
-    'deep': vector_from_features(scale=[0.0, 0.0, 1.5]),
-    'the': vector_from_features()
-}

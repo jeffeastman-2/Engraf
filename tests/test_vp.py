@@ -5,7 +5,7 @@ from engraf.lexer.vector_space import VectorSpace, vector_from_features
 from pprint import pprint
 
 def test_simple_vp():
-    result = run_vp(TokenStream("draw a red cube".split()))
+    result = run_vp(TokenStream(tokenize("draw a red cube")))
     #print(result)  # For debugging purposes, can be removed later
     assert result is not None
     assert result["verb"] == "draw"
@@ -14,7 +14,7 @@ def test_simple_vp():
     assert result["modifiers"] is None
 
 def test_vp_with_nested_pp():
-    result = run_vp(TokenStream("draw a cube over the sphere".split()))
+    result = run_vp(TokenStream(tokenize("draw a cube over the sphere")))
     assert result is not None
 
     # Top-level checks
@@ -49,7 +49,7 @@ def test_vp_with_nested_pp():
     assert result["modifiers"] == np_mods
 
 def test_vp_with_explicit_vector():
-    tokens = TokenStream(tokenize("draw a tall blue cube at [3.0, 4.0, 5.0]"))
+    tokens = TokenStream(tokenize(tokenize("draw a tall blue cube at [3.0, 4.0, 5.0]")))
     result = run_vp(tokens)
     pprint(result)  # For debugging purposes, can be removed later
     assert result is not None

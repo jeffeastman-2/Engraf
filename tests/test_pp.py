@@ -4,7 +4,7 @@ from engraf.atn.subnet_pp import run_pp
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 
 def test_pp_over_red_cube():
-    result = run_pp(TokenStream("over the red cube".split()))
+    result = run_pp(TokenStream(tokenize("over the red cube")))
     assert result is not None
     assert result['prep'] == 'over'
     assert result['object'] == 'cube'
@@ -13,7 +13,7 @@ def test_pp_over_red_cube():
 
 
 def test_pp_near_green_sphere():
-    result = run_pp(TokenStream("near the green sphere".split()))
+    result = run_pp(TokenStream(tokenize("near the green sphere")))
     assert result is not None
     assert result['prep'] == 'near'
     assert result['object'] == 'sphere'
@@ -21,7 +21,7 @@ def test_pp_near_green_sphere():
 
 
 def test_pp_under_large_blue_box():
-    result = run_pp(TokenStream("under the large blue box".split()))
+    result = run_pp(TokenStream(tokenize("under the large blue box")))
     assert result is not None
     assert result['prep'] == 'under'
     assert result['object'] == 'box'

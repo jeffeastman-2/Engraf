@@ -11,21 +11,21 @@ def build_sentence_atn(ts: TokenStream):
 
     # Optional subject NP (ignored in output, just consumes NP if found)
     start.add_arc(
-        lambda tok: POS_TAGS.get(tok) in ('DET', 'ADJ', 'NOUN'),
+        lambda tok: tok.isa("det"),
         make_run_np_into_ctx(ts),  # consumes subject NP, but doesn't store
         after_np
     )
 
     # If subject omitted, proceed directly to VP
     start.add_arc(
-        lambda tok: POS_TAGS.get(tok) == 'VERB',
+        lambda tok: tok.isa("verb"),  # if verb found, assume no subject NP
         noop,
         after_np
     )
 
     # Main verb phrase
     after_np.add_arc(
-        lambda tok: POS_TAGS.get(tok) == 'VERB',
+        lambda tok: tok.isa("verb"),
         make_run_vp_into_ctx(ts),
         end
     )
