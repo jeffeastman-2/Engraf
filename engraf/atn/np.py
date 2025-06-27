@@ -7,19 +7,22 @@ from engraf.utils.actions import make_run_pp_into_ctx
 
 # --- Helper predicate functions ---
 def is_determiner(tok): 
-    return tok.isa("det")   
+    return tok is not None and tok.isa("det")   
+
+def is_pronoun(tok):
+    return tok is not None and tok.isa("pronoun")
 
 def is_adjective(tok):
-    return tok.isa("adj")
+    return tok is not None and tok.isa("adj")
 
 def is_adverb(tok):
-    return tok.isa("adv")
+    return tok is not None and tok.isa("adv")
 
 def is_noun(tok):
-    return tok.isa("noun")  
+    return tok is not None and tok.isa("noun")  
 
-def is_preposition(tok):
-    return tok.isa("prep")
+def is_prep(tok):
+    return tok is not None and tok.isa("prep")
 
 def is_none(tok):
     return tok is None
@@ -30,6 +33,12 @@ def apply_determiner(ctx, tok):
     ctx["vector"] = ctx.setdefault("vector", VectorSpace())
     # Add the determiner vector to the context
     ctx["vector"] += tok
+
+def apply_pronoun(ctx, tok):
+    ctx["vector"] = ctx.setdefault("vector", VectorSpace())
+    ctx["pronoun"] = tok.word
+    ctx["object"] = tok.word  # placeholder, real referent resolved later
+    ctx["noun_phrase"] = {"pronoun": tok.word}
 
 def apply_adverb(ctx, tok):
     # Multiply any upcoming adjective by 1.5 (or another scalar)
@@ -51,16 +60,23 @@ def build_np_atn(ts: TokenStream):
     det = ATNState("NP-DET")
     adv = ATNState("NP-ADV")
     adj = ATNState("NP-ADJ")
+    adj_after_pronoun = ATNState("NP-ADJ-AFTER-PRONOUN")
     noun = ATNState("NP-NOUN")
     pp = ATNState("NP-PP")
     end = ATNState("NP-END")
 
     start.add_arc(is_determiner, apply_determiner, det)
+    start.add_arc(is_pronoun, apply_pronoun, adj_after_pronoun)
 
     # ADJ → ADJ / NOUN
     det.add_arc(is_adverb, apply_adverb, adj)
     det.add_arc(is_adjective, apply_adjective, adj)
+
     adj.add_arc(is_adjective, apply_adjective, adj)
+
+    adj_after_pronoun.add_arc(is_adverb, apply_adverb, adj_after_pronoun)
+    adj_after_pronoun.add_arc(is_adjective, apply_adjective, adj_after_pronoun)
+    adj_after_pronoun.add_arc(lambda tok: True, noop, end)
 
     # ADJ or DET → NOUN
     for state in [det, adj]:
@@ -71,7 +87,7 @@ def build_np_atn(ts: TokenStream):
 
     # NOUN → PP (subnetwork)
     action = make_run_pp_into_ctx(ts)
-    noun.add_arc(is_preposition, action, pp)
+    noun.add_arc(is_prep, action, pp)
 
     # PP → END
     pp.add_arc(is_none, noop, end)

@@ -46,7 +46,10 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
         for test, action, next_state in current.arcs:
             print(f"Testing in {current.name} → {next_state.name}")
             if test(tok):
-                print(f"    Matched!")
+                if tok is not None:
+                    print(f"    Token '{tok.word}' matches in {current.name} → {next_state.name}")
+                else: 
+                    print(f"    Token is None, but matched in {current.name} → {next_state.name}")
                 if action is None:
                     print("❌ ERROR: This arc has a None action!")
                 action(context, tok)
@@ -57,10 +60,16 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
                 matched = True
                 break
             else:
-                print(f"Failed in {current.name} on '{tok}' → {next_state.name}")
+                if tok is not None:
+                    print(f"    Failed in {current.name} on '{tok.word}' → {next_state.name}")
+                else:
+                    print(f"    Failed in {current.name} on None → {next_state.name}")
 
         if not matched:
-            print(f"No arc matched in {current.name} on token '{tok}'")
+            if tok is not None:
+                print(f"    ***No arc matched in {current.name} on token '{tok.word}'")
+            else:           
+                print(f"    ***No arc matched in {current.name} on None token")
             return None
 
         if current == end_state:

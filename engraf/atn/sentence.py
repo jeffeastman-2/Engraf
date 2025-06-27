@@ -10,7 +10,7 @@ def build_sentence_atn(ts: TokenStream):
     end = ATNState("SENTENCE-END")
 
     # Optional subject NP (ignored in output, just consumes NP if found)
-    start.add_arc(isDeterminer, make_run_np_into_ctx(ts), after_np )
+    start.add_arc(isDeterminer or isPronoun, make_run_np_into_ctx(ts), after_np )
 
     # If subject omitted, proceed directly to VP
     start.add_arc(is_verb, noop,  after_np)

@@ -2,8 +2,8 @@ import numpy as np
 # --- Updated semantic vector space (6D: RGB + X/Y/Z size) ---
 
 VECTOR_DIMENSIONS = [
-    "verb", "tobe", "prep", "det", "def", "adv", "adj", "noun", 
-    "number", "vector",
+    "verb", "tobe", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
+    "number", "vector", "singular", "plural",
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
     "rotX", "rotY", "rotZ",
@@ -76,7 +76,7 @@ class VectorSpace:
 
 
 
-def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=None):
+def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=None, number=None):
     vs = VectorSpace(word)
     for tag in pos.split():
         if tag in VECTOR_DIMENSIONS:

@@ -35,3 +35,22 @@ def test_scene_from_simple_vp():
     # Example: check that the cube is tall and blue
     assert obj.vector["scaleY"] > 1.0
     assert obj.vector["blue"] > 0.5
+
+def test_pronoun_resolution():
+    from engraf.scenes.scene_model import SceneModel, resolve_pronoun
+    from engraf.lexer.vector_space import VectorSpace
+
+    scene = SceneModel()
+    scene.add_object(SceneObject(name="cube", vector=VectorSpace()))
+    scene.add_object(SceneObject(name="sphere", vector=VectorSpace()))
+
+    assert len(scene.objects) == 2
+    # Test singular pronoun resolution
+    result = resolve_pronoun("it", scene)
+    assert len(result) == 1
+    assert result[0].name == "sphere"  # Last added object should be resolved
+
+    # Test plural pronoun resolution
+    result = resolve_pronoun("they", scene)
+    assert len(result) == 2
+    assert {obj.name for obj in result} == {"cube", "sphere"}  # Both objects should be resolved
