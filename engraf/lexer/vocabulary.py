@@ -20,6 +20,7 @@ SEMANTIC_VECTOR_SPACE = {
     'tall': vector_from_features("adj", scale=[0.0, 1.5, 0.0]),
     'wide': vector_from_features("adj", scale=[1.5, 0.0, 0.0]),
     'deep': vector_from_features("adj", scale=[0.0, 0.0, 1.5]),
+    'very': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5]),
     'the': vector_from_features("det def"),
     'a': vector_from_features("det"),
     'draw': vector_from_features("verb"),

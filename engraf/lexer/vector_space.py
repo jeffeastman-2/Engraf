@@ -56,6 +56,12 @@ class VectorSpace:
         else:
             raise TypeError("Can only add another VectorSpace instance")
 
+    def __mul__(self, scalar):
+        return VectorSpace(self.vector * scalar)
+
+    def __rmul__(self, scalar):
+        return self.__mul__(scalar)
+
     def isa(self, category: str) -> bool:
         """Returns True if the category is 'active' in this vector."""
         try:

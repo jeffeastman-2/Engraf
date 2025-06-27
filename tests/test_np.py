@@ -18,6 +18,17 @@ def test_np_with_adjectives():
     assert result is not None
     assert result["noun"] == "sphere"
     assert isinstance(result["vector"], VectorSpace)
+    assert result["vector"]["scaleY"] > 1.5  # Check if the height is scaled
+    assert result["vector"]["blue"] > 0.5  # Check if the color is blue
+
+def test_np_with_adverbs():
+    result = run_np(TokenStream(tokenize("a very tall red arch")))
+   
+    assert result is not None
+    assert result["noun"] == "arch"
+    assert isinstance(result["vector"], VectorSpace)
+    assert result["vector"]["scaleY"] > 2.5  # Check if the height is scaled
+    assert result["vector"]["red"] > 0.5  # Check if the color is red
 
 def test_np_failure():
     result = run_np(TokenStream(tokenize("draw red cube")))
