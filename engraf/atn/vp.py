@@ -7,6 +7,9 @@ from engraf.atn.np import is_determiner, is_none, is_pronoun
 def is_verb(tok):
     return tok is not None and tok.isa("verb")
 
+def is_tobe(tok):
+    return tok is not None and tok.isa("tobe")
+
 def verb_action(ctx, tok):
     ctx['verb'] = tok.word
 

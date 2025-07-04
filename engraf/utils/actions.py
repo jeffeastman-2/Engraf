@@ -30,3 +30,15 @@ def make_run_pp_into_ctx(ts):
     run_pp_into_ctx._is_subnetwork = True
     return run_pp_into_ctx
 
+
+def make_run_vp_into_ctx(ts, output_key="vector"):
+    from engraf.atn.vp import build_vp_atn
+    
+    def run_vp_into_ctx(ctx, _):
+        vp_ctx = {}
+        vp_start, vp_end = build_vp_atn(ts)
+        result = run_atn(vp_start, vp_end, ts, vp_ctx)
+        if result:
+            ctx[output_key] = result.get("vector")
+            ctx["object"] = result.get("object")  # optional: noun or pronoun
+    return run_vp_into_ctx

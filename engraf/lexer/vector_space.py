@@ -9,7 +9,7 @@ VECTOR_DIMENSIONS = [
     "rotX", "rotY", "rotZ",
     "red", "green", "blue",
     "texture", "transparency",
-    "unknown"
+    "quoted"
 ]
 
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)

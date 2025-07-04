@@ -69,7 +69,7 @@ def build_np_atn(ts: TokenStream):
     start.add_arc(is_pronoun, apply_pronoun, adj_after_pronoun)
 
     # ADJ → ADJ / NOUN
-    det.add_arc(is_adverb, apply_adverb, adj)
+    det.add_arc(is_adverb, apply_adverb, det)
     det.add_arc(is_adjective, apply_adjective, adj)
 
     adj.add_arc(is_adjective, apply_adjective, adj)

@@ -72,7 +72,7 @@ def tokenize(sentence):
     for tok in flat_tokens:
         if tok.startswith("'") and tok.endswith("'"):
             tok = tok[1:-1]
-            vs = vector_from_features(pos="unknown")  # empty vector with unknown POS
+            vs = vector_from_features(pos="quoted")  # empty vector with unknown POS
             vs.word = tok
             result.append(vs)
         elif tok.startswith("[") and tok.endswith("]"):

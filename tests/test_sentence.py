@@ -1,8 +1,8 @@
 from engraf.lexer.token_stream import TokenStream, tokenize
-from engraf.atn.subnet_vp import run_vp
 from engraf.scenes.scene_model import SceneModel, resolve_pronoun
 from engraf.scenes.scene_object import SceneObject
 from engraf.lexer.vector_space import VectorSpace
+from engraf.atn.subnet_sentence import run_sentence
 from pprint import pprint
 
 
@@ -11,7 +11,7 @@ def test_draw_and_color():
 
     # First sentence: draw a red cube
     tokens1 = TokenStream(tokenize("draw a red cube"))
-    result1 = run_vp(tokens1)
+    result1 = run_sentence(tokens1)
     assert result1["verb"] == "draw"
 
     # Add object to scene
@@ -25,7 +25,7 @@ def test_draw_and_color():
 
     # Second sentence: color it green
     tokens2 = TokenStream(tokenize("color it green"))
-    result2 = run_vp(tokens2)
+    result2 = run_sentence(tokens2)
     assert result2 is not None, "Failed to parse second sentence: 'color it green'"
     assert result2["verb"] == "color"
     
@@ -43,12 +43,13 @@ def test_draw_and_color():
     assert targets[0].vector["green"] == 1.0
     assert targets[0].vector["blue"] == 0.0
 
+
 def test_draw_and_color_multiple_objects():
     scene = SceneModel()
 
     # First sentence: draw a red cube
     tokens1 = TokenStream(tokenize("draw a red cube"))
-    result1 = run_vp(tokens1)
+    result1 = run_sentence(tokens1)
     assert result1["verb"] == "draw"
 
     # Add object to scene
@@ -62,7 +63,7 @@ def test_draw_and_color_multiple_objects():
 
     # Second sentence: draw a blue sphere
     tokens2 = TokenStream(tokenize("draw a blue sphere"))
-    result2 = run_vp(tokens2)
+    result2 = run_sentence(tokens2)
     assert result2["verb"] == "draw"
 
     # Add second object to scene
@@ -76,7 +77,7 @@ def test_draw_and_color_multiple_objects():
 
     # Third sentence: color them green
     tokens3 = TokenStream(tokenize("color them green"))
-    result3 = run_vp(tokens3)
+    result3 = run_sentence(tokens3)
     assert result3 is not None, "Failed to parse third sentence: 'color them green'"
     assert result3["verb"] == "color"
     pronoun = result3["noun_phrase"]["pronoun"]
@@ -96,12 +97,13 @@ def test_draw_and_color_multiple_objects():
         assert target.vector["green"] == 1.0
         assert target.vector["blue"] == 0.0
 
+
 def test_declarative_sentence():
     scene = SceneModel()
 
     # First sentence: draw a red cube
     tokens1 = TokenStream(tokenize("draw a red cube"))
-    result1 = run_vp(tokens1)
+    result1 = run_sentence(tokens1)
     assert result1["verb"] == "draw"
 
     # Add object to scene
@@ -115,7 +117,7 @@ def test_declarative_sentence():
 
     # Second sentence: the cube is blue
     tokens2 = TokenStream(tokenize("the cube is blue"))
-    result2 = run_vp(tokens2)
+    result2 = run_sentence(tokens2)
     assert result2 is not None, "Failed to parse second sentence: 'the cube is blue'"
     
     pronoun = result2["noun_phrase"]["pronoun"]

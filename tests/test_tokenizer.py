@@ -51,7 +51,7 @@ def test_tokenize_unknown_token_raises():
 def test_tokenize_quoted_word():
     tokens = tokenize("'sky blue' is blue and green")
     assert len(tokens) == 5
-    assert_vector_has_pos(tokens[0], "unknown")
+    assert_vector_has_pos(tokens[0], "quoted")
     assert tokens[0].word == "sky blue"
     assert_vector_has_pos(tokens[1], "tobe")
     assert_vector_has_pos(tokens[2], "adj")
