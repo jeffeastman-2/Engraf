@@ -1,7 +1,7 @@
 from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.vector_space import is_preposition, is_vector, is_determiner, is_pronoun, any_of
 from engraf.atn.core import ATNState
 from engraf.utils.actions import make_run_np_into_ctx
-from engraf.atn.np import is_determiner, is_prep, noop, is_pronoun
 
 # --- Build the Prepositional Phrase ATN ---
 
@@ -9,9 +9,6 @@ def build_pp_atn(ts: TokenStream):
     start = ATNState("PP-START")
     after_prep = ATNState("PP-NP")
     end = ATNState("PP-END")
-
-    def is_vector(tok):
-        return tok is not None and tok.isa("vector")
 
     def apply_preposition(ctx, tok):
         # Initialize the context with the preposition
@@ -22,11 +19,11 @@ def build_pp_atn(ts: TokenStream):
         ctx['object'] = tok
 
     # Match PREPOSITION (e.g., "on", "under")
-    start.add_arc(is_prep, apply_preposition, after_prep)
+    start.add_arc(is_preposition, apply_preposition, after_prep)
 
     # Match NP (subnetwork)
     action = make_run_np_into_ctx(ts)
-    after_prep.add_arc(is_determiner or is_pronoun, action, end)
+    after_prep.add_arc(any_of(is_determiner, is_pronoun), action, end)
 
     # Match VECTOR (e.g., "[x, y, z]")
     after_prep.add_arc(is_vector, apply_vector, end)

@@ -1,15 +1,8 @@
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.core import ATNState, run_atn, noop
-from engraf.atn.np import is_determiner, is_none, is_pronoun
-from engraf.atn.vp import is_verb, is_tobe
+from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, is_adjective_or_adverb
 from engraf.utils.actions import make_run_np_into_ctx
 from engraf.utils.actions import make_run_vp_into_ctx
-
-def is_quoted(tok):
-    return tok is not None and tok.isa("quoted")
-
-def is_adjective_or_adverb(tok):
-    return tok is not None and (tok.isa("adj") or tok.isa("adv"))
 
 def store_definition_word(ctx, tok):
     ctx["definition_word"] = tok.word
@@ -30,9 +23,9 @@ def build_sentence_atn(ts: TokenStream):
     end = ATNState("SENTENCE-END")
 
     # Optional subject NP (ignored in output, just consumes NP if found)
-    start.add_arc(is_determiner, make_run_np_into_ctx(ts), after_np)
-    start.add_arc(is_pronoun, make_run_np_into_ctx(ts), after_np)
+    start.add_arc(any_of(is_determiner, is_pronoun), make_run_np_into_ctx(ts), after_np)
     start.add_arc(is_quoted, store_definition_word, tobe)   # Recognize: 'quoted' → 'is' → adjective/adverb phrase
+    start.add_arc(is_verb, noop,  after_np)    # If subject omitted, proceed directly to VP
 
    # Recognize: 'quoted' → 'is' → adjective/adverb phrase
     tobe.add_arc(is_tobe, store_tobe_word, adjective_phrase)
@@ -41,11 +34,9 @@ def build_sentence_atn(ts: TokenStream):
     adjective_phrase.add_arc(is_adjective_or_adverb, make_run_np_into_ctx(ts), adjective_phrase)
     adjective_phrase.add_arc(is_none, noop, end)
 
-    # If subject omitted, proceed directly to VP
-    start.add_arc(is_verb, noop,  after_np)
-
     # Main verb phrase
     after_np.add_arc(is_verb, make_run_vp_into_ctx(ts), end)
+    after_np.add_arc(is_tobe, store_tobe_word, adjective_phrase)
 
     # Allow final transition if stream is exhausted
     end.add_arc(is_none, noop, end)
@@ -57,4 +48,9 @@ def run_sentence(tokens):
     print("TokenStream initialized with tokens:", tokens)
     start, end = build_sentence_atn(ts)
     ctx = {}
-    return run_atn(start, end, ts, ctx)
+    result = run_atn(start, end, ts, ctx)
+    if result is None:
+        print("No valid parse found for the sentence.")
+        return None
+    print("Parsed sentence context:", ctx)
+    return result

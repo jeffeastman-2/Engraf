@@ -73,6 +73,6 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
             return None
 
         if current == end_state:
-            print(f"Reached final state: {end_state.name}")
+            print(f"    ++Reached final state: {end_state.name} with context: {context}")
             return context
 

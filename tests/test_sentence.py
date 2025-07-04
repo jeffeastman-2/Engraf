@@ -1,7 +1,7 @@
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.scenes.scene_model import SceneModel, resolve_pronoun
 from engraf.scenes.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
+from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun, any_of
 from engraf.atn.subnet_sentence import run_sentence
 from pprint import pprint
 
@@ -12,6 +12,7 @@ def test_draw_and_color():
     # First sentence: draw a red cube
     tokens1 = TokenStream(tokenize("draw a red cube"))
     result1 = run_sentence(tokens1)
+    assert result1 is not None, "Failed to parse first sentence: 'draw a red cube'"
     assert result1["verb"] == "draw"
 
     # Add object to scene

@@ -1,7 +1,7 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_pp import run_pp
-from engraf.lexer.vector_space import VectorSpace, vector_from_features
+from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_preposition, is_vector, is_determiner, is_pronoun, is_adverb
 
 def test_pp_over_red_cube():
     result = run_pp(TokenStream(tokenize("over the red cube")))

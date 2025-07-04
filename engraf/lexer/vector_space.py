@@ -1,3 +1,4 @@
+# vector_space.py
 import numpy as np
 # --- Updated semantic vector space (6D: RGB + X/Y/Z size) ---
 
@@ -88,3 +89,22 @@ def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=N
     if rot: vs["rotX"], vs["rotY"], vs["rotZ"] = rot
     if color: vs["red"], vs["green"], vs["blue"] = color
     return vs
+
+def is_determiner(tok): return tok is not None and tok.isa("det")
+def is_pronoun(tok): return tok is not None and tok.isa("pronoun")
+def is_adjective(tok): return tok is not None and tok.isa("adj")
+def is_adverb(tok): return tok is not None and tok.isa("adv")
+def is_noun(tok): return tok is not None and tok.isa("noun")
+def is_verb(tok): return tok is not None and tok.isa("verb")
+def is_tobe(tok): return tok is not None and tok.isa("tobe")
+def is_preposition(tok): return tok is not None and tok.isa("prep")
+def is_number(tok): return tok is not None and tok["number"] > 0.0
+def is_none(tok): return tok is None
+def is_vector(tok): return tok is not None and tok.isa("vector")
+def is_quoted(tok): return tok is not None and tok.isa("quoted")
+def is_adjective_or_adverb(tok): return tok is not None and (tok.isa("adj") or tok.isa("adv"))
+def any_of(*predicates):
+    def combined_predicate(tok):
+        return any(pred(tok) for pred in predicates)
+    return combined_predicate
+

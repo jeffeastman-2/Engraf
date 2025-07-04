@@ -1,7 +1,7 @@
 from engraf.scenes.scene_object import SceneObject 
 from engraf.scenes.scene_model import SceneModel
 from engraf.scenes.scene_model import scene_from_parse
-from engraf.lexer.vector_space import VectorSpace
+from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_vp import run_vp
 from engraf.lexer.token_stream import tokenize

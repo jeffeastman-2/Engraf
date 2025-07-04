@@ -1,31 +1,11 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
-from engraf.lexer.vector_space import vector_from_features, VectorSpace
-from engraf.atn.core import ATNState,noop
+from engraf.lexer.vector_space import vector_from_features, VectorSpace, any_of, is_verb, is_adverb, is_noun, is_tobe, \
+    is_determiner, is_pronoun, is_adjective, is_preposition, is_none
+from engraf.atn.core import ATNState, noop
 from engraf.utils.actions import make_run_pp_into_ctx
 
-# --- Helper predicate functions ---
-def is_determiner(tok): 
-    return tok is not None and tok.isa("det")   
-
-def is_pronoun(tok):
-    return tok is not None and tok.isa("pronoun")
-
-def is_adjective(tok):
-    return tok is not None and tok.isa("adj")
-
-def is_adverb(tok):
-    return tok is not None and tok.isa("adv")
-
-def is_noun(tok):
-    return tok is not None and tok.isa("noun")  
-
-def is_prep(tok):
-    return tok is not None and tok.isa("prep")
-
-def is_none(tok):
-    return tok is None
 
 # --- Action functions ---
 def apply_determiner(ctx, tok):
@@ -87,7 +67,10 @@ def build_np_atn(ts: TokenStream):
 
     # NOUN → PP (subnetwork)
     action = make_run_pp_into_ctx(ts)
-    noun.add_arc(is_prep, action, pp)
+    noun.add_arc(is_preposition, action, pp)
+
+    # NOUN → VERB or ISA 
+    noun.add_arc(any_of(is_verb, is_tobe), action, end)
 
     # PP → END
     pp.add_arc(is_none, noop, end)
