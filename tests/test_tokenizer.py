@@ -1,6 +1,8 @@
 import pytest
 from engraf.lexer.token_stream import tokenize
 from engraf.lexer.vector_space import VectorSpace
+from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vocabulary import add_to_vocabulary, get_from_vocabulary, has_word
 
 def assert_vector_has_pos(vs: VectorSpace, expected_pos: str):
     assert isinstance(vs, VectorSpace)
@@ -45,3 +47,16 @@ def test_tokenize_with_float_number():
 def test_tokenize_unknown_token_raises():
     with pytest.raises(ValueError, match="Unknown token: foozle"):
         tokenize("draw foozle")
+
+def test_tokenize_quoted_word():
+    tokens = tokenize("'sky blue' is blue and green")
+    assert len(tokens) == 5
+    assert_vector_has_pos(tokens[0], "unknown")
+    assert tokens[0].word == "sky blue"
+    assert_vector_has_pos(tokens[1], "tobe")
+    assert_vector_has_pos(tokens[2], "adj")
+    assert_vector_has_pos(tokens[3], "conj")
+    assert_vector_has_pos(tokens[4], "adj") 
+    add_to_vocabulary(tokens[0].word, tokens[0])
+    print(f"Added '{tokens[0].word}' to vocabulary: {SEMANTIC_VECTOR_SPACE[tokens[0].word]}")
+    assert has_word("sky blue")

@@ -95,3 +95,39 @@ def test_draw_and_color_multiple_objects():
         assert target.vector["red"] == 0.0
         assert target.vector["green"] == 1.0
         assert target.vector["blue"] == 0.0
+
+def test_declarative_sentence():
+    scene = SceneModel()
+
+    # First sentence: draw a red cube
+    tokens1 = TokenStream(tokenize("draw a red cube"))
+    result1 = run_vp(tokens1)
+    assert result1["verb"] == "draw"
+
+    # Add object to scene
+    obj1 = SceneObject(name=result1["object"], vector=result1["vector"])
+    scene.add_object(obj1)
+
+    # Verify initial color is red
+    assert obj1.vector["red"] == 1.0
+    assert obj1.vector["green"] == 0.0
+    assert obj1.vector["blue"] == 0.0
+
+    # Second sentence: the cube is blue
+    tokens2 = TokenStream(tokenize("the cube is blue"))
+    result2 = run_vp(tokens2)
+    assert result2 is not None, "Failed to parse second sentence: 'the cube is blue'"
+    
+    pronoun = result2["noun_phrase"]["pronoun"]
+    targets = resolve_pronoun(pronoun, scene)
+    assert len(targets) == 1
+
+    # Apply color from parsed NP
+    new_color_vec = result2["noun_phrase"]["vector"]
+    for channel in ("red", "green", "blue"):
+        targets[0].vector[channel] = new_color_vec[channel]
+
+    # Verify updated color
+    assert targets[0].vector["red"] == 0.0
+    assert targets[0].vector["green"] == 0.0
+    assert targets[0].vector["blue"] == 1.0

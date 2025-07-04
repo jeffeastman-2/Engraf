@@ -1,4 +1,5 @@
 from engraf.lexer.vector_space import vector_from_features
+from engraf.lexer.vector_space import VectorSpace
 
 SEMANTIC_VECTOR_SPACE = {
     # Nouns
@@ -14,6 +15,7 @@ SEMANTIC_VECTOR_SPACE = {
     'cylinder': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'cone': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'tetrahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
+    'hexahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'octahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'dodecahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'icosahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
@@ -38,10 +40,18 @@ SEMANTIC_VECTOR_SPACE = {
     'tall': vector_from_features("adj", scale=[0.0, 1.5, 0.0]),
     'wide': vector_from_features("adj", scale=[1.5, 0.0, 0.0]),
     'deep': vector_from_features("adj", scale=[0.0, 0.0, 1.5]),
+    'rough': vector_from_features("adj", texture=2.0),
+    'smooth': vector_from_features("adj", texture=0.5),
+    'shiny': vector_from_features("adj", texture=0.0),
+    'clear': vector_from_features("adj", transparency=2.0),
+    'transparent': vector_from_features("adj", transparency=2.0),
+    'opaque': vector_from_features("adj", transparency=0.0),
     # Adverbs
-    'very': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5]),
-    'extremely': vector_from_features("adv", scale=[2.0, 2.0, 2.0], color=[2.0, 2.0, 2.0]),
-    'slightly': vector_from_features("adv", scale=[0.5, 0.5, 0.5], color=[0.5, 0.5, 0.5]),
+    'very': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5], texture=1.5, transparency=1.5),
+    'more': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5], texture=1.5, transparency=1.5),
+    'much': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5], texture=1.5, transparency=1.5),
+    'extremely': vector_from_features("adv", scale=[2.0, 2.0, 2.0], color=[2.0, 2.0, 2.0], texture=2.0, transparency=2.0),
+    'slightly': vector_from_features("adv", scale=[0.5, 0.5, 0.5], color=[0.5, 0.5, 0.5], texture=0.5, transparency=0.5),
     # Determiners
     'the': vector_from_features("det def", number=1.0),
     'one': vector_from_features("det def", number=1.0),
@@ -86,5 +96,27 @@ SEMANTIC_VECTOR_SPACE = {
     'in': vector_from_features("prep"),
     'at': vector_from_features("prep"),
     'by': vector_from_features("prep"),
-    'near': vector_from_features("prep")
+    'near': vector_from_features("prep"),
+    # Conjunctions
+    'and': vector_from_features("conj"),
+    'or': vector_from_features("conj"),
+    # To be verbs
+    'is': vector_from_features("tobe"),
+    'are': vector_from_features("tobe"),
+    'was': vector_from_features("tobe"),
+    'were': vector_from_features("tobe"),
+    'be': vector_from_features("tobe"),
+    'been': vector_from_features("tobe")
 }
+
+def add_to_vocabulary(word, vector_space):
+    """Add or update a word in the runtime vocabulary."""
+    word = word.lower()
+    SEMANTIC_VECTOR_SPACE[word] = vector_space
+
+def get_from_vocabulary(word: str) -> VectorSpace:
+    """Safely retrieves a vector from the vocabulary."""
+    return SEMANTIC_VECTOR_SPACE.get(word.lower())
+
+def has_word(word: str) -> bool:
+    return word.lower() in SEMANTIC_VECTOR_SPACE

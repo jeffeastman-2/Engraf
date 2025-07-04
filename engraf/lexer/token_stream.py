@@ -1,5 +1,6 @@
 from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE  
 from engraf.lexer.vector_space import VectorSpace
+from engraf.lexer.vocabulary import get_from_vocabulary
 import re
 
 class TokenStream:
@@ -58,18 +59,23 @@ def tokenize(sentence):
             \s*-?\d+(\.\d+)?\s*      # z
             \]             # closing bracket
             | -?\d+(?:\.\d+)?         # standalone number (int or float)
-            | \w+          # normal word
-            | [^\w\s]      # punctuation
+            | '[\w\s]+'     # quoted words (single quotes)
+            | \w+           # normal word
+            | [^\w\s]       # punctuation
         )""",
         re.VERBOSE,
     )
-
     tokens = pattern.findall(sentence)
     flat_tokens = [t[0] for t in tokens]
 
     result = []
     for tok in flat_tokens:
-        if tok.startswith("[") and tok.endswith("]"):
+        if tok.startswith("'") and tok.endswith("'"):
+            tok = tok[1:-1]
+            vs = vector_from_features(pos="unknown")  # empty vector with unknown POS
+            vs.word = tok
+            result.append(vs)
+        elif tok.startswith("[") and tok.endswith("]"):
             nums = re.findall(r"-?\d+(?:\.\d+)?", tok)
             x, y, z = map(float, nums)
             result.append(vector_from_features(loc=[x, y, z], pos="vector"))  
@@ -78,10 +84,9 @@ def tokenize(sentence):
             vs["number"] = float(tok)
             result.append(vs)
         else:
-            try:
-                vs = SEMANTIC_VECTOR_SPACE[tok.lower()]
+                vs = get_from_vocabulary(tok.lower())
+                if vs is None:
+                    raise ValueError(f"Unknown token: {tok}")
                 vs.word = tok.lower()  # Store the original word for reference
                 result.append(vs)
-            except KeyError:
-                raise ValueError(f"Unknown token: {tok}")
     return result

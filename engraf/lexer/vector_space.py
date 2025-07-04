@@ -3,11 +3,13 @@ import numpy as np
 
 VECTOR_DIMENSIONS = [
     "verb", "tobe", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
-    "number", "vector", "singular", "plural",
+    "number", "vector", "singular", "plural", "conj", "tobe",
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
     "rotX", "rotY", "rotZ",
-    "red", "green", "blue"
+    "red", "green", "blue",
+    "texture", "transparency",
+    "unknown"
 ]
 
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
@@ -74,9 +76,7 @@ class VectorSpace:
     def shape(self):
         return self.vector.shape
 
-
-
-def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=None, number=None):
+def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None):
     vs = VectorSpace(word)
     for tag in pos.split():
         if tag in VECTOR_DIMENSIONS:
