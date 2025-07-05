@@ -107,4 +107,5 @@ def any_of(*predicates):
     def combined_predicate(tok):
         return any(pred(tok) for pred in predicates)
     return combined_predicate
+def is_conjunction(tok): return tok is not None and tok.isa("conj")
 

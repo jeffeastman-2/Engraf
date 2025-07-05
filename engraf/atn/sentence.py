@@ -1,6 +1,8 @@
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.core import ATNState, run_atn, noop
-from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, is_adjective_or_adverb
+from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, is_adjective_or_adverb, \
+    any_of, is_determiner, is_pronoun, is_none, is_adverb, is_adjective, is_conjunction
+from engraf.atn.np import apply_adjective, apply_adverb
 from engraf.utils.actions import make_run_np_into_ctx
 from engraf.utils.actions import make_run_vp_into_ctx
 
@@ -19,6 +21,9 @@ def build_sentence_atn(ts: TokenStream):
     after_np = ATNState("SENTENCE-VP")
     tobe = ATNState("SENTENCE-TOBE")
     adjective_phrase = ATNState("SENTENCE-ADJECTIVE-PHRASE")
+    adjective = ATNState("SENTENCE-ADJECTIVE")
+    adverb = ATNState("SENTENCE-ADVERB")
+    conj = ATNState("SENTENCE-CONJ")  # e.g., "and transparent"
     after_tobe = ATNState("SENTENCE-TOBE")
     end = ATNState("SENTENCE-END")
 
@@ -30,9 +35,20 @@ def build_sentence_atn(ts: TokenStream):
    # Recognize: 'quoted' → 'is' → adjective/adverb phrase
     tobe.add_arc(is_tobe, store_tobe_word, adjective_phrase)
 
-    # Let NP handle adjective phrase (you may reuse np_atn or a subset)
-    adjective_phrase.add_arc(is_adjective_or_adverb, make_run_np_into_ctx(ts), adjective_phrase)
-    adjective_phrase.add_arc(is_none, noop, end)
+    # Start by accepting an adverb (optional) or adjective
+    adjective_phrase.add_arc(is_adverb, apply_adverb, adverb)
+    adjective_phrase.add_arc(is_adjective, apply_adjective, adjective)
+
+    # Allow chain of adverbs before adjectives
+    adverb.add_arc(is_adverb, apply_adverb, adverb)
+    adverb.add_arc(is_adjective, apply_adjective, adjective)
+
+    # After adjective, allow conjunction for chained descriptions (e.g. "and rough")
+    adjective.add_arc(is_conjunction, noop, conj)
+    conj.add_arc(is_adjective, apply_adjective, adjective)
+
+    # End of adjective phrase
+    adjective.add_arc(is_none, noop, end)
 
     # Main verb phrase
     after_np.add_arc(is_verb, make_run_vp_into_ctx(ts), end)
