@@ -1,7 +1,8 @@
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.scenes.scene_model import SceneModel, resolve_pronoun
 from engraf.scenes.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun, any_of
+from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, \
+    is_pronoun, any_of
 from engraf.atn.subnet_sentence import run_sentence
 from pprint import pprint
 
@@ -122,3 +123,7 @@ def test_declarative_sentence():
     assert result2 is not None, "Failed to parse second sentence: 'the cube is blue'"  
     assert result2["tobe_word"] == "is"
     assert result2["noun_phrase"]["noun"] == "cube"
+
+    # Find the target object in the scene   
+    targets = scene.find_noun_phrase(result2["noun_phrase"])
+    assert targets is not None, "Failed to find noun phrase in scene"

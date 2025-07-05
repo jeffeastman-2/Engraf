@@ -1,5 +1,6 @@
 # vector_space.py
 import numpy as np
+import math
 # --- Updated semantic vector space (6D: RGB + X/Y/Z size) ---
 
 VECTOR_DIMENSIONS = [
@@ -16,7 +17,7 @@ VECTOR_DIMENSIONS = [
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
 
 class VectorSpace:
-    def __init__(self, array=None, word=None):
+    def __init__(self, array=None, word=None, data=None):
         if array is None:
             self.vector = np.zeros(VECTOR_LENGTH)
         else:
@@ -24,6 +25,7 @@ class VectorSpace:
                 raise ValueError(f"Expected vector of length {VECTOR_LENGTH}, got {len(array)}")
             self.vector = np.array(array, dtype=float)
         self.word = word  # NEW
+        self.data = data or {}
 
     # Add optional __str__ override for easier debugging
     def __repr__(self):
@@ -72,6 +74,19 @@ class VectorSpace:
             return self.vector[idx] > 0.5  # threshold hardcoded here
         except ValueError:
             return False
+
+    def cosine_similarity(self, other):
+        # Calculate dot product
+        dot = sum(self[k] * other[k] for k in self.data if k in other.data)
+
+        # Calculate norms
+        norm_self = math.sqrt(sum(v * v for v in self.data.values()))
+        norm_other = math.sqrt(sum(v * v for v in other.data.values()))
+
+        if norm_self == 0 or norm_other == 0:
+            return 0.0
+
+        return dot / (norm_self * norm_other)
 
     @property
     def shape(self):
