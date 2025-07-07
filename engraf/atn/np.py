@@ -4,38 +4,14 @@ from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import vector_from_features, VectorSpace, any_of, is_verb, is_adverb, is_noun, is_tobe, \
     is_determiner, is_pronoun, is_adjective, is_preposition, is_none
 from engraf.atn.core import ATNState, noop
-from engraf.utils.actions import make_run_pp_into_ctx
+from engraf.utils.actions import make_run_pp_into_atn
+from engraf.pos.noun_phrase import NounPhrase
 
-
-# --- Action functions ---
-def apply_determiner(ctx, tok):
-    # Initialize the vector space for the noun phrase
-    ctx["vector"] = ctx.setdefault("vector", VectorSpace())
-    # Add the determiner vector to the context
-    ctx["vector"] += tok
-
-def apply_pronoun(ctx, tok):
-    ctx["vector"] = ctx.setdefault("vector", VectorSpace())
-    ctx["pronoun"] = tok.word
-    ctx["object"] = tok.word  # placeholder, real referent resolved later
-    ctx["noun_phrase"] = {"pronoun": tok.word}
-
-def apply_adverb(ctx, tok):
-    # Multiply any upcoming adjective by 1.5 (or another scalar)
-    ctx["scale_factor"] = ctx.get("scale_factor", 1.0) * 1.5
-
-def apply_adjective(ctx, tok):
-    vec = ctx.setdefault("vector")
-    scale = ctx.pop("scale_factor", 1.0)
-    vec += tok * scale
-
-def apply_noun(ctx, tok):
-    ctx.setdefault('vector', 
-    vector_from_features("")).__iadd__(tok),
-    ctx.update({'noun': tok.word})
 
 # --- Build the Noun Phrase ATN ---
 def build_np_atn(ts: TokenStream):
+    np = NounPhrase()
+
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
     adv = ATNState("NP-ADV")
@@ -66,7 +42,7 @@ def build_np_atn(ts: TokenStream):
     noun.add_arc(is_none, noop, end)
 
     # NOUN → PP (subnetwork)
-    action = make_run_pp_into_ctx(ts)
+    action = make_run_pp_into_atn(ts)
     noun.add_arc(is_preposition, action, pp)
 
     # NOUN → VERB or ISA 

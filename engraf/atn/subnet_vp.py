@@ -5,6 +5,5 @@ from engraf.atn.core import run_atn
 
 def run_vp(tokens):
     ts = TokenStream(tokens)
-    ctx = {}
     vp_start, vp_end = build_vp_atn(ts)
-    return run_atn(vp_start, vp_end, ts, ctx)
+    return run_atn(vp_start, vp_end, ts)

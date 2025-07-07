@@ -5,6 +5,5 @@ from engraf.atn.core import run_atn
 
 def run_pp(tokens):
     ts = TokenStream(tokens)
-    ctx = {}
     pp_start, pp_end = build_pp_atn(ts)
-    return run_atn(pp_start, pp_end, ts, ctx)
+    return run_atn(pp_start, pp_end, ts)

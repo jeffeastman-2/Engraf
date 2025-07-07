@@ -2,9 +2,8 @@ from engraf.lexer.token_stream import TokenStream
 from engraf.atn.core import ATNState, run_atn, noop
 from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, is_adjective_or_adverb, \
     any_of, is_determiner, is_pronoun, is_none, is_adverb, is_adjective, is_conjunction
-from engraf.atn.np import apply_adjective, apply_adverb
-from engraf.utils.actions import make_run_np_into_ctx
-from engraf.utils.actions import make_run_vp_into_ctx
+from engraf.utils.actions import make_run_np_into_atn
+from engraf.utils.actions import make_run_vp_into_atn
 
 def store_definition_word(ctx, tok):
     ctx["definition_word"] = tok.word
@@ -28,7 +27,7 @@ def build_sentence_atn(ts: TokenStream):
     end = ATNState("SENTENCE-END")
 
     # Optional subject NP (ignored in output, just consumes NP if found)
-    start.add_arc(any_of(is_determiner, is_pronoun), make_run_np_into_ctx(ts), after_np)
+    start.add_arc(any_of(is_determiner, is_pronoun), make_run_np_into_atn(ts), after_np)
     start.add_arc(is_quoted, store_definition_word, tobe)   # Recognize: 'quoted' → 'is' → adjective/adverb phrase
     start.add_arc(is_verb, noop,  after_np)    # If subject omitted, proceed directly to VP
 
@@ -51,7 +50,7 @@ def build_sentence_atn(ts: TokenStream):
     adjective.add_arc(is_none, noop, end)
 
     # Main verb phrase
-    after_np.add_arc(is_verb, make_run_vp_into_ctx(ts), end)
+    after_np.add_arc(is_verb, make_run_vp_into_atn(ts), end)
     after_np.add_arc(is_tobe, store_tobe_word, adjective_phrase)
 
     # Allow final transition if stream is exhausted

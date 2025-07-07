@@ -1,6 +1,6 @@
 import
 
-class PrepositionalPhrase(POSNounPhrase):
+class PrepositionalPhrase():
     """Represents a prepositional phrase in a sentence.
     This is a non-terminal part of speech (POS) type.
     """
@@ -8,3 +8,7 @@ class PrepositionalPhrase(POSNounPhrase):
         super().__init__()
         self.preposition = preposition
         self.noun_phrase = noun_phrase if noun_phrase is not None else []   
+
+    def apply_preposition(self, tok)
+        self.preposition = tok.word
+        self.vector = tok

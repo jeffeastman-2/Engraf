@@ -1,62 +1,86 @@
 from engraf.atn.core import run_atn
 from engraf.lexer.token_stream import TokenStream
 
-def make_run_np_into_ctx(ts):
+def make_run_np_into_atn(ts):
     from engraf.atn.np import build_np_atn
+    from engraf.pos.noun_phrase import NounPhrase
 
-    def run_np_into_ctx(ctx, _):
+    def run_np_into_atn(atn, _):
         saved_pos = ts.position
-        np_ctx = {}
         np_start, np_end = build_np_atn(ts)
-        result = run_atn(np_start, np_end, ts, np_ctx)
+
+        np_obj = NounPhrase()
+        result = run_atn(np_start, np_end, ts, np_obj)
+
         if result is not None:
-            ctx['object'] = result.get('noun')
-            ctx['noun_phrase'] = result 
-            ctx['vector'] = result.get('vector', None)
-            ctx['modifiers'] = result.get('modifiers', None)
+            atn.noun_phrase = np_obj
+            atn.vector = np_obj.vector
+            atn.object = np_obj.noun
+            atn.modifiers = getattr(np_obj, "modifiers", None)
         else:
             ts.position = saved_pos
-        run_np_into_ctx._is_subnetwork = True
-    return run_np_into_ctx
 
-def make_run_pp_into_ctx(ts):
+    run_np_into_atn._is_subnetwork = True
+    return run_np_into_atn
+
+def make_run_pp_into_atn(ts):
     from engraf.atn.pp import build_pp_atn
+    from engraf.pos.prepositional_phrase import PrepositionalPhrase
 
-    def run_pp_into_ctx(ctx, tok):
+    def run_pp_into_atn(atn, _):
         saved_pos = ts.position
-        ctx.setdefault('modifiers', []).append({'prep': tok})
-        modifier_ctx = ctx['modifiers'][-1]
         pp_start, pp_end = build_pp_atn(ts)
-        result = run_atn(pp_start, pp_end, ts, modifier_ctx)
+
+        pp_obj = PrepositionalPhrase()
+        result = run_atn(pp_start, pp_end, ts, pp_obj)
+
         if result is not None:
-            modifier_ctx['object'] = result.get('object')
-            if "vector" not in ctx:
-                ctx["vector"] = result.get("vector")
+            atn.prepositional_phrases.append(pp_obj)
+            atn.vector += pp_obj.vector
         else:
             ts.position = saved_pos
-    run_pp_into_ctx._is_subnetwork = True
-    return run_pp_into_ctx
+
+    run_pp_into_atn._is_subnetwork = True
+    return run_pp_into_atn
 
 
-def make_run_vp_into_ctx(ts, output_key="vector"):
+def make_run_vp_into_atn(ts):
     from engraf.atn.vp import build_vp_atn
+    from engraf.pos.verb_phrase import VerbPhrase
 
-    def run_vp_into_ctx(ctx, _):
+    def run_vp_into_atn(atn, _):
         saved_pos = ts.position
-        vp_ctx = {}
         vp_start, vp_end = build_vp_atn(ts)
-        result = run_atn(vp_start, vp_end, ts, vp_ctx)
+
+        vp_obj = VerbPhrase()
+        result = run_atn(vp_start, vp_end, ts, vp_obj)
+
         if result is not None:
-            ctx[output_key] = result.get("vector")
-            ctx["object"] = result.get("object")  # optional: noun or pronoun
-            ctx["verb"] = result.get("verb")
-            ctx["noun_phrase"] = result.get("noun_phrase", {})
-            ctx["modifiers"] = result.get("modifiers", [])  
-            if "vector" not in ctx:
-                ctx["vector"] = vp_ctx.get("vector")
-            if "pronoun" in vp_ctx:
-                ctx["pronoun"] = vp_ctx["pronoun"]
+            atn.verb_phrase = vp_obj
+            atn.vector += vp_obj.vector
+            atn.action = getattr(vp_obj, "action", None)
         else:
             ts.position = saved_pos
-    run_vp_into_ctx._is_subnetwork = True
-    return run_vp_into_ctx
+
+    run_vp_into_atn._is_subnetwork = True
+    return run_vp_into_atn
+
+def make_run_sentence_into_atn(ts):
+    from engraf.atn.sentence import build_sentence_atn
+    from engraf.pos.sentence import Sentence
+
+    def run_sentence_into_atn(atn, _):
+        saved_pos = ts.position
+        sent_start, sent_end = build_sentence_atn(ts)
+
+        sentence_obj = Sentence()
+        result = run_atn(sent_start, sent_end, ts, sentence_obj)
+
+        if result is not None:
+            atn.sentence = sentence_obj
+            atn.vector = sentence_obj.vector
+        else:
+            ts.position = saved_pos
+
+    run_sentence_into_atn._is_subnetwork = True
+    return run_sentence_into_atn
