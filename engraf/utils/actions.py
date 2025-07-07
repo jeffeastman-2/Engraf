@@ -7,9 +7,8 @@ def make_run_np_into_atn(ts):
 
     def run_np_into_atn(atn, _):
         saved_pos = ts.position
-        np_start, np_end = build_np_atn(ts)
-
         np_obj = NounPhrase()
+        np_start, np_end = build_np_atn(np_obj, ts)
         result = run_atn(np_start, np_end, ts, np_obj)
 
         if result is not None:
@@ -29,14 +28,13 @@ def make_run_pp_into_atn(ts):
 
     def run_pp_into_atn(atn, _):
         saved_pos = ts.position
-        pp_start, pp_end = build_pp_atn(ts)
-
         pp_obj = PrepositionalPhrase()
+        pp_start, pp_end = build_pp_atn(pp_obj, ts)
         result = run_atn(pp_start, pp_end, ts, pp_obj)
 
         if result is not None:
-            atn.prepositional_phrases.append(pp_obj)
-            atn.vector += pp_obj.vector
+            atn.noun_phrase = pp_obj  # 👈 used by apply_pp() caller
+            atn.vector = pp_obj.vector
         else:
             ts.position = saved_pos
 
@@ -50,9 +48,8 @@ def make_run_vp_into_atn(ts):
 
     def run_vp_into_atn(atn, _):
         saved_pos = ts.position
-        vp_start, vp_end = build_vp_atn(ts)
-
         vp_obj = VerbPhrase()
+        vp_start, vp_end = build_vp_atn(vp_obj)
         result = run_atn(vp_start, vp_end, ts, vp_obj)
 
         if result is not None:

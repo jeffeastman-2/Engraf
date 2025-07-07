@@ -92,7 +92,12 @@ class VectorSpace:
     def shape(self):
         return self.vector.shape
 
-def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None):
+    def scalar_projection(self, dim="adv"):
+        i = VECTOR_DIMENSIONS.index(dim)
+        return self.vector[i]
+
+
+def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None):
     vs = VectorSpace(word)
     for tag in pos.split():
         if tag in VECTOR_DIMENSIONS:
@@ -103,6 +108,7 @@ def vector_from_features(pos, loc=None, scale=None, rot=None, color=None, word=N
     if scale: vs["scaleX"], vs["scaleY"], vs["scaleZ"] = scale
     if rot: vs["rotX"], vs["rotY"], vs["rotZ"] = rot
     if color: vs["red"], vs["green"], vs["blue"] = color
+    if adverb is not None: vs["adv"] = adverb
     return vs
 
 def is_determiner(tok): return tok is not None and tok.isa("det")

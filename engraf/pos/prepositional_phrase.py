@@ -1,4 +1,5 @@
-import
+from engraf.lexer.vector_space import VectorSpace   
+ 
 
 class PrepositionalPhrase():
     """Represents a prepositional phrase in a sentence.
@@ -9,6 +10,6 @@ class PrepositionalPhrase():
         self.preposition = preposition
         self.noun_phrase = noun_phrase if noun_phrase is not None else []   
 
-    def apply_preposition(self, tok)
+    def apply_preposition(self, tok):
         self.preposition = tok.word
         self.vector = tok

@@ -1,8 +1,7 @@
 import numpy as np
 from engraf.lexer.vector_space import VectorSpace
-from engraf.pos.pos import POSNonTerminal
 
-class SentenceDeclarative(POSNonTerminal):
+class SentenceDeclarative():
     def __init__(self, subject: NounPhrase, predicate: VerbPhrase):
         self.subject = subject
         self.predicate = predicate

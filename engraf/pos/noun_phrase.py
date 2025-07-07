@@ -18,24 +18,33 @@ class NounPhrase():
     def apply_adverb(self, tok):
         """Store the adverb vector for use in scaling the next adjective."""
         self.scale_vector = getattr(self, "scale_vector", VectorSpace())
+        print(f"Scale_vector is {self.scale_vector} for token {tok}")
         self.scale_vector += tok  # Combine adverbs if needed (e.g., "very extremely")
 
     def apply_adjective(self, tok):
         """Apply the adverb-scaled adjective to the NP vector."""
         scale = getattr(self, "scale_vector", None)
         if scale:
-            self.vector += tok * scale
-            self.scale_vector = None  # Reset after use
+            strength = scale.scalar_projection("adv")
+            print(f"Scaling adjective {tok.word} by {strength}")
+            print(f"Adjective vector before scale: {tok}")
+            self.vector += tok * strength
+            self.scale_vector = None
         else:
             self.vector += tok
 
     def apply_noun(self, tok):
+        print(f"Applying noun {tok.word} with vector {tok}")
         self.noun = tok.word
         self.vector += tok
 
+    def apply_pronoun(self, tok):
+        self.pronoun = tok.word
+        self.vector += tok
+
     def apply_pp(self, pp_obj):
-        """Incorporate a PrepositionalPhrase object."""
-        self.prepositional_phrases.append(pp_obj)
+        print(f"📌 Applying PP: {pp_obj}")
+        self.preps.append(pp_obj)
         self.vector += pp_obj.vector
 
     def to_vector(self):

@@ -12,7 +12,7 @@ class ATNState:
     def __repr__(self):
         return f"ATNState({self.name})"
 
-def noop(ctx, tok):
+def noop(_):
     pass
 
 # Walk the whole ATN to get all states
@@ -35,8 +35,7 @@ def get_all_states(start_state):
                 print(f"Warning: next_state {next_state} is not an ATNState")
     return all_states
 
-def run_atn(start_state, end_state, ts: TokenStream, context=None):
-    context = context or {}
+def run_atn(start_state, end_state, ts: TokenStream, pos):
     current = start_state
 
     while True:
@@ -52,7 +51,7 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
                     print(f"    Token is None, but matched in {current.name} → {next_state.name}")
                 if action is None:
                     print("❌ ERROR: This arc has a None action!")
-                action(context, tok)
+                action(tok)
                 current = next_state
                  # ❗ Only advance if action is not a subnetwork runner
                 if action != noop and not getattr(action, "_is_subnetwork", False):
@@ -73,6 +72,6 @@ def run_atn(start_state, end_state, ts: TokenStream, context=None):
             return None
 
         if current == end_state:
-            print(f"    ++Reached final state: {end_state.name} with context: {context}")
-            return context
+            print(f"    ++Reached final state: {end_state.name} with context: {pos}")
+            return pos
 

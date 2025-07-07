@@ -1,7 +1,6 @@
 import numpy as np
-from engraf.pos.pos import POSNonTerminal
-
-class SentenceInterrogative(POSNonTerminal):
+x
+class SentenceInterrogative():
     """Represents an interrogative sentence in a sentence structure.
     This is a non-terminal part of speech (POS) type.
     """

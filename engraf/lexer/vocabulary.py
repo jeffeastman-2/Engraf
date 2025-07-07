@@ -47,11 +47,11 @@ SEMANTIC_VECTOR_SPACE = {
     'transparent': vector_from_features("adj", transparency=2.0),
     'opaque': vector_from_features("adj", transparency=0.0),
     # Adverbs
-    'very': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5], texture=1.5, transparency=1.5),
-    'more': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5], texture=1.5, transparency=1.5),
-    'much': vector_from_features("adv", scale=[1.5, 1.5, 1.5], color=[1.5, 1.5, 1.5], texture=1.5, transparency=1.5),
-    'extremely': vector_from_features("adv", scale=[2.0, 2.0, 2.0], color=[2.0, 2.0, 2.0], texture=2.0, transparency=2.0),
-    'slightly': vector_from_features("adv", scale=[0.5, 0.5, 0.5], color=[0.5, 0.5, 0.5], texture=0.5, transparency=0.5),
+    'very': vector_from_features("adv", adverb=1.5),
+    'more': vector_from_features("adv", adverb=1.5),
+    'much': vector_from_features("adv", adverb=1.5),
+    'extremely': vector_from_features("adv", adverb=2.0),
+    'slightly': vector_from_features("adv", adverb=0.75),
     # Determiners
     'the': vector_from_features("det def", number=1.0),
     'one': vector_from_features("det def", number=1.0),

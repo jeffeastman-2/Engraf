@@ -1,8 +1,7 @@
 import numpy as np
 from engraf.lexer.vector_space import VectorSpace
-from engraf.pos.pos import POSNonTerminal
 
-class SentenceImperative(POSNonTerminal):
+class SentenceImperative():
     """Represents an imperative sentence in a sentence structure.
     This is a non-terminal part of speech (POS) type.
     """

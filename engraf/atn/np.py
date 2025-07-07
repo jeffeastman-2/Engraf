@@ -7,11 +7,11 @@ from engraf.atn.core import ATNState, noop
 from engraf.utils.actions import make_run_pp_into_atn
 from engraf.pos.noun_phrase import NounPhrase
 
+def apply_from_subnet(fieldname, apply_func):
+    return lambda atn: apply_func(getattr(atn, fieldname))
 
 # --- Build the Noun Phrase ATN ---
-def build_np_atn(ts: TokenStream):
-    np = NounPhrase()
-
+def build_np_atn(np, ts):
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
     adv = ATNState("NP-ADV")
@@ -21,32 +21,34 @@ def build_np_atn(ts: TokenStream):
     pp = ATNState("NP-PP")
     end = ATNState("NP-END")
 
-    start.add_arc(is_determiner, apply_determiner, det)
-    start.add_arc(is_pronoun, apply_pronoun, adj_after_pronoun)
+    start.add_arc(is_determiner, lambda tok: np.apply_determiner(tok), det)
+    start.add_arc(is_pronoun, lambda tok: np.apply_pronoun(tok), adj_after_pronoun)
 
     # ADJ → ADJ / NOUN
-    det.add_arc(is_adverb, apply_adverb, det)
-    det.add_arc(is_adjective, apply_adjective, adj)
+    det.add_arc(is_adverb, lambda tok: np.apply_adverb(tok), det)
+    det.add_arc(is_adjective, lambda tok: np.apply_adjective(tok), adj)
 
-    adj.add_arc(is_adjective, apply_adjective, adj)
+    adj.add_arc(is_adjective, lambda tok: np.apply_adjective(tok), adj)
 
-    adj_after_pronoun.add_arc(is_adverb, apply_adverb, adj_after_pronoun)
-    adj_after_pronoun.add_arc(is_adjective, apply_adjective, adj_after_pronoun)
+    adj_after_pronoun.add_arc(is_adverb, lambda tok: np.apply_adverb(tok), adj_after_pronoun)
+    adj_after_pronoun.add_arc(is_adjective, lambda tok: np.apply_adjective(tok), adj_after_pronoun)
     adj_after_pronoun.add_arc(lambda tok: True, noop, end)
 
     # ADJ or DET → NOUN
     for state in [det, adj]:
-        state.add_arc(is_noun, apply_noun, noun)
+        state.add_arc(is_noun, lambda tok: np.apply_noun(tok), noun)
 
     # NOUN → END (simple NP)
     noun.add_arc(is_none, noop, end)
 
     # NOUN → PP (subnetwork)
+    # Add the subnetwork runner on its own state transition
     action = make_run_pp_into_atn(ts)
     noun.add_arc(is_preposition, action, pp)
 
     # NOUN → VERB or ISA 
     noun.add_arc(any_of(is_verb, is_tobe), action, end)
+    pp.add_arc(is_none, apply_from_subnet("noun_phrase", np.apply_pp), end)
 
     # PP → END
     pp.add_arc(is_none, noop, end)
