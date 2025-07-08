@@ -41,8 +41,7 @@ def test_np_with_preposition():
     assert result is not None
     assert result.noun == "sphere"
     assert isinstance(result.vector, VectorSpace)
-    assert result.preps is not None
     assert len(result.preps) == 1
-    assert result.preps[0]["prep"] == "over"
-    assert result.preps[0]["object"] == "cube"
+    assert result.preps[0].preposition == "over"
+    assert result.preps[0].noun_phrase.noun == "cube"
 

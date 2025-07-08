@@ -85,5 +85,13 @@ def make_run_sentence_into_atn(ts):
     return run_sentence_into_atn
 
 def apply_from_subnet(fieldname, apply_func):
-    return lambda _, atn: apply_func(getattr(atn, fieldname))
+    def wrapper(_, atn):
+        val = getattr(atn, fieldname, None)
+        print(f"📍 apply_from_subnet: {fieldname} = {val}")
+        if val is not None:
+            apply_func(val)
+        else:
+            print(f"⚠️  Warning: {fieldname} is None — skipping apply_func")
+    return wrapper
+
 

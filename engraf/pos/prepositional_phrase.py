@@ -8,8 +8,9 @@ class PrepositionalPhrase():
     def __init__(self):
         super().__init__()
         self.preposition = None
-        self.noun_phrase = None  
-        
+        self.noun_phrase = None 
+        self.vector = VectorSpace() 
+
     def __repr__(self):
         return f"PrepositionalPhrase(preposition={self.preposition!r}, noun_phrase={self.noun_phrase!r})"
 

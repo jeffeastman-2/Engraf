@@ -42,13 +42,9 @@ def build_np_atn(np, ts):
     # Add the subnetwork runner on its own state transition
     action = make_run_pp_into_atn(ts)
     noun.add_arc(is_preposition, action, pp)
-
-    # NOUN → VERB or ISA 
     noun.add_arc(any_of(is_verb, is_tobe), action, pp)
-    pp.add_arc(is_none, apply_from_subnet("noun_phrase", np.apply_pp), end)
 
-    # PP → END
-    pp.add_arc(is_none, noop, end)
+    pp.add_arc(is_none, apply_from_subnet("noun_phrase", np.apply_pp), end)
 
     return start, end
 
