@@ -4,13 +4,15 @@ from engraf.scenes.scene_model import scene_from_parse
 from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_vp import run_vp
+from engraf.atn.subnet_sentence import run_sentence
 from engraf.lexer.token_stream import tokenize
 from pprint import pprint
 
-def test_scene_from_simple_vp():
+def test_scene_from_simple_sentence():
     tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere"))
-    parse_tree = run_vp(tokens)
-    scene = scene_from_parse(parse_tree)
+    sentence = run_sentence(tokens)
+    assert sentence is not None
+    scene = scene_from_parse(sentence)
 
     # Check the scene has one object
     assert isinstance(scene, SceneModel)

@@ -60,14 +60,15 @@ def resolve_pronoun(word, scene: SceneModel):
     else:
         raise ValueError(f"Unrecognized pronoun: {word}")
 
-def scene_from_parse(parse_tree):
+def scene_from_parse(sentence_phrase):
     scene = SceneModel()
-    
-    if parse_tree["verb"] == "draw":
-        noun_data = parse_tree["noun_phrase"]
+    verb_phrase = sentence_phrase.predicate
+    if verb_phrase.verb == "draw":
+        noun_phrase = sentence_phrase.noun_phrase
+        preps = noun_phrase.preps
         obj = SceneObject(
-            name=noun_data["noun"],
-            vector=noun_data["vector"],
+            name=noun_phrase.noun,
+            vector=noun_phrase.vector,
             modifiers=[
                 SceneObject(
                     name=mod["object"],

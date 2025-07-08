@@ -8,7 +8,7 @@ from engraf.utils.actions import make_run_pp_into_atn, apply_from_subnet
 from engraf.pos.noun_phrase import NounPhrase
 
 # --- Build the Noun Phrase ATN ---
-def build_np_atn(np, ts):
+def build_np_atn(np: NounPhrase, ts: TokenStream):
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
     adv = ATNState("NP-ADV")

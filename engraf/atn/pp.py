@@ -8,7 +8,7 @@ from engraf.utils.actions import apply_from_subnet
 
 # --- Build the Prepositional Phrase ATN ---
 
-def build_pp_atn(pp, ts):
+def build_pp_atn(pp:PrepositionalPhrase, ts:TokenStream):
     start = ATNState("PP-START")
     after_prep = ATNState("PP-AFTER-PREP")
     after_np = ATNState("PP-NP-RESULT")

@@ -4,7 +4,7 @@ import math
 # --- Updated semantic vector space (6D: RGB + X/Y/Z size) ---
 
 VECTOR_DIMENSIONS = [
-    "verb", "tobe", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
+    "verb", "tobe", "action", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
     "number", "vector", "singular", "plural", "conj", "tobe",
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
@@ -71,7 +71,7 @@ class VectorSpace:
         """Returns True if the category is 'active' in this vector."""
         try:
             idx = VECTOR_DIMENSIONS.index(category.lower())
-            return self.vector[idx] > 0.5  # threshold hardcoded here
+            return self.vector[idx] > 0.0  # threshold hardcoded here
         except ValueError:
             return False
 

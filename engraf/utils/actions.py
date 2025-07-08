@@ -33,7 +33,6 @@ def make_run_pp_into_atn(ts):
         result = run_atn(pp_start, pp_end, ts, pp_obj)
 
         if result is not None:
-            # Use result.noun_phrase here, assuming the PP ATN builds it
             parent_atn.preps.append(pp_obj)
             return parent_atn
         else:
@@ -44,25 +43,26 @@ def make_run_pp_into_atn(ts):
     return run_pp_into_atn
 
 
-def make_run_vp_into_atn(ts):
+def make_run_vp_into_atn(ts, fieldname):
     from engraf.atn.vp import build_vp_atn
     from engraf.pos.verb_phrase import VerbPhrase
 
-    def run_vp_into_atn(atn, _):
+    def run_vp_into_atn(parent_atn, _):
         saved_pos = ts.position
         vp_obj = VerbPhrase()
-        vp_start, vp_end = build_vp_atn(vp_obj)
+        vp_start, vp_end = build_vp_atn(vp_obj, ts)
         result = run_atn(vp_start, vp_end, ts, vp_obj)
 
         if result is not None:
-            atn.verb_phrase = vp_obj
-            atn.vector += vp_obj.vector
-            atn.action = getattr(vp_obj, "action", None)
+            setattr(parent_atn, fieldname, vp_obj)
+            return parent_atn  # ✅ Return the parent sentence!
         else:
             ts.position = saved_pos
+            return None
 
     run_vp_into_atn._is_subnetwork = True
     return run_vp_into_atn
+
 
 def make_run_sentence_into_atn(ts):
     from engraf.atn.sentence import build_sentence_atn

@@ -7,16 +7,18 @@ class VerbPhrase():
     def __init__(self):
         super().__init__()
         self.verb = None
-        self.object_np = None
+        self.noun_phrase = None
 
     def to_vector(self) -> VectorSpace:
         # Combine verb meaning with its object’s vector (if present)
         v = self.verb.to_vector().copy()
-        if self.object_np:
-            v += self.object_np.to_vector()
+        if self.noun_phrase:
+            v += self.noun_phrase.to_vector()
         return v
 
-    def verb_action(self, tok):
-        this.verb = tok.word
-        this.vector = tok
+    def apply_verb(self, tok):
+        self.verb = tok.word
+        self.vector = tok
 
+    def apply_np(self, np):
+        self.noun_phrase = np
