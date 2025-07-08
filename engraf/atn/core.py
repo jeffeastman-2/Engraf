@@ -12,7 +12,7 @@ class ATNState:
     def __repr__(self):
         return f"ATNState({self.name})"
 
-def noop(_):
+def noop(_, tok):
     pass
 
 # Walk the whole ATN to get all states
@@ -47,15 +47,27 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
             if test(tok):
                 if tok is not None:
                     print(f"    Token '{tok.word}' matches in {current.name} → {next_state.name}")
-                else: 
+                else:
                     print(f"    Token is None, but matched in {current.name} → {next_state.name}")
+
                 if action is None:
                     print("❌ ERROR: This arc has a None action!")
-                action(tok)
+
+                if getattr(action, "_is_subnetwork", False):
+                    result = action(pos, tok)
+                    if result is None:
+                        print("❌ Subnetwork failed — aborting parse")
+                        return None
+                    pos = result  # ✅ use the result from the subnetwork as the next pos
+                else:
+                    action(pos, tok)
+
                 current = next_state
-                 # ❗ Only advance if action is not a subnetwork runner
-                if action != noop and not getattr(action, "_is_subnetwork", False):
+
+                # Advance only if action is not a subnetwork runner
+                if tok is not None and action != noop and not getattr(action, "_is_subnetwork", False):
                     ts.advance()
+
                 matched = True
                 break
             else:
@@ -67,11 +79,11 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
         if not matched:
             if tok is not None:
                 print(f"    ***No arc matched in {current.name} on token '{tok.word}'")
-            else:           
+            else:
                 print(f"    ***No arc matched in {current.name} on None token")
             return None
 
         if current == end_state:
             print(f"    ++Reached final state: {end_state.name} with context: {pos}")
+            print(f"    DEBUG: At return time, pos.noun_phrase = {getattr(pos, 'noun_phrase', 'NO ATTR')}")
             return pos
-

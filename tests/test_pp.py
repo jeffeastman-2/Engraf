@@ -6,33 +6,33 @@ from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_prep
 def test_pp_over_red_cube():
     result = run_pp(TokenStream(tokenize("over the red cube")))
     assert result is not None
-    assert result['prep'] == 'over'
-    assert result['object'] == 'cube'
-    assert isinstance(result['vector'], VectorSpace)
-    assert result['noun_phrase']['noun'] == 'cube'
+    print(f" *** Result = {result}")
+    assert result.preposition == "over"
+    assert result.noun_phrase is not None
+    assert result.noun_phrase.noun == "cube"
+    assert isinstance(result.vector, VectorSpace)
 
 
 def test_pp_near_green_sphere():
     result = run_pp(TokenStream(tokenize("near the green sphere")))
     assert result is not None
-    assert result['prep'] == 'near'
-    assert result['object'] == 'sphere'
-    assert result['noun_phrase']['noun'] == 'sphere'
+    assert result.preposition == "near"
+    assert result.noun_phrase.noun == "sphere"
 
 
 def test_pp_under_large_blue_box():
     result = run_pp(TokenStream(tokenize("under the large blue box")))
     assert result is not None
-    assert result['prep'] == 'under'
-    assert result['object'] == 'box'
-    assert result['noun_phrase']['noun'] == 'box'
+    assert result.preposition == 'under'
+    assert result.noun_phrase.noun == 'box'
 
 def test_pp_at_vector():
     tokens = tokenize("at [3.0, 4.0, 5.0]")
     result = run_pp(TokenStream(tokens))
 
     assert result is not None
-    assert result['prep'] == 'at'
-    assert result['object']["locX"] == 3.0
-    assert result['object']["locY"] == 4.0
-    assert result['object']["locZ"] == 5.0
+    assert result.preposition == 'at'
+    assert result.vector is not None
+    assert result.vector["locX"] == 3.0
+    assert result.vector["locY"] == 4.0
+    assert result.vector["locZ"] == 5.0

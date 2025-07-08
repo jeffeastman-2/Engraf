@@ -1,23 +1,23 @@
 from engraf.atn.core import run_atn
 from engraf.lexer.token_stream import TokenStream
 
-def make_run_np_into_atn(ts):
+def make_run_np_into_atn(ts, fieldname):
     from engraf.atn.np import build_np_atn
     from engraf.pos.noun_phrase import NounPhrase
 
-    def run_np_into_atn(atn, _):
+    def run_np_into_atn(parent_atn, _):
         saved_pos = ts.position
         np_obj = NounPhrase()
         np_start, np_end = build_np_atn(np_obj, ts)
         result = run_atn(np_start, np_end, ts, np_obj)
 
         if result is not None:
-            atn.noun_phrase = np_obj
-            atn.vector = np_obj.vector
-            atn.object = np_obj.noun
-            atn.modifiers = getattr(np_obj, "modifiers", None)
+            print(f"✅ Set {fieldname} = {result}")  # ADD THIS LINE
+            setattr(parent_atn, fieldname, result)
+            return parent_atn
         else:
             ts.position = saved_pos
+            return None
 
     run_np_into_atn._is_subnetwork = True
     return run_np_into_atn
@@ -26,17 +26,19 @@ def make_run_pp_into_atn(ts):
     from engraf.atn.pp import build_pp_atn
     from engraf.pos.prepositional_phrase import PrepositionalPhrase
 
-    def run_pp_into_atn(atn, _):
+    def run_pp_into_atn(parent_atn, _):
         saved_pos = ts.position
         pp_obj = PrepositionalPhrase()
         pp_start, pp_end = build_pp_atn(pp_obj, ts)
         result = run_atn(pp_start, pp_end, ts, pp_obj)
 
         if result is not None:
-            atn.noun_phrase = pp_obj  # 👈 used by apply_pp() caller
-            atn.vector = pp_obj.vector
+            # Use result.noun_phrase here, assuming the PP ATN builds it
+            parent_atn.preps.append(pp_obj)
+            return parent_atn
         else:
-            ts.position = saved_pos
+            ts.position = saved_pos  # Roll back if it failed
+            return None
 
     run_pp_into_atn._is_subnetwork = True
     return run_pp_into_atn
@@ -81,3 +83,7 @@ def make_run_sentence_into_atn(ts):
 
     run_sentence_into_atn._is_subnetwork = True
     return run_sentence_into_atn
+
+def apply_from_subnet(fieldname, apply_func):
+    return lambda _, atn: apply_func(getattr(atn, fieldname))
+
