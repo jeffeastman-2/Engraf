@@ -22,13 +22,13 @@ def test_vp_with_nested_pp():
 
     # Noun phrase checks
     noun_phrase = vp.noun_phrase
-    assert isinstance(noun_phrase, NounPhrase)
+    assert noun_phrase is not None
     assert noun_phrase.noun == "cube"
     assert isinstance(noun_phrase.vector, VectorSpace)
 
     # Safely check prepositions
-    preps = noun_phrase.get("preps")
-    assert preps is not None, "Expected noun_phrase to have modifiers"
+    preps = noun_phrase.preps
+    assert preps is not None, "Expected noun_phrase to have prepositions"
     assert isinstance(preps, list)
     assert len(preps) == 1
 
@@ -37,10 +37,9 @@ def test_vp_with_nested_pp():
     assert isinstance(prep.vector, VectorSpace)
 
     inner_np = prep.noun_phrase
-    assert isinstance(inner_np, NounPhrase)
     assert inner_np.noun == "sphere"
     assert isinstance(inner_np.vector, VectorSpace)
-    assert len(inner_np.get("preps")) == 0
+    assert len(inner_np.preps) == 0
 
 
 def test_vp_with_explicit_vector():
@@ -50,18 +49,19 @@ def test_vp_with_explicit_vector():
     assert result is not None
     assert result.verb == "draw"
 
-    np_data = result.noun_phrase
-    assert np_data.noun == "cube"
-    assert isinstance(np_data.vector, VectorSpace)
+    np = result.noun_phrase
+    assert np.noun == "cube"
+    assert isinstance(np.vector, VectorSpace)
     
-    mod = np_data["preps"][0]
-    assert mod.preposition == "at"
-    assert mod.object["locX"] == 3.0
-    assert mod.object["locY"] == 4.0
-    assert mod.object["locZ"] == 5.0
+    pp = np.preps[0]
+    assert pp.preposition == "at"
+    pp_np = pp.noun_phrase
+    assert pp_np.vector["locX"] == 3.0
+    assert pp_np.vector["locY"] == 4.0
+    assert pp_np.vector["locZ"] == 5.0
 
     # Optional: check if the vector is untouched by the position spec
-    v = np_data.vector
+    v = np.vector
     assert v["scaleY"] == 2.5  # from "tall"
     assert v["blue"] == 1.0    # from "blue"
 

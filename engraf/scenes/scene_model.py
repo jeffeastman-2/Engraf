@@ -64,17 +64,17 @@ def scene_from_parse(sentence_phrase):
     scene = SceneModel()
     verb_phrase = sentence_phrase.predicate
     if verb_phrase.verb == "draw":
-        noun_phrase = sentence_phrase.noun_phrase
+        noun_phrase = verb_phrase.noun_phrase
         preps = noun_phrase.preps
         obj = SceneObject(
             name=noun_phrase.noun,
             vector=noun_phrase.vector,
             modifiers=[
                 SceneObject(
-                    name=mod["object"],
-                    vector=mod.get("vector", VectorSpace()),
-                    modifiers=mod.get("modifiers", [])
-                ) for mod in noun_data.get("modifiers", [])
+                    name=pp.noun_phrase.noun,
+                    vector=pp.vector,
+                    modifiers=pp.noun_phrase.preps)
+                for pp in noun_phrase.preps
             ]
         )
         scene.add_object(obj)

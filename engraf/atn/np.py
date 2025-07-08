@@ -2,7 +2,7 @@ import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import vector_from_features, VectorSpace, any_of, is_verb, is_adverb, is_noun, is_tobe, \
-    is_determiner, is_pronoun, is_adjective, is_preposition, is_none
+    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_anything
 from engraf.atn.core import ATNState, noop
 from engraf.utils.actions import make_run_pp_into_atn, apply_from_subnet
 from engraf.pos.noun_phrase import NounPhrase
@@ -29,7 +29,7 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
 
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)
     adj_after_pronoun.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj_after_pronoun)
-    adj_after_pronoun.add_arc(lambda _, tok: True, noop, end)
+    adj_after_pronoun.add_arc(is_anything, noop, end)
 
     # ADJ or DET → NOUN
     for state in [det, adj]:
@@ -42,9 +42,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Add the subnetwork runner on its own state transition
     action = make_run_pp_into_atn(ts)
     noun.add_arc(is_preposition, action, pp)
-    noun.add_arc(any_of(is_verb, is_tobe), action, pp)
+    noun.add_arc(any_of(is_verb, is_tobe), noop, end)
+    noun.add_arc(is_anything, lambda _, tok: print(f"Unexpected token in NP: {tok}"), end)
 
     pp.add_arc(is_none, apply_from_subnet("noun_phrase", np.apply_pp), end)
+    pp.add_arc(any_of(is_verb, is_tobe), noop, end)
 
     return start, end
 

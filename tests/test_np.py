@@ -45,3 +45,8 @@ def test_np_with_preposition():
     assert result.preps[0].preposition == "over"
     assert result.preps[0].noun_phrase.noun == "cube"
 
+def test_np_with_pronoun():
+    np = run_np(TokenStream(tokenize("it")))
+    assert np is not None
+    assert np.pronoun == "it"
+

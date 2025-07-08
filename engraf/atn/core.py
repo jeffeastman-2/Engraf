@@ -43,20 +43,23 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
         matched = False
 
         for test, action, next_state in current.arcs:
-            print(f"Testing in {current.name} → {next_state.name}")
+            if tok is not None:
+                print(f"📍 Testing '{tok.word}' in {current.name} → {next_state.name}")
+            else:
+                print(f"📍 Testing 'None' in {current.name} → {next_state.name}")
             if test(tok):
                 if tok is not None:
-                    print(f"    Token '{tok.word}' matches in {current.name} → {next_state.name}")
+                    print(f"    ✅ Token '{tok.word}' matches in {current.name} → {next_state.name}")
                 else:
-                    print(f"    Token is None, but matched in {current.name} → {next_state.name}")
+                    print(f"    ✅ Token is None, but matched in {current.name} → {next_state.name}")
 
                 if action is None:
-                    print("❌ ERROR: This arc has a None action!")
+                    print(" ❌ ERROR: This arc has a None action!")
 
                 if getattr(action, "_is_subnetwork", False):
                     result = action(pos, tok)
                     if result is None:
-                        print("❌ Subnetwork failed — aborting parse")
+                        print(" ❌ Subnetwork failed — aborting parse")
                         return None
                     pos = result  # ✅ use the result from the subnetwork as the next pos
                 else:
@@ -72,18 +75,17 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
                 break
             else:
                 if tok is not None:
-                    print(f"    Failed in {current.name} on '{tok.word}' → {next_state.name}")
+                    print(f"    ❌ Failed to match in {current.name} on '{tok.word}' → {next_state.name}")
                 else:
-                    print(f"    Failed in {current.name} on None → {next_state.name}")
+                    print(f"    ❌ Failed to match in {current.name} on None → {next_state.name}")
 
         if not matched:
             if tok is not None:
-                print(f"    ***No arc matched in {current.name} on token '{tok.word}'")
+                print(f"    ⚠️ No arc matched in {current.name} on token '{tok.word}'")
             else:
-                print(f"    ***No arc matched in {current.name} on None token")
+                print(f"    ⚠️ No arc matched in {current.name} on None token")
             return None
 
         if current == end_state:
-            print(f"    ++Reached final state: {end_state.name} with context: {pos}")
-            print(f"    DEBUG: At return time, pos.noun_phrase = {getattr(pos, 'noun_phrase', 'NO ATTR')}")
+            print(f"✅✅ Reached final state: {end_state.name} with context: {pos}")
             return pos

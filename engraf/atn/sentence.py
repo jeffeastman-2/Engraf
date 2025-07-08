@@ -1,7 +1,7 @@
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.core import ATNState, run_atn, noop
 from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, is_adjective_or_adverb, \
-    any_of, is_determiner, is_pronoun, is_none, is_adverb, is_adjective, is_conjunction
+    any_of, is_determiner, is_pronoun, is_none, is_adverb, is_adjective, is_conjunction, is_anything
 from engraf.utils.actions import make_run_np_into_atn
 from engraf.utils.actions import make_run_vp_into_atn
 from engraf.pos.sentence_phrase import SentencePhrase
@@ -24,11 +24,13 @@ def build_sentence_atn(sent: SentencePhrase, ts: TokenStream):
     start.add_arc(is_quoted, lambda _, tok: sent.store_definition_word(tok), predicate) 
     start.add_arc(is_verb, noop,  predicate) 
 
-    after_np.add_arc(is_none, lambda _, np_obj: sent.apply_subject(np_obj), predicate)
+    after_np.add_arc(is_anything, lambda _, __: sent.apply_subject(sent.subject), predicate)
+    #after_np.add_arc(is_none, lambda _, np_obj: sent.apply_subject(np_obj), predicate)
 
     predicate.add_arc(is_verb, make_run_vp_into_atn(ts, fieldname="predicate"), after_predicate)
 
-    after_predicate.add_arc(is_none, lambda _, vp_obj: sent.apply_predicate(vp_obj), end)
+    after_predicate.add_arc(is_none, lambda _, __: sent.apply_predicate(sent.predicate), end)
+    #after_predicate.add_arc(is_none, lambda _, vp_obj: sent.apply_predicate(vp_obj), end)
 
 
 #TBD

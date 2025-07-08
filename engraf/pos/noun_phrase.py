@@ -7,7 +7,6 @@ class NounPhrase():
         self.noun = None
         self.pronoun = None
         self.determiner = None
-        self.adjectives = []
         self.preps = []
         self.scale_factor = 1.0
 
@@ -34,16 +33,17 @@ class NounPhrase():
             self.vector += tok
 
     def apply_noun(self, tok):
-        print(f"Applying noun {tok.word} with vector {tok}")
+        print(f"++ NP applying noun {tok.word} with vector {tok}")
         self.noun = tok.word
         self.vector += tok
 
     def apply_pronoun(self, tok):
+        print(f"++ NP applying pronoun {tok.word} with vector {tok}")
         self.pronoun = tok.word
         self.vector += tok
 
     def apply_pp(self, pp_obj):
-        print(f"📌 Applying PP: {pp_obj}")
+        print(f"++ Np applying PP: {pp_obj}")
         self.preps.append(pp_obj)
         self.vector += pp_obj.vector
 
@@ -58,4 +58,4 @@ class NounPhrase():
         return v
 
     def __repr__(self):
-        return f"NP(noun={self.noun}, determiner= {self.determiner}, adjectives={self.adjectives}, preps={self.preps})"          
+        return f"NP(noun={self.noun}, determiner= {self.determiner}, preps={self.preps})"          
