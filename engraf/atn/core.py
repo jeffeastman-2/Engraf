@@ -47,7 +47,14 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
                 print(f"📍 Testing '{tok.word}' in {current.name} → {next_state.name}")
             else:
                 print(f"📍 Testing 'None' in {current.name} → {next_state.name}")
-            if test(tok):
+                
+            match_result = test(tok)
+            if isinstance(match_result, tuple):
+                matched_bool, should_consume = match_result
+            else:
+                matched_bool, should_consume = match_result, True
+
+            if matched_bool:
                 if tok is not None:
                     print(f"    ✅ Token '{tok.word}' matches in {current.name} → {next_state.name}")
                 else:
@@ -68,8 +75,10 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
                 current = next_state
 
                 # Advance only if action is not a subnetwork runner
-                if tok is not None and action != noop and not getattr(action, "_is_subnetwork", False):
+                if should_consume and tok is not None and action != noop and not getattr(action, "_is_subnetwork", False):
                     ts.advance()
+                else:
+                    print(f"    Token '{tok}' accepted but not consumed")    
 
                 matched = True
                 break

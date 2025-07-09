@@ -101,12 +101,12 @@ SEMANTIC_VECTOR_SPACE = {
     'and': vector_from_features("conj"),
     'or': vector_from_features("conj"),
     # To be verbs
-    'is': vector_from_features("verb tobe"),
-    'are': vector_from_features("verb tobe"),
-    'was': vector_from_features("verb tobe"),
-    'were': vector_from_features("verb tobe"),
-    'be': vector_from_features("verb tobe"),
-    'been': vector_from_features("verb tobe")
+    'is': vector_from_features("tobe"),
+    'are': vector_from_features("tobe"),
+    'was': vector_from_features("tobe"),
+    'were': vector_from_features("tobe"),
+    'be': vector_from_features("tobe"),
+    'been': vector_from_features("tobe")
 }
 
 def add_to_vocabulary(word, vector_space):

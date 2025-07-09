@@ -1,6 +1,5 @@
 from engraf.scenes.scene_object import SceneObject 
-from engraf.scenes.scene_model import SceneModel
-from engraf.scenes.scene_model import scene_from_parse
+from engraf.scenes.scene_model import SceneModel, scene_from_parse, resolve_pronoun
 from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_vp import run_vp
@@ -87,14 +86,14 @@ def test_draw_and_color_in_scene():
     predicate2 = sentence2.predicate
     assert predicate2 is not None
     assert predicate2.verb == "color"
-    predicate2_noun_phrase = predicate2.noun_phrase
-    assert predicate2_noun_phrase is not None
-    pronoun = predicate2_noun_phrase.pronoun
+    predicate2_np = predicate2.noun_phrase
+    assert predicate2_np is not None
+    pronoun = predicate2_np.pronoun
     targets = resolve_pronoun(pronoun, scene)
     assert len(targets) == 1
 
     # Apply color from parsed NP
-    new_color_vec = sentence2["noun_phrase"]["vector"]
+    new_color_vec = predicate2_np.vector
     for channel in ("red", "green", "blue"):
         targets[0].vector[channel] = new_color_vec[channel]
 
