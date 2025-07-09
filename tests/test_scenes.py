@@ -37,7 +37,7 @@ def test_scene_from_simple_sentence():
     assert obj.vector["scaleY"] > 1.0
     assert obj.vector["blue"] > 0.5
 
-def test_pronoun_resolution_in_scene():
+def test_scene_pronoun_resolution():
     from engraf.scenes.scene_model import SceneModel, resolve_pronoun
     from engraf.lexer.vector_space import VectorSpace
 
@@ -56,7 +56,7 @@ def test_pronoun_resolution_in_scene():
     assert len(result) == 2
     assert {obj.name for obj in result} == {"cube", "sphere"}  # Both objects should be resolved
 
-def test_draw_and_color_in_scene():
+def test_scene_draw_and_color():
     scene = SceneModel()
 
     # First sentence: draw a red cube
@@ -103,7 +103,7 @@ def test_draw_and_color_in_scene():
     assert targets[0].vector["blue"] == 0.0
 
 
-def test_draw_and_color_multiple_objects_to_scene():
+def test_scene_draw_and_color_multiple_objects():
     scene = SceneModel()
 
     # First sentence: draw a red cube
@@ -170,7 +170,7 @@ def test_draw_and_color_multiple_objects_to_scene():
         assert target.vector["blue"] == 0.0
 
 
-def test_declarative_sentence_to_scene():
+def test_scene_declarative_sentence():
     scene = SceneModel()
 
     # First sentence: draw a red cube

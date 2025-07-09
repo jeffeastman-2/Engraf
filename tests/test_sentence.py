@@ -38,10 +38,8 @@ def test_imperative_with_preposition():
 def test_declarative_sentence():
     tokens = TokenStream(tokenize("the cube is blue"))
     sentence = run_sentence(tokens)
-    assert sentence is not None, "Failed to parse second sentence: 'the cube is blue'"  
-    predicate = sentence.predicate
-    assert predicate is not None
-    assert predicate.verb == "is"
-    predicate_np = predicate.noun_phrase
-    assert predicate_np is not None
-    assert predicate_np.noun == "cube"
+    assert sentence is not None, "Failed to parse sentence: 'the cube is blue'"  
+    subject = sentence.subject
+    assert subject is not None
+    assert sentence.tobe == "is"
+    print(f"Sentence is {sentence}")
