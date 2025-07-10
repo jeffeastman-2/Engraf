@@ -66,7 +66,7 @@ SEMANTIC_VECTOR_SPACE = {
     'ten': vector_from_features("det def", number=10.0),
     'a': vector_from_features("det", number=1.0),
     'an': vector_from_features("det", number=1.0),
-    
+
     # Verbs
     # create
     'create': vector_from_features("verb action create"),
@@ -137,3 +137,25 @@ def get_from_vocabulary(word: str) -> VectorSpace:
 
 def has_word(word: str) -> bool:
     return word.lower() in SEMANTIC_VECTOR_SPACE
+
+
+from engraf.utils.noun_inflector import singularize_noun
+
+def vector_from_word(word: str) -> VectorSpace:
+    base_vector = SEMANTIC_VECTOR_SPACE.get(word)
+    if base_vector:
+        return base_vector.copy()
+
+    # Try singularizing in case it's a plural noun
+    singular, is_plural = singularize_noun(word)
+    if singular != word:
+        base_vector = SEMANTIC_VECTOR_SPACE.get(singular)
+        if base_vector:
+            v = base_vector.copy()
+            if is_plural:
+                v["plural"] = 1.0
+                v["singular"] = 0.0
+            return v
+
+    # Still unknown? Raise
+    raise ValueError(f"Unknown token: {word}")

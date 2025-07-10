@@ -104,6 +104,12 @@ class VectorSpace:
         i = VECTOR_DIMENSIONS.index(dim)
         return self.vector[i]
 
+    def copy(self):
+        new_vs = VectorSpace()
+        new_vs.word = self.word
+        new_vs.vector = self.vector.copy()
+        return new_vs
+
 
 def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None):
     vs = VectorSpace(word)

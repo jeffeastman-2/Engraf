@@ -1,7 +1,7 @@
-from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE  
-from engraf.lexer.vector_space import VectorSpace
-from engraf.lexer.vocabulary import get_from_vocabulary
+from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE, vector_from_word
+from engraf.lexer.vector_space import VectorSpace, vector_from_features
 import re
+
 
 class TokenStream:
     def __init__(self, tokens: list[VectorSpace]):
@@ -46,9 +46,6 @@ class TokenStream:
         else:
             raise IndexError("TokenStream position out of bounds")
 
-import re
-from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
-from engraf.lexer.vector_space import VectorSpace, vector_from_features
 
 def tokenize(sentence):
     pattern = re.compile(
@@ -84,7 +81,7 @@ def tokenize(sentence):
             vs["number"] = float(tok)
             result.append(vs)
         else:
-                vs = get_from_vocabulary(tok.lower())
+                vs = vector_from_word(tok.lower())
                 if vs is None:
                     raise ValueError(f"Unknown token: {tok}")
                 vs.word = tok.lower()  # Store the original word for reference

@@ -60,3 +60,13 @@ def test_tokenize_quoted_word():
     add_to_vocabulary(tokens[0].word, tokens[0])
     print(f"Added '{tokens[0].word}' to vocabulary: {SEMANTIC_VECTOR_SPACE[tokens[0].word]}")
     assert has_word("sky blue")
+
+def test_tokenize_plural_words():
+    tokens = tokenize("draw three red cubes")
+    assert len(tokens) == 4
+    assert_vector_has_pos(tokens[0], "verb")
+    assert_vector_has_pos(tokens[1], "det")
+    assert_vector_has_pos(tokens[2], "adj")
+    assert_vector_has_pos(tokens[3], "noun")
+    assert_vector_has_pos(tokens[3], "plural")
+
