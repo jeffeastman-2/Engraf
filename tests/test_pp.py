@@ -32,7 +32,9 @@ def test_pp_at_vector():
 
     assert result is not None
     assert result.preposition == 'at'
-    assert result.vector is not None
-    assert result.vector["locX"] == 3.0
-    assert result.vector["locY"] == 4.0
-    assert result.vector["locZ"] == 5.0
+    np = result.noun_phrase
+    assert np is not None
+    assert np.vector is not None
+    assert np.vector["locX"] == 3.0
+    assert np.vector["locY"] == 4.0
+    assert np.vector["locZ"] == 5.0

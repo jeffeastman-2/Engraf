@@ -1,8 +1,7 @@
 import numpy as np
-from engraf.atn.np import build_np_atn
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_np import run_np
-from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_adverb
+from engraf.lexer.vector_space import VectorSpace
 
  
 def test_simple_np():
@@ -50,3 +49,32 @@ def test_np_with_pronoun():
     assert np is not None
     assert np.pronoun == "it"
 
+def test_np_with_vector():
+    np = run_np(TokenStream(tokenize("[5,6,7]")))
+    assert np is not None
+    assert np.noun == "vector"
+    assert np.vector is not None
+    v = np.vector
+    assert v["locX"] == 5.0
+    assert v["locY"] == 6.0
+    assert v["locZ"] == 7.0
+
+
+def test_np_with_explicit_vector():
+    tokens = TokenStream(tokenize("a tall blue cube at [3.0, 4.0, 5.0]"))
+    np = run_np(tokens)
+    assert np is not None
+    assert np.noun == "cube"
+    assert isinstance(np.vector, VectorSpace)
+    
+    pp = np.preps[0]
+    assert pp.preposition == "at"
+    pp_np = pp.noun_phrase
+    assert pp_np.vector["locX"] == 3.0
+    assert pp_np.vector["locY"] == 4.0
+    assert pp_np.vector["locZ"] == 5.0
+
+    # Optional: check if the vector is untouched by the position spec
+    v = np.vector
+    assert v["scaleY"] == 2.5  # from "tall"
+    assert v["blue"] == 1.0    # from "blue"

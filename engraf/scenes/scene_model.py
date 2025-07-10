@@ -21,13 +21,13 @@ class SceneModel:
     def get_recent_objects(self, count=None):
         return self.recent if count is None else self.recent[-count:]
         
-    def find_noun_phrase(self, ctx):
+    def find_noun_phrase(self, np):
         """
         Given a noun phrase context, try to find the most relevant SceneObject in the scene.
         ctx should contain at least 'noun' and optionally a 'vector'.
         """
-        noun = ctx.get("noun")
-        vector = ctx.get("vector")
+        noun = np.noun
+        vector = np.vector
 
         candidates = []
 
@@ -60,22 +60,4 @@ def resolve_pronoun(word, scene: SceneModel):
     else:
         raise ValueError(f"Unrecognized pronoun: {word}")
 
-def scene_from_parse(sentence_phrase):
-    scene = SceneModel()
-    verb_phrase = sentence_phrase.predicate
-    if verb_phrase.verb == "draw":
-        noun_phrase = verb_phrase.noun_phrase
-        preps = noun_phrase.preps
-        obj = SceneObject(
-            name=noun_phrase.noun,
-            vector=noun_phrase.vector,
-            modifiers=[
-                SceneObject(
-                    name=pp.noun_phrase.noun,
-                    vector=pp.vector,
-                    modifiers=pp.noun_phrase.preps)
-                for pp in noun_phrase.preps
-            ]
-        )
-        scene.add_object(obj)
-    return scene
+

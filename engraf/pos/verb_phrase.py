@@ -9,6 +9,9 @@ class VerbPhrase():
         self.verb = None
         self.noun_phrase = None
 
+    def __repr__(self):
+        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase})"
+
     def to_vector(self) -> VectorSpace:
         # Combine verb meaning with its object’s vector (if present)
         v = self.verb.to_vector().copy()

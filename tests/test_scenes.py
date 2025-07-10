@@ -1,41 +1,37 @@
-from engraf.scenes.scene_object import SceneObject 
-from engraf.scenes.scene_model import SceneModel, scene_from_parse, resolve_pronoun
-from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun
+from engraf.scenes.scene_object import SceneObject, scene_object_from_np 
+from engraf.scenes.scene_model import SceneModel, resolve_pronoun
+from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.token_stream import TokenStream
-from engraf.atn.subnet_vp import run_vp
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.lexer.token_stream import tokenize
-from pprint import pprint
 
 def test_scene_from_simple_sentence():
     tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere"))
     sentence = run_sentence(tokens)
     assert sentence is not None
-    scene = scene_from_parse(sentence)
+    assert sentence.subject is None
+    assert sentence.predicate is not None
+    np = sentence.predicate.noun_phrase
+    assert np is not None
+    scene = scene_object_from_np(np)
 
-    # Check the scene has one object
-    assert isinstance(scene, SceneModel)
-    assert len(scene.objects) == 1
-
-    obj = scene.objects[0]
-    assert isinstance(obj, SceneObject)
-    assert obj.name == "cube"
-    assert isinstance(obj.vector, VectorSpace)
+    assert isinstance(scene, SceneObject)
+    assert scene.name == "cube"
+    assert isinstance(scene.vector, VectorSpace)
 
     # Ensure the object has one modifier
-    assert obj.modifiers is not None
-    assert len(obj.modifiers) == 1
+    assert scene.modifiers is not None
+    assert len(scene.modifiers) == 1
 
-    mod = obj.modifiers[0]
-    assert isinstance(mod, SceneObject)
-    assert mod.name == "sphere"
-    assert isinstance(mod.vector, VectorSpace)
+    modifier = scene.modifiers[0]
+    assert isinstance(modifier, SceneObject)
+    assert modifier.name == "sphere"
+    assert isinstance(modifier.vector, VectorSpace)
+    assert modifier.vector["green"] > 0.5
 
-    # Example: check that the sphere is green
-    assert mod.vector["green"] > 0.5
     # Example: check that the cube is tall and blue
-    assert obj.vector["scaleY"] > 1.0
-    assert obj.vector["blue"] > 0.5
+    assert scene.vector["scaleY"] > 1.0
+    assert scene.vector["blue"] > 0.5
 
 def test_scene_pronoun_resolution():
     from engraf.scenes.scene_model import SceneModel, resolve_pronoun
@@ -196,13 +192,11 @@ def test_scene_declarative_sentence():
     tokens2 = TokenStream(tokenize("the cube is blue"))
     sentence2 = run_sentence(tokens2)
     assert sentence2 is not None, "Failed to parse second sentence: 'the cube is blue'"  
-    predicate2 = sentence2.predicate
-    assert predicate2 is not None
-    assert predicate2.verb == "is"
-    predicate2_np = predicate2.noun_phrase
-    assert predicate2_np is not None
-    assert predicate2_np.noun == "cube"
+    print(f"Sentence2 = {sentence2}")
+    subject = sentence2.subject
+    assert subject is not None
+    assert sentence2.tobe == "is"
 
     # Find the target object in the scene   
-    targets = scene.find_noun_phrase(predicate2_np)
+    targets = scene.find_noun_phrase(subject)
     assert targets is not None, "Failed to find noun phrase in scene"

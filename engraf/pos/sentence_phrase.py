@@ -16,7 +16,7 @@ class SentencePhrase():
         return self.predicate.to_vector()
 
     def __repr__(self):
-        return f"SentenceDeclarative(subject={self.subject}, predicate={self.predicate})"
+        return f"Sentence(subject={self.subject}, predicate={self.predicate})"
 
     def store_definition_word(self, tok):
         self.definition_word = tok.word

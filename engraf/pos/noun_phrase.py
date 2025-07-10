@@ -14,10 +14,14 @@ class NounPhrase():
         self.determiner = tok.word
         self.vector += tok
 
+    def apply_vector(self, tok):
+        self.noun = "vector"
+        self.vector += tok
+
     def apply_adverb(self, tok):
         """Store the adverb vector for use in scaling the next adjective."""
         self.scale_vector = getattr(self, "scale_vector", VectorSpace())
-        print(f"Scale_vector is {self.scale_vector} for token {tok}")
+        print(f"✅ Scale_vector is {self.scale_vector} for token {tok}")
         self.scale_vector += tok  # Combine adverbs if needed (e.g., "very extremely")
 
     def apply_adjective(self, tok):
@@ -25,25 +29,27 @@ class NounPhrase():
         scale = getattr(self, "scale_vector", None)
         if scale:
             strength = scale.scalar_projection("adv")
-            print(f"Scaling adjective {tok.word} by {strength}")
-            print(f"Adjective vector before scale: {tok}")
+            print(f"✅ Scaling adjective {tok.word} by {strength}")
+            print(f"✅ Adjective vector before scale: {tok}")
             self.vector += tok * strength
             self.scale_vector = None
         else:
+            print(f"✅ Setting adjective vector without scale: {tok}")
             self.vector += tok
 
+
     def apply_noun(self, tok):
-        print(f"++ NP applying noun {tok.word} with vector {tok}")
+        print(f"✅ NP applying noun {tok.word} with vector {tok}")
         self.noun = tok.word
         self.vector += tok
 
     def apply_pronoun(self, tok):
-        print(f"++ NP applying pronoun {tok.word} with vector {tok}")
+        print(f"✅ NP applying pronoun {tok.word} with vector {tok}")
         self.pronoun = tok.word
         self.vector += tok
 
     def apply_pp(self, pp_obj):
-        print(f"++ Np applying PP: {pp_obj}")
+        print(f"✅ Np applying PP: {pp_obj}")
         self.preps.append(pp_obj)
         self.vector += pp_obj.vector
 
@@ -58,4 +64,4 @@ class NounPhrase():
         return v
 
     def __repr__(self):
-        return f"NP(noun={self.noun}, determiner= {self.determiner}, preps={self.preps})"          
+        return f"NP(noun={self.noun}, determiner= {self.determiner}, vector={self.vector}, PPs={self.preps})"          

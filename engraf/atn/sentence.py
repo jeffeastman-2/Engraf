@@ -1,6 +1,6 @@
 from engraf.lexer.token_stream import TokenStream
-from engraf.atn.core import ATNState, run_atn, noop
-from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, is_adjective_or_adverb, \
+from engraf.atn.core import ATNState, noop
+from engraf.lexer.vector_space import is_quoted, is_tobe, is_verb, \
     any_of, is_determiner, is_pronoun, is_none, is_adverb, is_adjective, is_conjunction, is_anything_no_consume
 from engraf.utils.actions import make_run_np_into_atn
 from engraf.utils.actions import make_run_vp_into_atn
