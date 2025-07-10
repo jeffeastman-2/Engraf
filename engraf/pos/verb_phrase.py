@@ -25,3 +25,11 @@ class VerbPhrase():
 
     def apply_np(self, np):
         self.noun_phrase = np
+
+    def is_imperative(self):
+        return self.vector.scalar_projection("action") > 0.5
+
+    def verb_has_intent(self, intent: str, threshold=0.5) -> bool:
+        return self.verb and self.verb.scalar_projection(intent) > threshold
+
+

@@ -11,7 +11,15 @@ VECTOR_DIMENSIONS = [
     "rotX", "rotY", "rotZ",
     "red", "green", "blue",
     "texture", "transparency",
-    "quoted"
+    "quoted", 
+    # High-level verb intent vectors
+    "create",    # draw, create, place, make
+    "transform", # move, rotate, scale
+    "style",     # color, texture
+    "organize",  # group, ungroup, align, position
+    "edit",      # delete, undo, redo, copy, paste
+    "select"     # select
+
 ]
 
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)

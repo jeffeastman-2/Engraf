@@ -66,24 +66,41 @@ SEMANTIC_VECTOR_SPACE = {
     'ten': vector_from_features("det def", number=10.0),
     'a': vector_from_features("det", number=1.0),
     'an': vector_from_features("det", number=1.0),
+    
     # Verbs
-    'draw': vector_from_features("verb action"),
-    'move': vector_from_features("verb action"),
-    'delete': vector_from_features("verb action"),
-    'create': vector_from_features("verb action"),
-    'rotate': vector_from_features("verb action"),
-    'scale': vector_from_features("verb action"),
-    'color': vector_from_features("verb action"),
-    'select': vector_from_features("verb action"),
-    'place': vector_from_features("verb action"),
-    'position': vector_from_features("verb action"),
-    'align': vector_from_features("verb action"),
-    'group': vector_from_features("verb action"),
-    'ungroup': vector_from_features("verb action"),
-    'copy': vector_from_features("verb action"),
-    'paste': vector_from_features("verb action"),
-    'undo': vector_from_features("verb action"),
+    # create
+    'create': vector_from_features("verb action create"),
+    'draw': vector_from_features("verb action create"),
+    'make': vector_from_features("verb action create"),
+    'place': vector_from_features("verb action create"),
+
+    # edit
+    'copy': vector_from_features("verb action edit"),
+    'delete': vector_from_features("verb action edit"),
+    'paste': vector_from_features("verb action edit"),
+
+    # organize
+    'align': vector_from_features("verb action organize"),
+    'group': vector_from_features("verb action organize"),
+    'position': vector_from_features("verb action organize"),
+    'ungroup': vector_from_features("verb action organize"),
+
+    # select
+    'select': vector_from_features("verb action select"),
+
+    # style
+    'color': vector_from_features("verb action style"),
+    'texture': vector_from_features("verb action style"),
+
+    # transform
+    'move': vector_from_features("verb action transform"),
+    'rotate': vector_from_features("verb action transform"),
+    'scale': vector_from_features("verb action transform"),
+
+    # generic (no third term)
     'redo': vector_from_features("verb action"),
+    'undo': vector_from_features("verb action"),
+
     # Prepositions
     'on': vector_from_features("prep"),
     'over': vector_from_features("prep"),

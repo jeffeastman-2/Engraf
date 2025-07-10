@@ -53,3 +53,23 @@ class SentencePhrase():
         else:
             self.vector += tok
 
+
+class SentenceImperative(SentencePhrase):
+    def __init__(self, subject=None, predicate=None):
+        super().__init__(subject, predicate)
+        self.action = predicate.verb if predicate else None
+
+    @property
+    def object(self):
+        return self.predicate.noun_phrase if self.predicate else None
+    
+    def has_intent(self, intent: str, threshold=0.5) -> bool:
+        return self.predicate.verb and self.predicate.verb.scalar_projection(intent) > threshold
+
+
+
+
+def promote_sentence(sentence: SentencePhrase):
+    if sentence.subject is None and sentence.predicate and sentence.predicate.is_imperative():
+        return SentenceImperative(subject=None, predicate=sentence.predicate)
+    return sentence
