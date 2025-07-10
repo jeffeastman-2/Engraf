@@ -1,7 +1,7 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
-from engraf.lexer.vector_space import any_of, is_verb, is_adverb, is_noun, is_tobe, \
+from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
     is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_anything, is_vector
 from engraf.atn.core import ATNState, noop
 from engraf.utils.actions import make_run_pp_into_atn, apply_from_subnet

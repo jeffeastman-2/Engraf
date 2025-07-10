@@ -1,7 +1,7 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_vp import run_vp
-from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, is_pronoun
+from engraf.lexer.vector_space import VectorSpace
 from pprint import pprint
 
 def test_simple_vp():

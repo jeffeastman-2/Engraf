@@ -1,6 +1,5 @@
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.vector_space import is_preposition, is_determiner, is_none, is_pronoun, \
-    is_vector, any_of
+from engraf.utils.predicates import is_preposition, is_np_head, is_none
 from engraf.atn.core import ATNState
 from engraf.utils.actions import make_run_np_into_atn
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
@@ -25,6 +24,6 @@ def build_pp_atn(pp:PrepositionalPhrase, ts:TokenStream):
     after_np.add_arc(is_none, lambda _, np_obj: pp.apply_np(np_obj), end)
 
     # match an NP
-    after_prep.add_arc(any_of(is_determiner, is_pronoun, is_vector), make_run_np_into_atn(ts, fieldname="noun_phrase"), end)
+    after_prep.add_arc(is_np_head, make_run_np_into_atn(ts, fieldname="noun_phrase"), end)
 
     return start, end

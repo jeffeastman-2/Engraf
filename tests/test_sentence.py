@@ -1,8 +1,7 @@
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.scenes.scene_model import SceneModel, resolve_pronoun
 from engraf.scenes.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace, vector_from_features, is_verb, is_tobe, is_determiner, \
-    is_pronoun, any_of
+from engraf.lexer.vector_space import VectorSpace
 from engraf.atn.subnet_sentence import run_sentence
 from pprint import pprint
 
