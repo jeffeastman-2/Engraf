@@ -10,17 +10,27 @@ class SceneObject:
         return f"<{self.name} {self.vector} modifiers={self.modifiers}>"
 
 def scene_object_from_np(noun_phrase):
+    from pprint import pprint
     pprint(f"🟢 scene from NP = {noun_phrase}")
-    preps = noun_phrase.preps
+
+    def flatten_modifiers(np):
+        """Recursively extract all PPs from a noun phrase and return flat list of SceneObjects."""
+        modifiers = []
+        for pp in np.preps:
+            mod_np = pp.noun_phrase
+            if mod_np.noun is not None:
+                modifiers.append(SceneObject(
+                    name=mod_np.noun,
+                    vector=mod_np.vector,
+                    modifiers=[]  # We will flatten everything at this level
+                ))
+                # Recurse to grab their own PPs too
+                modifiers.extend(flatten_modifiers(mod_np))
+        return modifiers
+
     obj = SceneObject(
         name=noun_phrase.noun,
         vector=noun_phrase.vector,
-        modifiers=[
-            SceneObject(
-                name=pp.noun_phrase.noun,
-                vector=pp.noun_phrase.vector,
-                modifiers=pp.noun_phrase.preps)
-            for pp in preps
-        ]
+        modifiers=flatten_modifiers(noun_phrase)
     )
     return obj

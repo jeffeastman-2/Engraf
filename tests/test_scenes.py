@@ -33,6 +33,40 @@ def test_scene_from_simple_sentence():
     assert scene.vector["scaleY"] > 1.0
     assert scene.vector["blue"] > 0.5
 
+def test_scene_from_sentence_with_chained_pps():
+    tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere by the very tall arch"))
+    sentence = run_sentence(tokens)
+    assert sentence is not None
+    assert sentence.subject is None
+    assert sentence.predicate is not None
+    np = sentence.predicate.noun_phrase
+    assert np is not None
+    scene = scene_object_from_np(np)
+
+    assert isinstance(scene, SceneObject)
+    assert scene.name == "cube"
+    assert isinstance(scene.vector, VectorSpace)
+
+    # Ensure the object has one modifier
+    assert scene.modifiers is not None
+    assert len(scene.modifiers) == 2
+
+    modifier = scene.modifiers[0]
+    assert isinstance(modifier, SceneObject)
+    assert modifier.name == "sphere"
+    assert isinstance(modifier.vector, VectorSpace)
+    assert modifier.vector["green"] > 0.5
+
+    modifier = scene.modifiers[1]
+    assert isinstance(modifier, SceneObject)
+    assert modifier.name == "arch"
+    assert isinstance(modifier.vector, VectorSpace)
+    assert modifier.vector["scaleY"] > 2.0
+
+    # Example: check that the cube is tall and blue
+    assert scene.vector["scaleY"] > 1.0
+    assert scene.vector["blue"] > 0.5
+
 def test_scene_pronoun_resolution():
     from engraf.scenes.scene_model import SceneModel, resolve_pronoun
     from engraf.lexer.vector_space import VectorSpace
