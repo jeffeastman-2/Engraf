@@ -84,6 +84,5 @@ def tokenize(sentence):
                 vs = vector_from_word(tok.lower())
                 if vs is None:
                     raise ValueError(f"Unknown token: {tok}")
-                vs.word = tok.lower()  # Store the original word for reference
                 result.append(vs)
     return result

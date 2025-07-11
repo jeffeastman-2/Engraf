@@ -1,5 +1,6 @@
 import numpy as np
 from engraf.lexer.vector_space import VectorSpace
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
 
 class SentencePhrase():
     def __init__(self):
@@ -22,13 +23,60 @@ class SentencePhrase():
         self.definition_word = tok.word
         self.vector = tok  # Store the vector representation of the quoted word
 
-    def apply_subject(self, tok):
-        print(f"✅ => Applying sentence subject {tok}")
-        self.subject = tok
+    def apply_subject_conjunction(self, tok):
+        print(f"✅ => Applying subject conjunction '{tok.word}'")
+        if isinstance(self.subject, ConjunctionPhrase):
+            tail = self.subject.get_last()   
+            if tail.right is None: 
+                tail.right = ConjunctionPhrase(tok)
+                print(f"✅ => setting tail.right in {self}")
+            else: 
+                tail.right = ConjunctionPhrase(tok, left=tail.right)
+        else:
+            self.subject = ConjunctionPhrase(tok, left=self.subject)
+            
+    def apply_predicate_conjunction(self, tok):
+        print(f"✅ => Applying predicate conjunction '{tok.word}'")
+        if isinstance(self.predicate, ConjunctionPhrase):
+            tail = self.predicate.get_last()    
+            if tail.right is None:
+                tail.right = ConjunctionPhrase(tok)
+                print(f"✅ => setting tail.right in {self}")
+            else: 
+                tail.right = ConjunctionPhrase(tok, left=tail.right)
+        else:
+            self.predicate = ConjunctionPhrase(tok, left=self.predicate)
 
-    def apply_predicate(self,tok):
-        print(f"✅ => Applying sentence predcate {tok}")
-        self.predicate = tok
+    def apply_subject(self, subj):
+        print(f"✅ => Applying sentence subject {subj} \n      to {self}")
+        if self.subject is None:
+            self.subject = subj
+        elif self.subject == subj:
+            return
+        elif isinstance(self.subject, ConjunctionPhrase):
+            tail = self.subject.get_last()
+            if tail.right is  None:
+                tail.right = subj
+            elif tail.right == subj:
+                return
+            else: print(f"⚠️ ERROR: tail.right is not None {self}")
+ 
+    def apply_predicate(self, pred):
+        print(f"✅ => Applying sentence predicate {pred} \n.      to {self}")
+        if self.predicate is None:
+            self.predicate = pred
+        elif pred == self.predicate:
+            # Avoid wrapping the same predicate twice
+            return
+        elif isinstance(self.predicate, ConjunctionPhrase):
+            tail = self.predicate.get_last()
+            if tail.right is None:
+                tail.right = pred
+            elif tail.right == pred:
+                return
+            else:
+                print(f"⚠️ ERROR: tail.right not None {self}")
+
 
     def apply_tobe(self, tok):
         print(f"✅ => Applying sentence tobe {tok}")

@@ -144,7 +144,9 @@ from engraf.utils.noun_inflector import singularize_noun
 def vector_from_word(word: str) -> VectorSpace:
     base_vector = SEMANTIC_VECTOR_SPACE.get(word)
     if base_vector:
-        return base_vector.copy()
+        copy = base_vector.copy()
+        copy.word = word
+        return copy
 
     # Try singularizing in case it's a plural noun
     singular, is_plural = singularize_noun(word)

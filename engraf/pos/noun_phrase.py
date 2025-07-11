@@ -2,9 +2,9 @@ from engraf.lexer.vector_space import VectorSpace
 
 
 class NounPhrase():
-    def __init__(self):
+    def __init__(self, noun=None):
         self.vector = VectorSpace()
-        self.noun = None
+        self.noun = noun
         self.pronoun = None
         self.determiner = None
         self.preps = []

@@ -4,9 +4,9 @@ from engraf.lexer.vector_space import VectorSpace
 from engraf.pos.noun_phrase import NounPhrase
 
 class VerbPhrase():
-    def __init__(self):
+    def __init__(self, verb=None):
         super().__init__()
-        self.verb = None
+        self.verb = verb
         self.noun_phrase = None
 
     def __repr__(self):
