@@ -142,7 +142,7 @@ def has_word(word: str) -> bool:
 from engraf.utils.noun_inflector import singularize_noun
 
 def vector_from_word(word: str) -> VectorSpace:
-    base_vector = SEMANTIC_VECTOR_SPACE.get(word)
+    base_vector = SEMANTIC_VECTOR_SPACE.get(word.lower())
     if base_vector:
         copy = base_vector.copy()
         copy.word = word
@@ -150,8 +150,10 @@ def vector_from_word(word: str) -> VectorSpace:
 
     # Try singularizing in case it's a plural noun
     singular, is_plural = singularize_noun(word)
+    print(f"vector_from_word: word={word}, singular={singular}, is_plural={is_plural}")
     if singular != word:
-        base_vector = SEMANTIC_VECTOR_SPACE.get(singular)
+        base_vector = SEMANTIC_VECTOR_SPACE.get(singular.lower())
+        print(f"vector_from_word: lookup singular.lower()={singular.lower()}, found={base_vector is not None}")
         if base_vector:
             v = base_vector.copy()
             if is_plural:

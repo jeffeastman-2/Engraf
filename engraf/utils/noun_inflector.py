@@ -21,14 +21,20 @@ def singularize_noun(word):
         return re.sub(r"ves$", "f", word_lower), True
     elif re.match(r".+ies$", word_lower):
         return re.sub(r"ies$", "y", word_lower), True
+    elif re.search(r"([b-df-hj-np-tv-z]es)$", word_lower) and not word_lower.endswith("ses") and not word_lower.endswith("ies"):
+        # Handles 'cubes' -> 'cube', 'boxes' -> 'box', 'buses' -> 'bus', etc.
+        return word_lower[:-1], True
+    elif re.match(r".+es$", word_lower) and not word_lower.endswith("ies"):
+        # Handles regular plurals like 'cubes' -> 'cube'
+        return re.sub(r"es$", "", word_lower), True
     elif re.match(r".+s$", word_lower) and not word_lower.endswith("ss"):
         return re.sub(r"s$", "", word_lower), True
     else:
         return word, False
 
 def is_plural(word):
-    singular = singularize_noun(word)
-    return singular != word
+    singular, flag = singularize_noun(word)
+    return flag
 
 # Integration in Token creation:
 from engraf.lexer.vector_space import vector_from_features, VectorSpace
@@ -38,10 +44,10 @@ def analyze_word(word):
     if word.lower() in SEMANTIC_VECTOR_SPACE:
         features = SEMANTIC_VECTOR_SPACE[word.lower()].split()
     elif is_plural(word):
-        features = ["noun", "plural"]
+        features = "noun plural"
     else:
-        features = ["noun", "singular"]
-    return vector_from_features(*features)
+        features = "noun singular"
+    return vector_from_features(features)
 
 # Example use:
 # vector = analyze_word("boxes")
