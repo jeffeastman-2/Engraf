@@ -1,4 +1,3 @@
-from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE  
 import re
 
 # Example plural-to-singular dictionary for irregulars
@@ -40,9 +39,11 @@ def is_plural(word):
 from engraf.lexer.vector_space import vector_from_features, VectorSpace
 
 def analyze_word(word):
+    from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
     features = []
     if word.lower() in SEMANTIC_VECTOR_SPACE:
-        features = SEMANTIC_VECTOR_SPACE[word.lower()].split()
+        # If word is in semantic space, return it directly
+        return SEMANTIC_VECTOR_SPACE[word.lower()]
     elif is_plural(word):
         features = "noun plural"
     else:
