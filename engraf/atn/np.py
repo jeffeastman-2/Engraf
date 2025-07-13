@@ -30,7 +30,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
 
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)
     adj_after_pronoun.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj_after_pronoun)
-    adj_after_pronoun.add_arc(is_anything, noop, end)
+    # Handle prepositional phrases after pronouns
+    adj_after_pronoun.add_arc(is_preposition, make_run_pp_into_atn(ts), pp)
+    # End on various boundary conditions but don't consume tokens
+    adj_after_pronoun.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
+    adj_after_pronoun.add_arc(is_none, noop, end)
 
     # ADJ or DET → NOUN
     for state in [det, adj]:

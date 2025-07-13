@@ -125,4 +125,20 @@ def apply_from_subnet(fieldname, apply_func):
             print(f"⚠️  Warning: {fieldname} is None — skipping apply_func")
     return wrapper
 
+def apply_from_subnet_multi(*field_func_pairs):
+    """Apply multiple fields from subnet with their respective functions.
+    Usage: apply_from_subnet_multi("field1", func1, "field2", func2, ...)
+    """
+    def wrapper(_, atn):
+        for i in range(0, len(field_func_pairs), 2):
+            fieldname = field_func_pairs[i]
+            apply_func = field_func_pairs[i + 1]
+            val = getattr(atn, fieldname, None)
+            print(f"📍 apply_from_subnet_multi: {fieldname} = {val}")
+            if val is not None:
+                apply_func(val)
+            else:
+                print(f"⚠️  Warning: {fieldname} is None — skipping apply_func")
+    return wrapper
+
 
