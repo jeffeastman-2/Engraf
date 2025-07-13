@@ -9,9 +9,10 @@ class VerbPhrase():
         self.verb = verb
         self.noun_phrase = None
         self.preps = []
+        self.adjective_complement = None
 
     def __repr__(self):
-        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase}, PPs={self.preps})"
+        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase}, PPs={self.preps}, adjective_complement={self.adjective_complement})"
 
     def to_vector(self) -> VectorSpace:
         # Combine verb meaning with its object’s vector (if present)
@@ -30,6 +31,10 @@ class VerbPhrase():
     def apply_pp(self, pp_obj):
         print(f"✅ VP applying PP: {pp_obj}")
         self.preps.append(pp_obj)
+
+    def apply_adjective(self, tok):
+        self.adjective_complement = tok.word
+        print(f"✅ VP applying adjective complement: {tok.word}")
 
     def is_imperative(self):
         return self.vector.scalar_projection("action") > 0.5

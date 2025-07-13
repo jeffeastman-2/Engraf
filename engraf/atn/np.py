@@ -48,7 +48,7 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Add the subnetwork runner on its own state transition
     action = make_run_pp_into_atn(ts)
     noun.add_arc(is_preposition, action, pp)
-    noun.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
+    noun.add_arc(any_of(is_verb, is_tobe, is_conjunction, is_adjective), noop, end)
     # REMOVED: noun.add_arc(is_anything, lambda _, tok: print(f"Unexpected token in NP: {tok}"), end)
     # Let the parser naturally end instead of consuming unexpected tokens
 
