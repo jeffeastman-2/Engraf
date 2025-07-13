@@ -2,7 +2,7 @@ import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
-    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_anything, is_vector
+    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_anything, is_vector, is_conjunction
 from engraf.atn.core import ATNState, noop
 from engraf.utils.actions import make_run_pp_into_atn, apply_from_subnet
 from engraf.pos.noun_phrase import NounPhrase
@@ -38,16 +38,19 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
 
     # NOUN → END (simple NP)
     noun.add_arc(is_none, noop, end)
+    # NOUN → END (when conjunction is encountered - don't consume the conjunction)
+    noun.add_arc(is_conjunction, noop, end)
 
     # NOUN → PP (subnetwork)
     # Add the subnetwork runner on its own state transition
     action = make_run_pp_into_atn(ts)
     noun.add_arc(is_preposition, action, pp)
-    noun.add_arc(any_of(is_verb, is_tobe), noop, end)
-    noun.add_arc(is_anything, lambda _, tok: print(f"Unexpected token in NP: {tok}"), end)
+    noun.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
+    # REMOVED: noun.add_arc(is_anything, lambda _, tok: print(f"Unexpected token in NP: {tok}"), end)
+    # Let the parser naturally end instead of consuming unexpected tokens
 
     pp.add_arc(is_none, apply_from_subnet("noun_phrase", np.apply_pp), end)
-    pp.add_arc(any_of(is_verb, is_tobe), noop, end)
+    pp.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
 
     return start, end
 

@@ -59,14 +59,45 @@ def make_run_vp_into_atn(ts, fieldname):
         else:
             ts.position = saved_pos
             return None
-
+    
     run_vp_into_atn._is_subnetwork = True
     return run_vp_into_atn
 
+def make_run_vp_into_conjunction(ts):
+    """Create a VP action that adds the VP to the existing conjunction."""
+    from engraf.atn.vp import build_vp_atn
+    from engraf.pos.verb_phrase import VerbPhrase
+    from engraf.pos.conjunction_phrase import ConjunctionPhrase
+
+    def run_vp_into_conjunction(parent_atn, _):
+        saved_pos = ts.position
+        vp_obj = VerbPhrase()
+        vp_start, vp_end = build_vp_atn(vp_obj, ts)
+        result = run_atn(vp_start, vp_end, ts, vp_obj)
+
+        if result is not None:
+            # Add the VP to the existing conjunction
+            if isinstance(parent_atn.predicate, ConjunctionPhrase):
+                tail = parent_atn.predicate.get_last()
+                if tail.right is None:
+                    tail.right = vp_obj
+                else:
+                    # This shouldn't happen in simple cases, but handle it
+                    tail.right = ConjunctionPhrase(tail.right.conjunction, left=tail.right, right=vp_obj)
+            else:
+                # This shouldn't happen if conjunction was applied first
+                print("⚠️  Warning: Expected ConjunctionPhrase but got", type(parent_atn.predicate))
+            return parent_atn
+        else:
+            ts.position = saved_pos
+            return None
+    
+    run_vp_into_conjunction._is_subnetwork = True
+    return run_vp_into_conjunction
+
 
 def make_run_sentence_into_atn(ts):
-    from engraf.atn.sentence import build_sentence_atn
-    from engraf.pos.sentence import Sentence
+    from engraf.atn.sentence import build_sentence_atn, Sentence
 
     def run_sentence_into_atn(atn, _):
         saved_pos = ts.position
