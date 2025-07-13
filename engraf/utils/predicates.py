@@ -21,6 +21,8 @@ def is_conjunction(tok): return tok is not None and tok.isa("conj")
 def is_anything(tok): return True
 def is_anything_no_consume(tok):
     return True, False
+def is_conjunction_no_consume(tok):
+    return is_conjunction, False
 def is_np_head(tok):
     """Returns True if the token starts a noun phrase."""
     return any_of(is_determiner, is_pronoun, is_vector)(tok)
