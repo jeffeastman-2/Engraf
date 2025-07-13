@@ -5,7 +5,7 @@ import math
 
 VECTOR_DIMENSIONS = [
     "verb", "tobe", "action", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
-    "number", "vector", "singular", "plural", "conj", "tobe",
+    "number", "vector", "singular", "plural", "conj", "disj", "tobe",
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
     "rotX", "rotY", "rotZ",

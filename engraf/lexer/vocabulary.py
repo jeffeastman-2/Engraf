@@ -7,6 +7,7 @@ SEMANTIC_VECTOR_SPACE = {
     'box': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'sphere': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'arch': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
+    'table': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'object': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'square': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'rectangle': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
@@ -116,7 +117,6 @@ SEMANTIC_VECTOR_SPACE = {
     'near': vector_from_features("prep"),
     # Conjunctions
     'and': vector_from_features("conj"),
-    'or': vector_from_features("conj"),
     # To be verbs
     'is': vector_from_features("tobe"),
     'are': vector_from_features("tobe"),
@@ -150,10 +150,8 @@ def vector_from_word(word: str) -> VectorSpace:
 
     # Try singularizing in case it's a plural noun
     singular, is_plural = singularize_noun(word)
-    print(f"vector_from_word: word={word}, singular={singular}, is_plural={is_plural}")
     if singular != word:
         base_vector = SEMANTIC_VECTOR_SPACE.get(singular.lower())
-        print(f"vector_from_word: lookup singular.lower()={singular.lower()}, found={base_vector is not None}")
         if base_vector:
             v = base_vector.copy()
             if is_plural:

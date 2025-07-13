@@ -25,13 +25,13 @@ def test_subject_conjunction_phrase():
     assert sentence.subject.left == one
     assert isinstance(sentence.subject.right, NounPhrase)
     
-    tok = vector_from_word("or")
+    tok = vector_from_word("and")
     sentence.apply_subject_conjunction(tok)
     assert sentence.subject.left == one
     assert sentence.subject.conjunction == "and"
     assert isinstance(sentence.subject.right, ConjunctionPhrase)
     assert sentence.subject.right.left == two
-    assert sentence.subject.right.conjunction == "or"
+    assert sentence.subject.right.conjunction == "and"
     assert sentence.subject.right.right is None
     three = NounPhrase("three")
     sentence.apply_subject(three)
@@ -66,13 +66,13 @@ def test_predicate_conjunction_phrase():
     assert sentence.predicate.left == one
     assert isinstance(sentence.predicate.right, VerbPhrase)
     
-    tok = vector_from_word("or")
+    tok = vector_from_word("and")
     sentence.apply_predicate_conjunction(tok)
     assert sentence.predicate.left == one
     assert sentence.predicate.conjunction == "and"
     assert isinstance(sentence.predicate.right, ConjunctionPhrase)
     assert sentence.predicate.right.left == two
-    assert sentence.predicate.right.conjunction == "or"
+    assert sentence.predicate.right.conjunction == "and"
     assert sentence.predicate.right.right is None
     three = VerbPhrase("three")
     sentence.apply_predicate(three)

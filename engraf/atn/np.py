@@ -11,7 +11,6 @@ from engraf.pos.noun_phrase import NounPhrase
 def build_np_atn(np: NounPhrase, ts: TokenStream):
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
-    adv = ATNState("NP-ADV")
     adj = ATNState("NP-ADJ")
     adj_after_pronoun = ATNState("NP-ADJ-AFTER-PRONOUN")
     noun = ATNState("NP-NOUN")

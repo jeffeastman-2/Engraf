@@ -1,3 +1,5 @@
+
+
 def is_determiner(tok): return tok is not None and tok.isa("det")
 def is_pronoun(tok): return tok is not None and tok.isa("pronoun")
 def is_adjective(tok): return tok is not None and tok.isa("adj")
@@ -16,8 +18,6 @@ def any_of(*predicates):
         return any(pred(tok) for pred in predicates)
     return combined_predicate
 def is_conjunction(tok): return tok is not None and tok.isa("conj")
-def is_conjunction_no_consume(tok):
-    return (tok is not None and tok.isa("conj")), False
 def is_anything(tok): return True
 def is_anything_no_consume(tok):
     return True, False
