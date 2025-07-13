@@ -12,6 +12,7 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
     adj = ATNState("NP-ADJ")
+    adj_conj = ATNState("NP-ADJ-CONJ")  # New state for handling conjunctions between adjectives
     adj_after_pronoun = ATNState("NP-ADJ-AFTER-PRONOUN")
     noun = ATNState("NP-NOUN")
     pp = ATNState("NP-PP")
@@ -26,6 +27,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     det.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
 
     adj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    # Handle conjunctions between adjectives (e.g., "tall and red")
+    adj.add_arc(is_conjunction, lambda _, tok: None, adj_conj)  # Consume the conjunction
+    
+    # After conjunction, expect another adjective
+    adj_conj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
 
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)
     adj_after_pronoun.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj_after_pronoun)
@@ -36,7 +42,7 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     adj_after_pronoun.add_arc(is_none, noop, end)
 
     # ADJ or DET → NOUN
-    for state in [det, adj]:
+    for state in [det, adj, adj_conj]:
         state.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)
 
     # NOUN → END (simple NP)

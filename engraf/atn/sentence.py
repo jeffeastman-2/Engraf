@@ -49,7 +49,7 @@ def build_sentence_atn(sent: SentencePhrase, ts: TokenStream):
     adverb.add_arc(is_adjective, lambda _, tok: sent.apply_adjective(tok), adjective)
 
     # After adjective, allow conjunction for chained descriptions (e.g. "and rough")
-    adjective.add_arc(is_conjunction, noop, conj)
+    adjective.add_arc(is_conjunction, lambda _, tok: None, conj)  # Consume the conjunction
     conj.add_arc(is_adjective, lambda _, tok: sent.apply_adjective(tok), adjective)
 
     # End of adjective phrase
