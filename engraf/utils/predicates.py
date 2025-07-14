@@ -1,5 +1,3 @@
-
-
 def is_determiner(tok): return tok is not None and tok.isa("det")
 def is_pronoun(tok): return tok is not None and tok.isa("pronoun")
 def is_adjective(tok): return tok is not None and tok.isa("adj")
@@ -22,8 +20,42 @@ def is_anything(tok): return True
 def is_anything_no_consume(tok):
     return True, False
 def is_conjunction_no_consume(tok):
-    return is_conjunction, False
+    return is_conjunction(tok), False
 def is_np_head(tok):
     """Returns True if the token starts a noun phrase."""
     return any_of(is_determiner, is_pronoun, is_vector)(tok)
+
+def is_adjective_conjunction(ts):
+    """Returns a predicate that checks if current token is 'and' followed by adjective."""
+    def predicate(tok):
+        if not is_conjunction(tok):
+            return False
+        
+        # Look ahead to see if next token is an adjective
+        current_pos = ts.position
+        next_tok = None
+        if current_pos + 1 < len(ts.tokens):
+            next_tok = ts.tokens[current_pos + 1]
+        
+        return next_tok is not None and is_adjective(next_tok)
+    
+    return predicate
+
+def is_predicate_conjunction(ts):
+    """Returns a predicate that checks if current token is 'and' NOT followed by adjective."""
+    def predicate(tok):
+        if not is_conjunction(tok):
+            return False, False
+        
+        # Look ahead to see if next token is an adjective
+        current_pos = ts.position
+        next_tok = None
+        if current_pos + 1 < len(ts.tokens):
+            next_tok = ts.tokens[current_pos + 1]
+        
+        # If next token is not an adjective, this is likely a predicate conjunction
+        is_predicate_conj = next_tok is None or not is_adjective(next_tok)
+        return is_predicate_conj, False  # Don't consume the conjunction
+    
+    return predicate
 
