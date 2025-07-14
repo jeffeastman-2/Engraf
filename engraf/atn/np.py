@@ -31,6 +31,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     det.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
 
     adj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    # Handle adverbs that modify subsequent adjectives (e.g., "small bright blue")
+    adj.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj)
     # Handle conjunctions between adjectives (e.g., "tall and red")
     adj.add_arc(is_conjunction, lambda _, tok: None, adj_conj)  # Consume the conjunction
     
