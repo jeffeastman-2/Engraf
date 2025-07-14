@@ -134,6 +134,7 @@ SEMANTIC_VECTOR_SPACE = {
     'by': vector_from_features("prep"),
     'near': vector_from_features("prep"),
     'of': vector_from_features("prep"),
+    'than': vector_from_features("prep"),
     
     # Additional verbs for time travel
     'go': vector_from_features("verb action"),

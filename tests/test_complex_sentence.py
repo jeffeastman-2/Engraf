@@ -54,3 +54,63 @@ def test_complex_sentence():
     assert it_np.preps[0].preposition == 'to', "First PP should be 'to'"
     
     print("✅ Test passed! Complex sentence parsed correctly.")
+
+def test_comparative_sentence():
+    """Test parsing 'make them more transparent than the purple circle at [3, 3, 3]'"""
+    sentence = "make them more transparent than the purple circle at [3, 3, 3]"
+    
+    # Tokenize the sentence
+    tokens = tokenize(sentence)
+    assert len(tokens) > 0, "Tokenization should produce tokens"
+    
+    # Parse the sentence
+    ts = TokenStream(tokens)
+    sent = SentencePhrase()
+    start, end = build_sentence_atn(sent, ts)
+    result = run_atn(start, end, ts, sent)
+    
+    # Assert successful parsing
+    assert result is not None, f"Sentence '{sentence}' should parse successfully"
+    assert hasattr(result, 'predicate'), "Result should have a predicate"
+    
+    # Check that this is an imperative sentence (no subject)
+    assert result.subject is None, "Imperative sentence should have no subject"
+    
+    # Check the verb
+    predicate = result.predicate
+    assert predicate.verb == 'make', f"Verb should be 'make', got '{predicate.verb}'"
+    
+    # Check the noun phrase structure
+    np = predicate.noun_phrase
+    assert np is not None, "Should have a noun phrase"
+    assert np.pronoun == 'them', "Should have pronoun 'them'"
+    
+    # Check that transparency was scaled by "more" (should be 3.0: 2.0 * 1.5)
+    assert np.vector['transparency'] == 3.0, f"Transparency should be 3.0 (2.0 * 1.5), got {np.vector['transparency']}"
+    
+    # Check that there is a prepositional phrase with "than"
+    assert len(np.preps) > 0, "Should have prepositional phrases"
+    than_pp = np.preps[0]
+    assert than_pp.preposition == 'than', f"First PP should be 'than', got '{than_pp.preposition}'"
+    
+    # Check the comparison target: "the purple circle at [3, 3, 3]"
+    target_np = than_pp.noun_phrase
+    assert target_np.noun == 'circle', f"Target noun should be 'circle', got '{target_np.noun}'"
+    assert target_np.determiner == 'the', f"Target determiner should be 'the', got '{target_np.determiner}'"
+    assert target_np.vector['red'] == 0.5, "Target should be purple (red=0.5)"
+    assert target_np.vector['blue'] == 0.5, "Target should be purple (blue=0.5)"
+    
+    # Check that the target has a location prepositional phrase
+    assert len(target_np.preps) > 0, "Target should have prepositional phrases"
+    at_pp = target_np.preps[0]
+    assert at_pp.preposition == 'at', f"Target PP should be 'at', got '{at_pp.preposition}'"
+    
+    # Check the vector coordinates [3, 3, 3]
+    vector_np = at_pp.noun_phrase
+    assert vector_np.vector['vector'] == 1.0, "Should be recognized as a vector"
+    assert vector_np.vector['locX'] == 3.0, "X coordinate should be 3"
+    assert vector_np.vector['locY'] == 3.0, "Y coordinate should be 3"
+    assert vector_np.vector['locZ'] == 3.0, "Z coordinate should be 3"
+    
+    print("✅ Test passed! Comparative sentence parsed correctly.")
+
