@@ -66,7 +66,33 @@ def tokenize(sentence):
     flat_tokens = [t[0] for t in tokens]
 
     result = []
-    for tok in flat_tokens:
+    i = 0
+    while i < len(flat_tokens):
+        tok = flat_tokens[i]
+        
+        # Check for compound words (look ahead for multi-word tokens in vocabulary)
+        if i + 1 < len(flat_tokens) and not tok.startswith("'") and not tok.startswith("[") and not re.fullmatch(r"-?\d+(?:\.\d+)?", tok):
+            # Try two-word compound
+            two_word = f"{tok} {flat_tokens[i+1]}"
+            if two_word.lower() in SEMANTIC_VECTOR_SPACE:
+                vs = vector_from_word(two_word.lower())
+                if vs is not None:
+                    result.append(vs)
+                    i += 2  # Skip both tokens
+                    continue
+            
+            # Try three-word compound if we have enough tokens
+            if i + 2 < len(flat_tokens):
+                three_word = f"{tok} {flat_tokens[i+1]} {flat_tokens[i+2]}"
+                if three_word.lower() in SEMANTIC_VECTOR_SPACE:
+                    vs = vector_from_word(three_word.lower())
+                    if vs is not None:
+                        result.append(vs)
+                        i += 3  # Skip all three tokens
+                        continue
+        
+        # Process single token
+        # Process single token
         if tok.startswith("'") and tok.endswith("'"):
             tok = tok[1:-1]
             vs = vector_from_features(pos="quoted")  # empty vector with unknown POS
@@ -81,8 +107,11 @@ def tokenize(sentence):
             vs["number"] = float(tok)
             result.append(vs)
         else:
-                vs = vector_from_word(tok.lower())
-                if vs is None:
-                    raise ValueError(f"Unknown token: {tok}")
-                result.append(vs)
+            vs = vector_from_word(tok.lower())
+            if vs is None:
+                raise ValueError(f"Unknown token: {tok}")
+            result.append(vs)
+        
+        i += 1
+    
     return result

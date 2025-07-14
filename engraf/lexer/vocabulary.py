@@ -132,6 +132,12 @@ SEMANTIC_VECTOR_SPACE = {
     'at': vector_from_features("prep"),
     'by': vector_from_features("prep"),
     'near': vector_from_features("prep"),
+    'of': vector_from_features("prep"),
+    
+    # Additional verbs for time travel
+    'go': vector_from_features("verb action"),
+    'back': vector_from_features("adv"),
+    'forward': vector_from_features("adv"),
     # Conjunctions
     'and': vector_from_features("conj"),
     # To be verbs
