@@ -9,6 +9,10 @@ from engraf.pos.noun_phrase import NounPhrase
 
 # --- Build the Noun Phrase ATN ---
 def build_np_atn(np: NounPhrase, ts: TokenStream):
+    # Helper function to check if token is a non-comparative adjective
+    def is_non_comparative_adjective(tok):
+        return is_adjective(tok) and tok.scalar_projection("comp") == 0.0
+    
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
     adj = ATNState("NP-ADJ")
@@ -35,16 +39,33 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     adj_conj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
 
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)
-    adj_after_pronoun.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj_after_pronoun)
+    # Allow adjectives after pronouns, but NOT comparative adjectives (let VP handle those)
+    adj_after_pronoun.add_arc(is_non_comparative_adjective, lambda _, tok: np.apply_adjective(tok), adj_after_pronoun)
+    # Handle conjunctions between adjectives after pronouns - but only if followed by adjective
+    def is_conjunction_followed_by_adjective(tok):
+        if not is_conjunction(tok):
+            return False
+        # Peek ahead to see if next token is an adjective
+        current_pos = ts.position
+        next_tok = None
+        if current_pos + 1 < len(ts.tokens):
+            next_tok = ts.tokens[current_pos + 1]
+        return next_tok and is_adjective(next_tok)
+    
+    adj_after_pronoun.add_arc(is_conjunction_followed_by_adjective, lambda _, tok: None, adj_conj)
     # Handle prepositional phrases after pronouns
     adj_after_pronoun.add_arc(is_preposition, make_run_pp_into_atn(ts), pp)
     # End on various boundary conditions but don't consume tokens
-    adj_after_pronoun.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
+    adj_after_pronoun.add_arc(any_of(is_verb, is_tobe, is_conjunction, is_adjective), noop, end)
     adj_after_pronoun.add_arc(is_none, noop, end)
 
     # ADJ or DET → NOUN
     for state in [det, adj, adj_conj]:
         state.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)
+
+    # Allow ADJ state to end on various conditions
+    adj.add_arc(is_none, noop, end)
+    adj.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
 
     # NOUN → END (simple NP)
     noun.add_arc(is_none, noop, end)
