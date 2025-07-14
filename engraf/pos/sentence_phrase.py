@@ -62,7 +62,7 @@ class SentencePhrase():
             else: print(f"⚠️ ERROR: tail.right is not None {self}")
  
     def apply_predicate(self, pred):
-        print(f"✅ => Applying sentence predicate {pred} \n.      to {self}")
+        print(f"✅ => Applying sentence predicate {pred} \n      to {self}")
         if self.predicate is None:
             self.predicate = pred
         elif pred == self.predicate:

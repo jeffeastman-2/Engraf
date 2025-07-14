@@ -141,4 +141,99 @@ def apply_from_subnet_multi(*field_func_pairs):
                 print(f"⚠️  Warning: {fieldname} is None — skipping apply_func")
     return wrapper
 
+def make_run_np_into_conjunction(ts):
+    """Create an NP action that adds the NP to the existing conjunction."""
+    from engraf.atn.np import build_np_atn
+    from engraf.pos.noun_phrase import NounPhrase
+    from engraf.pos.conjunction_phrase import ConjunctionPhrase
+
+    def run_np_into_conjunction(parent_atn, _):
+        saved_pos = ts.position
+        np_obj = NounPhrase()
+        np_start, np_end = build_np_atn(np_obj, ts)
+        result = run_atn(np_start, np_end, ts, np_obj)
+
+        if result is not None:
+            # Add the NP to the existing conjunction
+            if isinstance(parent_atn, ConjunctionPhrase):
+                tail = parent_atn.get_last()
+                if tail.right is None:
+                    tail.right = np_obj
+                else:
+                    # This shouldn't happen in simple cases, but handle it
+                    tail.right = ConjunctionPhrase(tail.right.conjunction, left=tail.right, right=np_obj)
+            else:
+                # This shouldn't happen if conjunction was applied first
+                print("⚠️  Warning: Expected ConjunctionPhrase but got", type(parent_atn))
+            return parent_atn
+        else:
+            ts.position = saved_pos
+            return None
+    
+    run_np_into_conjunction._is_subnetwork = True
+    return run_np_into_conjunction
+
+def make_run_coordinated_np_into_atn(ts, fieldname):
+    """Create an NP action that can handle coordinated noun phrases."""
+    from engraf.atn.np import build_np_atn
+    from engraf.pos.noun_phrase import NounPhrase
+    from engraf.pos.conjunction_phrase import ConjunctionPhrase
+
+    def run_coordinated_np_into_atn(parent_atn, _):
+        saved_pos = ts.position
+        first_np = NounPhrase()
+        np_start, np_end = build_np_atn(first_np, ts)
+        result = run_atn(np_start, np_end, ts, first_np)
+
+        if result is not None:
+            # Check if there's a conjunction after the first NP
+            if ts.peek() and ts.peek().isa("conj"):
+                # Save position before consuming conjunction
+                conj_pos = ts.position
+                conj_tok = ts.next()
+                
+                # Try to parse the second NP
+                second_np = NounPhrase()
+                np_start, np_end = build_np_atn(second_np, ts)
+                second_result = run_atn(np_start, np_end, ts, second_np)
+                
+                if second_result is not None:
+                    # Successfully parsed coordinated NPs
+                    coord_np = ConjunctionPhrase(conj_tok, left=first_np, right=second_np)
+                    
+                    # Check for more conjunctions (recursive)
+                    while ts.peek() and ts.peek().isa("conj"):
+                        conj_tok = ts.next()
+                        next_np = NounPhrase()
+                        np_start, np_end = build_np_atn(next_np, ts)
+                        next_result = run_atn(np_start, np_end, ts, next_np)
+                        
+                        if next_result is not None:
+                            # Chain the conjunction
+                            coord_np.right = ConjunctionPhrase(conj_tok, left=coord_np.right, right=next_np)
+                        else:
+                            break
+                    
+                    print(f"✅ Set {fieldname} = {coord_np} (coordinated)")
+                    setattr(parent_atn, fieldname, coord_np)
+                    return parent_atn
+                else:
+                    # Failed to parse second NP - this might be a predicate conjunction
+                    # Rollback to before the conjunction and return just the first NP
+                    ts.position = conj_pos
+                    print(f"✅ Set {fieldname} = {result} (simple, conjunction not consumed)")
+                    setattr(parent_atn, fieldname, result)
+                    return parent_atn
+            else:
+                # No conjunction, just a simple NP
+                print(f"✅ Set {fieldname} = {result} (simple)")
+                setattr(parent_atn, fieldname, result)
+                return parent_atn
+        else:
+            ts.position = saved_pos
+            return None
+
+    run_coordinated_np_into_atn._is_subnetwork = True
+    return run_coordinated_np_into_atn
+
 

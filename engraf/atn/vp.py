@@ -2,9 +2,9 @@ from engraf.atn.core import ATNState
 from engraf.lexer.token_stream import TokenStream
 from engraf.utils.predicates import is_verb, is_none, is_np_head, is_conjunction_no_consume, is_preposition, any_of, is_tobe, is_adjective
 from engraf.atn.core import noop
-from engraf.utils.actions import make_run_np_into_atn, make_run_pp_into_atn
+from engraf.utils.actions import make_run_np_into_atn, make_run_pp_into_atn, make_run_coordinated_np_into_atn
 from engraf.pos.verb_phrase import VerbPhrase
-from engraf.utils.actions import make_run_np_into_atn, make_run_pp_into_atn, apply_from_subnet, apply_from_subnet_multi
+from engraf.utils.actions import make_run_np_into_atn, make_run_pp_into_atn, apply_from_subnet, apply_from_subnet_multi, make_run_coordinated_np_into_atn
 
 
 # --- Build the Verb Phrase ATN ---
@@ -18,8 +18,8 @@ def build_vp_atn(vp: VerbPhrase, ts: TokenStream):
 
     # VERB
     start.add_arc(is_verb, lambda _, tok: vp.apply_verb(tok), after_verb)
-    # NP (subnetwork)
-    after_verb.add_arc(is_np_head, make_run_np_into_atn(ts,fieldname="noun_phrase"), after_np)    
+    # NP (subnetwork) - supports coordinated noun phrases for objects like "a cube and a sphere"
+    after_verb.add_arc(is_np_head, make_run_coordinated_np_into_atn(ts, fieldname="noun_phrase"), after_np)    
     # Allow final transition if stream is exhausted
     after_verb.add_arc(is_none, noop, end)
 

@@ -2,7 +2,7 @@ from engraf.lexer.token_stream import TokenStream
 from engraf.atn.core import ATNState, noop
 from engraf.utils.predicates import is_quoted, is_tobe, is_verb, any_of, is_np_head, \
     is_none, is_adverb, is_adjective, is_conjunction, is_anything_no_consume
-from engraf.utils.actions import make_run_np_into_atn, make_run_vp_into_atn, make_run_vp_into_conjunction
+from engraf.utils.actions import make_run_np_into_atn, make_run_vp_into_atn, make_run_vp_into_conjunction, make_run_coordinated_np_into_atn
 from engraf.pos.sentence_phrase import SentencePhrase
 
 def build_sentence_atn(sent: SentencePhrase, ts: TokenStream):
@@ -18,8 +18,8 @@ def build_sentence_atn(sent: SentencePhrase, ts: TokenStream):
     conj = ATNState("SENTENCE-CONJ")  # e.g., "and transparent"
     end = ATNState("SENTENCE-END")
 
-    # Optional subject NP 
-    start.add_arc(is_np_head, make_run_np_into_atn(ts, fieldname="subject"), after_np)
+    # Optional subject NP - now supports coordinated noun phrases
+    start.add_arc(is_np_head, make_run_coordinated_np_into_atn(ts, fieldname="subject"), after_np)
     start.add_arc(is_quoted, lambda _, tok: sent.store_definition_word(tok), predicate) 
     start.add_arc(any_of(is_verb, is_tobe), noop,  predicate) 
 
