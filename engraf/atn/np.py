@@ -30,7 +30,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Handle conjunctions between adjectives (e.g., "tall and red")
     adj.add_arc(is_conjunction, lambda _, tok: None, adj_conj)  # Consume the conjunction
     
-    # After conjunction, expect another adjective
+    # After conjunction, expect another adjective (possibly with adverb modifier)
+    adj_conj.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_conj)
     adj_conj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
 
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)

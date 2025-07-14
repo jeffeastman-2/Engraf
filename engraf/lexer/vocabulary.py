@@ -36,7 +36,7 @@ SEMANTIC_VECTOR_SPACE = {
     'it': vector_from_features("pronoun singular"),
     'they': vector_from_features("pronoun plural"),
     'them': vector_from_features("pronoun plural"),
-    
+
      # Adjectives
     'red': vector_from_features("adj", color=[1.0, 0.0, 0.0]),
     'green': vector_from_features("adj", color=[0.0, 1.0, 0.0]),
@@ -50,6 +50,7 @@ SEMANTIC_VECTOR_SPACE = {
     'large': vector_from_features("adj", scale=[2.0, 2.0, 2.0]),
     'small': vector_from_features("adj", scale=[-0.5, -0.5, -0.5]),
     'tall': vector_from_features("adj", scale=[0.0, 1.5, 0.0]),
+    'short': vector_from_features("adj", scale=[0.0, -0.5, 0.0]),
     'wide': vector_from_features("adj", scale=[1.5, 0.0, 0.0]),
     'deep': vector_from_features("adj", scale=[0.0, 0.0, 1.5]),
     'rough': vector_from_features("adj", texture=2.0),
@@ -89,6 +90,7 @@ SEMANTIC_VECTOR_SPACE = {
     # edit
     'copy': vector_from_features("verb action edit"),
     'delete': vector_from_features("verb action edit"),
+    'remove': vector_from_features("verb action edit"),
     'paste': vector_from_features("verb action edit"),
 
     # organize

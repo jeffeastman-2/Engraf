@@ -20,7 +20,8 @@ class NounPhrase():
 
     def apply_adverb(self, tok):
         """Store the adverb vector for use in scaling the next adjective."""
-        self.scale_vector = getattr(self, "scale_vector", VectorSpace())
+        if not hasattr(self, 'scale_vector') or self.scale_vector is None:
+            self.scale_vector = VectorSpace()
         print(f"✅ Scale_vector is {self.scale_vector} for token {tok}")
         self.scale_vector += tok  # Combine adverbs if needed (e.g., "very extremely")
 
