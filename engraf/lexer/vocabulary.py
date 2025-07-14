@@ -62,6 +62,7 @@ SEMANTIC_VECTOR_SPACE = {
     # Adverbs
     'very': vector_from_features("adv", adverb=1.5),
     'more': vector_from_features("adv", adverb=1.5),
+    'bright': vector_from_features("adv", adverb=1.5),
     'much': vector_from_features("adv", adverb=1.5),
     'extremely': vector_from_features("adv", adverb=2.0),
     'slightly': vector_from_features("adv", adverb=0.75),
@@ -175,5 +176,63 @@ def vector_from_word(word: str) -> VectorSpace:
                 v["singular"] = 0.0
             return v
 
+    # Try base form in case it's a comparative adjective
+    base_adj, is_comparative = base_adjective_from_comparative(word)
+    if is_comparative and base_adj != word:
+        base_vector = SEMANTIC_VECTOR_SPACE.get(base_adj.lower())
+        if base_vector:
+            v = base_vector.copy()
+            v.word = word
+            # Mark as comparative and boost intensity
+            v["comp"] = 1.0  # Mark as comparative form
+            if v["adj"] > 0:
+                # Scale semantic features by 1.2 for comparative effect
+                semantic_features = ["scaleX", "scaleY", "scaleZ", "red", "green", "blue", "texture", "transparency"]
+                for key in semantic_features:
+                    if v[key] != 0:
+                        v[key] = v[key] * 1.2
+            return v
+
     # Still unknown? Raise
     raise ValueError(f"Unknown token: {word}")
+
+from engraf.utils.noun_inflector import singularize_noun
+
+def base_adjective_from_comparative(word: str) -> tuple[str, bool]:
+    """Convert comparative adjective to base form. Returns (base_form, is_comparative)."""
+    word = word.lower()
+    
+    # Handle -er endings (rougher -> rough, taller -> tall)
+    if word.endswith('er'):
+        # Special cases where we need to handle doubled consonants
+        if word.endswith('gger'):  # bigger -> big
+            base = word[:-3]
+            return base, True
+        elif word.endswith('tter'):  # fatter -> fat
+            base = word[:-3]
+            return base, True
+        elif word.endswith('nner'):  # thinner -> thin
+            base = word[:-3]
+            return base, True
+        elif word.endswith('er'):
+            base = word[:-2]
+            return base, True
+    
+    # Handle -est endings (roughest -> rough, tallest -> tall)
+    if word.endswith('est'):
+        # Special cases where we need to handle doubled consonants
+        if word.endswith('ggest'):  # biggest -> big
+            base = word[:-4]
+            return base, True
+        elif word.endswith('ttest'):  # fattest -> fat
+            base = word[:-4]
+            return base, True
+        elif word.endswith('nnest'):  # thinnest -> thin
+            base = word[:-4]
+            return base, True
+        elif word.endswith('est'):
+            base = word[:-3]
+            return base, True
+    
+    # Not a comparative/superlative
+    return word, False

@@ -6,6 +6,7 @@ import math
 VECTOR_DIMENSIONS = [
     "verb", "tobe", "action", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
     "number", "vector", "singular", "plural", "conj", "disj", "tobe", "unit",
+    "comp",      # comparative forms (rougher, taller, etc.)
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
     "rotX", "rotY", "rotZ",
@@ -123,5 +124,7 @@ def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color
     if rot: vs["rotX"], vs["rotY"], vs["rotZ"] = rot
     if color: vs["red"], vs["green"], vs["blue"] = color
     if adverb is not None: vs["adv"] = adverb
+    if texture is not None: vs["texture"] = texture
+    if transparency is not None: vs["transparency"] = transparency
     return vs
 

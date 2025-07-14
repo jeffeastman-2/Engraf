@@ -9,7 +9,7 @@ class VerbPhrase():
         self.verb = verb
         self.noun_phrase = None
         self.preps = []
-        self.adjective_complement = None
+        self.adjective_complement = []  # Changed to list for multiple adjectives
         self.amount = None  # For handling measurements like "45 degrees"
 
     def __repr__(self):
@@ -39,8 +39,9 @@ class VerbPhrase():
         self.preps.append(pp_obj)
 
     def apply_adjective(self, tok):
-        self.adjective_complement = tok.word
+        self.adjective_complement.append(tok.word)
         print(f"✅ VP applying adjective complement: {tok.word}")
+        print(f"✅ Current adjective complements: {self.adjective_complement}")
 
     def is_imperative(self):
         return self.vector.scalar_projection("action") > 0.5
