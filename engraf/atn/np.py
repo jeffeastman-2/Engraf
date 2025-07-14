@@ -29,6 +29,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # ADJ → ADJ / NOUN
     det.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), det)
     det.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    # Handle prepositional phrases after determiners (e.g., "one of them", "two of them")
+    det.add_arc(is_preposition, make_run_pp_into_atn(ts), pp)
 
     adj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
     # Handle adverbs that modify subsequent adjectives (e.g., "small bright blue")

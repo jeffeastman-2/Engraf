@@ -64,6 +64,7 @@ SEMANTIC_VECTOR_SPACE = {
     'more': vector_from_features("adv", adverb=1.5),
     'bright': vector_from_features("adv", adverb=1.5),
     'much': vector_from_features("adv", adverb=1.5),
+    'a little bit': vector_from_features("adv", adverb=1.15),
     'extremely': vector_from_features("adv", adverb=2.0),
     'slightly': vector_from_features("adv", adverb=0.75),
     # Determiners
@@ -220,6 +221,9 @@ def base_adjective_from_comparative(word: str) -> tuple[str, bool]:
         elif word.endswith('nner'):  # thinner -> thin
             base = word[:-3]
             return base, True
+        elif word.endswith('dder'):  # redder -> red
+            base = word[:-3]
+            return base, True
         elif word.endswith('er'):
             base = word[:-2]
             return base, True
@@ -236,7 +240,12 @@ def base_adjective_from_comparative(word: str) -> tuple[str, bool]:
         elif word.endswith('nnest'):  # thinnest -> thin
             base = word[:-4]
             return base, True
+        elif word.endswith('ddest'):  # reddest -> red
+            base = word[:-4]
+            return base, True
         elif word.endswith('est'):
+            base = word[:-3]
+            return base, True
             base = word[:-3]
             return base, True
     
