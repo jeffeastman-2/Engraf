@@ -21,11 +21,22 @@ SEMANTIC_VECTOR_SPACE = {
     'dodecahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'icosahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
     'pyramid': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
-    'prism': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]), 
+    'prism': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[1.0, 1.0, 1.0]),
+    
+    # Units
+    'degree': vector_from_features("noun unit", number=1.0),  # angular unit
+    'unit': vector_from_features("noun unit", number=1.0),   # generic unit
+    'pixel': vector_from_features("noun unit", number=1.0),  # screen unit
+    'meter': vector_from_features("noun unit", number=1.0),  # distance unit
+    'inch': vector_from_features("noun unit", number=1.0),   # distance unit
+    'foot': vector_from_features("noun unit", number=1.0),   # distance unit
+    'yard': vector_from_features("noun unit", number=1.0),   # distance unit
+ 
     # Pronouns
     'it': vector_from_features("pronoun singular"),
     'they': vector_from_features("pronoun plural"),
     'them': vector_from_features("pronoun plural"),
+    
      # Adjectives
     'red': vector_from_features("adj", color=[1.0, 0.0, 0.0]),
     'green': vector_from_features("adj", color=[0.0, 1.0, 0.0]),
@@ -96,6 +107,9 @@ SEMANTIC_VECTOR_SPACE = {
     # transform
     'move': vector_from_features("verb action transform"),
     'rotate': vector_from_features("verb action transform"),
+    'xrotate': vector_from_features("verb action transform"),  # rotate around x-axis
+    'yrotate': vector_from_features("verb action transform"),  # rotate around y-axis
+    'zrotate': vector_from_features("verb action transform"),  # rotate around z-axis
     'scale': vector_from_features("verb action transform"),
 
     # generic (no third term)

@@ -10,9 +10,10 @@ class VerbPhrase():
         self.noun_phrase = None
         self.preps = []
         self.adjective_complement = None
+        self.amount = None  # For handling measurements like "45 degrees"
 
     def __repr__(self):
-        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase}, PPs={self.preps}, adjective_complement={self.adjective_complement})"
+        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase}, PPs={self.preps}, adjective_complement={self.adjective_complement}, amount={self.amount})"
 
     def to_vector(self) -> VectorSpace:
         # Combine verb meaning with its object’s vector (if present)
@@ -27,6 +28,11 @@ class VerbPhrase():
 
     def apply_np(self, np):
         self.noun_phrase = np
+
+    def apply_amount(self, amount_np):
+        """Apply an amount/measure noun phrase like '45 degrees'"""
+        self.amount = amount_np
+        print(f"✅ VP applying amount: {amount_np}")
 
     def apply_pp(self, pp_obj):
         print(f"✅ VP applying PP: {pp_obj}")
