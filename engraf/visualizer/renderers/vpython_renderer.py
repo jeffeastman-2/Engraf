@@ -206,10 +206,11 @@ class VPythonRenderer(RendererBase):
         size = self._extract_size(obj)
         color = self._extract_color(obj)
         
+        # Create cone with circular base
         cone = vp.cone(
-            pos=position,
-            radius=size.x,
-            height=size.y,
+            pos=position + vp.vector(0, -size.y/2, 0),  # Position at bottom
+            axis=vp.vector(0, size.y, 0),  # Point upward
+            radius=max(size.x, size.z) / 2,  # Use larger dimension for radius
             color=color
         )
         
@@ -217,10 +218,22 @@ class VPythonRenderer(RendererBase):
         
         return cone
     
-    def _create_pyramid(self, obj: SceneObject) -> vp.compound:
-        """Create a pyramid object using a cone."""
-        # For now, use a cone as a pyramid approximation
-        return self._create_cone(obj)
+    def _create_pyramid(self, obj: SceneObject) -> vp.pyramid:
+        """Create a pyramid object with square base and triangular sides."""
+        position = self._extract_position(obj)
+        size = self._extract_size(obj)
+        color = self._extract_color(obj)
+        
+        # Create pyramid with square base
+        pyramid = vp.pyramid(
+            pos=position,
+            size=vp.vector(size.x, size.y, size.z),
+            color=color
+        )
+        
+        self._apply_transformations(pyramid, obj)
+        
+        return pyramid
     
     def _create_arch(self, obj: SceneObject) -> vp.compound:
         """Create an arch object using compound shapes."""
