@@ -1,6 +1,6 @@
 from engraf.lexer.token_stream import TokenStream, tokenize
-from engraf.scenes.scene_model import SceneModel, resolve_pronoun
-from engraf.scenes.scene_object import SceneObject
+from engraf.visualizer.scene.scene_model import SceneModel, resolve_pronoun
+from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.vector_space import VectorSpace
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.pos.conjunction_phrase import ConjunctionPhrase

@@ -1,4 +1,4 @@
-from engraf.scenes.scene_object import SceneObject
+from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.vector_space import VectorSpace
 from typing import List
 
@@ -10,13 +10,10 @@ class SceneModel:
 
     def add_object(self, obj):
         self.objects.append(obj)
+        self.recent = [obj]  # or append for plural
 
     def __repr__(self):
         return "\n".join(repr(obj) for obj in self.objects)
-
-    def add_object(self, obj):
-        self.objects.append(obj)
-        self.recent = [obj]  # or append for plural
 
     def get_recent_objects(self, count=None):
         return self.recent if count is None else self.recent[-count:]
@@ -55,9 +52,9 @@ def resolve_pronoun(word, scene: SceneModel):
     if word == "it":
         if scene.objects:
             return [scene.objects[-1]]  # Return the most recently added object
+        else:
+            return []  # Return empty list if no objects
     elif word in ("they", "them"):
         return scene.objects  # Return all known objects in the scene
     else:
         raise ValueError(f"Unrecognized pronoun: {word}")
-
-
