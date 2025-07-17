@@ -126,8 +126,8 @@ class VPythonRenderer(RendererBase):
         Args:
             obj: The scene object to render
         """
-        # Get the shape name from the object
-        shape_name = obj.name.lower()
+        # Get the shape name from the object (extract from names like "cube_1", "sphere_2", etc.)
+        shape_name = obj.name.split('_')[0].lower() if '_' in obj.name else obj.name.lower()
         
         # Determine the appropriate shape creator
         creator = self.shape_creators.get(shape_name, self._create_cube)
@@ -341,6 +341,11 @@ class VPythonRenderer(RendererBase):
                 r = obj.vector["red"]
                 g = obj.vector["green"]
                 b = obj.vector["blue"]
+                
+                # Handle black color specially - VPython (0,0,0) may not render properly
+                if r == 0 and g == 0 and b == 0:
+                    return vp.vector(0.1, 0.1, 0.1)  # Very dark gray instead of pure black
+                
                 return vp.vector(r, g, b)
             except (KeyError, TypeError):
                 pass
