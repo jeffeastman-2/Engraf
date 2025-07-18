@@ -77,6 +77,7 @@ class VPythonRenderer(RendererBase):
             "cube": self._create_cube,
             "box": self._create_cube,
             "sphere": self._create_sphere,
+            "ellipsoid": self._create_ellipsoid,
             "cylinder": self._create_cylinder,
             "cone": self._create_cone,
             "pyramid": self._create_pyramid,
@@ -229,6 +230,23 @@ class VPythonRenderer(RendererBase):
         self._apply_transformations(sphere, obj)
         
         return sphere
+    
+    def _create_ellipsoid(self, obj: SceneObject) -> vp.compound:
+        """Create an ellipsoid object that can be scaled non-uniformly."""
+        position = self._extract_position(obj)
+        size = self._extract_size(obj)
+        color = self._extract_color(obj)
+        
+        # Create ellipsoid with proper scaling
+        ellipsoid = vp.ellipsoid(
+            pos=position,
+            size=size,  # VPython ellipsoid uses size directly
+            color=color
+        )
+        
+        self._apply_transformations(ellipsoid, obj)
+        
+        return ellipsoid
     
     def _create_cylinder(self, obj: SceneObject) -> vp.compound:
         """Create a cylinder object."""
