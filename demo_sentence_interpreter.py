@@ -85,6 +85,46 @@ def demo_basic_commands():
     return interpreter
 
 
+def demo_transform_commands(interpreter):
+    """Demonstrate transformation commands on existing objects."""
+    print("🔄 Transform Demo - Modifying Existing Objects")
+    print("=" * 50)
+    print()
+    
+    # Transform sentences that work with existing objects
+    transform_sentences = [
+        "move the red cube to [2, 1, 0]",
+        "xrotate the orange arch by 45 degrees",
+        "scale the green cylinder by [1, 3, 3]",
+        "move it to [0, 0, 3]"  # Test pronoun resolution
+    ]
+    
+    print("🎯 Running transform sentences...")
+    print()
+    
+    for i, sentence in enumerate(transform_sentences, 1):
+        print(f"{i}. Processing: '{sentence}'")
+        
+        try:
+            result = interpreter.interpret(sentence)
+            
+            if result['success']:
+                print(f"   ✅ Success: {result['message']}")
+                if result['objects_modified']:
+                    print(f"   🔧 Modified: {', '.join(result['objects_modified'])}")
+                if result['actions_performed']:
+                    print(f"   🎬 Actions: {', '.join(result['actions_performed'])}")
+            else:
+                print(f"   ❌ Failed: {result['message']}")
+                
+        except Exception as e:
+            print(f"   💥 Error: {e}")
+        
+        print()
+    
+    return interpreter
+
+
 def interactive_mode(interpreter):
     """Run interactive mode for sentence interpretation."""
     print("🎮 Interactive Mode")
@@ -172,44 +212,6 @@ def print_help():
     print()
 
 
-def test_parsing_integration():
-    """Test the integration with the ATN parsing system."""
-    print("🧪 Testing ATN Parsing Integration")
-    print("=" * 40)
-    print()
-    
-    interpreter = SentenceInterpreter(
-        renderer=VPythonRenderer(headless=True)
-    )
-    
-    # Test sentences with known parsing behavior
-    test_sentences = [
-        "draw a cube",
-        "draw a red cube",
-        "draw a big sphere",
-        "draw a small blue cylinder",
-        "invalid sentence xyz",
-        "",
-        "draw a cube and a sphere"
-    ]
-    
-    for sentence in test_sentences:
-        print(f"Testing: '{sentence}'")
-        
-        try:
-            result = interpreter.interpret(sentence)
-            
-            if result['success']:
-                print(f"   ✅ Success: {len(result['objects_created'])} objects created")
-            else:
-                print(f"   ❌ Failed: {result['message']}")
-                
-        except Exception as e:
-            print(f"   💥 Exception: {e}")
-        
-        print()
-
-
 def main():
     """Main function to run the demo."""
     print("🚀 Starting ENGRAF Sentence Interpreter Demo")
@@ -219,9 +221,8 @@ def main():
         # Run basic demo
         interpreter = demo_basic_commands()
         
-        # Skip parsing integration test to avoid extra objects in the scene
-        # Uncomment the next line if you want to run parsing tests
-        # test_parsing_integration()
+        # Run transform demo
+        demo_transform_commands(interpreter)
         
         # Ask user if they want interactive mode
         if input("🎮 Would you like to try interactive mode? (y/n): ").lower().startswith('y'):

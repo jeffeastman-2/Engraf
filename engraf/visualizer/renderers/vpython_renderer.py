@@ -104,20 +104,31 @@ class VPythonRenderer(RendererBase):
         
         # VPython now uses default lighting - we can't set custom lights
         # The scene will automatically have appropriate lighting
+        
+        # Note: Disabled default object clearing to debug the issue
+        # self._clear_default_objects()
+    
+    def _clear_default_objects(self) -> None:
+        """Clear any default objects that VPython might have created."""
+        if self.headless or self.scene is None:
+            return
+            
+        # For now, disable automatic clearing to avoid removing legitimate objects
+        # VPython's default object creation seems to happen at unpredictable times
+        # TODO: Find a better way to detect and remove only VPython's default objects
+        pass
     
     def render_scene(self, scene: SceneModel) -> None:
         """
-        Render the entire scene.
+        Render the entire scene incrementally.
         
         Args:
             scene: The scene model to render
         """
-        # Clear existing objects
-        self.clear_scene()
-        
-        # Render all objects in the scene
+        # Only render objects that haven't been rendered yet
         for obj in scene.objects:
-            self.render_object(obj)
+            if obj.object_id not in self.rendered_objects:
+                self.render_object(obj)
     
     def render_object(self, obj: SceneObject) -> None:
         """
@@ -135,8 +146,8 @@ class VPythonRenderer(RendererBase):
         # Create the VPython object
         vpython_obj = creator(obj)
         
-        # Store the rendered object
-        self.rendered_objects[obj.name] = vpython_obj
+        # Store the rendered object using object_id as key
+        self.rendered_objects[obj.object_id] = vpython_obj
     
     def clear_scene(self) -> None:
         """Clear all objects from the scene."""
@@ -144,6 +155,42 @@ class VPythonRenderer(RendererBase):
             obj.visible = False
             del obj
         self.rendered_objects.clear()
+        
+        # Note: Disabled unwanted object clearing to debug the issue
+        # self._clear_unwanted_objects()
+    
+    def _clear_unwanted_objects(self) -> None:
+        """Clear any unwanted objects that VPython might have created after scene completion."""
+        if self.headless or self.scene is None:
+            return
+            
+        try:
+            # Get all objects in the scene
+            scene_objects = self.scene.objects
+            
+            # Remove any objects that are not in our rendered_objects dict
+            objects_to_remove = []
+            for obj in scene_objects:
+                # Check if this object is one we created
+                is_our_object = False
+                for rendered_obj in self.rendered_objects.values():
+                    if obj == rendered_obj:
+                        is_our_object = True
+                        break
+                
+                # If it's not our object, mark it for removal
+                if not is_our_object:
+                    objects_to_remove.append(obj)
+            
+            # Remove the unwanted objects
+            for obj in objects_to_remove:
+                if hasattr(obj, 'visible'):
+                    obj.visible = False
+                    del obj
+                    
+        except Exception:
+            # If there's any issue clearing unwanted objects, just continue
+            pass
     
     def _create_cube(self, obj: SceneObject) -> vp.compound:
         """Create a cube/box object."""

@@ -1,13 +1,15 @@
 from pprint import pprint
 
 class SceneObject:
-    def __init__(self, name, vector, modifiers=None):
-        self.name = name                  # e.g., 'cube'
+    def __init__(self, name, vector, modifiers=None, object_id=None):
+        self.name = name                  # e.g., 'cube' (the base noun)
+        self.object_id = object_id or name  # e.g., 'red_cube_1' (unique identifier)
         self.vector = vector              # VectorSpace instance
         self.modifiers = modifiers or []  # nested SceneObjects from PPs
+        self.metadata = {}                # Store additional metadata for matching
 
     def __repr__(self):
-        return f"<{self.name} {self.vector} modifiers={self.modifiers}>"
+        return f"<{self.name} ({self.object_id}) {self.vector} modifiers={self.modifiers}>"
 
 def scene_object_from_np(noun_phrase):
     from pprint import pprint

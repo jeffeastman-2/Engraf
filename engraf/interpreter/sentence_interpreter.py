@@ -17,7 +17,7 @@ from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.visualizer.renderers.vpython_renderer import VPythonRenderer
+# VPython renderer will be imported conditionally to avoid hanging
 from engraf.visualizer.transforms.transform_interpreter import TransformInterpreter
 from engraf.lexer.vector_space import VectorSpace
 
@@ -28,15 +28,20 @@ class SentenceInterpreter:
     and executes them in a 3D scene environment.
     """
     
-    def __init__(self, renderer: Optional[VPythonRenderer] = None):
+    def __init__(self, renderer=None):
         """
         Initialize the sentence interpreter.
         
         Args:
-            renderer: Optional VPython renderer. If None, creates a new one.
+            renderer: The renderer to use for visualization (e.g., VPythonRenderer, MockRenderer)
         """
-        self.scene = SceneModel()
-        self.renderer = renderer or VPythonRenderer(headless=True)
+        if renderer is None:
+            # Import VPython renderer only when needed
+            from engraf.visualizer.renderers.vpython_renderer import VPythonRenderer
+            renderer = VPythonRenderer(headless=True)
+        
+        self.renderer = renderer
+        self.scene = SceneModel()  # Initialize the scene
         self.transform_interpreter = TransformInterpreter()
         self.object_counter = 0
         self.execution_history = []
@@ -83,7 +88,7 @@ class SentenceInterpreter:
                 'success': True,
                 'message': f"Successfully executed: {original_sentence}",
                 'sentence': original_sentence,
-                'sentence_parsed': str(parsed_sentence),
+                'sentence_parsed': parsed_sentence,
                 'objects_created': [],
                 'objects_modified': [],
                 'actions_performed': []
@@ -231,7 +236,9 @@ class SentenceInterpreter:
         """Create a new scene object from object information."""
         try:
             self.object_counter += 1
-            obj_id = f"{obj_info['type']}_{self.object_counter}"
+            
+            # Create descriptive ID that includes key adjectives
+            obj_id = self._generate_descriptive_id(obj_info)
             
             # Create vector space for the object
             vector_space = obj_info.get('vector_space') or VectorSpace()
@@ -239,8 +246,21 @@ class SentenceInterpreter:
             # Apply default properties based on object type
             self._apply_default_properties(vector_space, obj_info)
             
-            # Create and add scene object
-            scene_object = SceneObject(obj_id, vector_space)
+            # Create and add scene object with metadata
+            scene_object = SceneObject(
+                name=obj_info['type'],  # Store the base noun (e.g., 'cube')
+                vector=vector_space,
+                object_id=obj_id       # Store the descriptive ID (e.g., 'red_cube_1')
+            )
+            
+            # Store descriptive metadata for later matching
+            scene_object.metadata = {
+                'type': obj_info['type'],
+                'adjectives': obj_info.get('adjectives', []),
+                'colors': self._extract_colors_from_vector(vector_space),
+                'sizes': self._extract_sizes_from_vector(vector_space),
+                'determiner': obj_info.get('determiner')
+            }
             
             # Apply prepositional phrases (positioning) if present
             if 'prepositional_phrases' in obj_info:
@@ -255,6 +275,61 @@ class SentenceInterpreter:
         except Exception as e:
             print(f"❌ Failed to create object: {e}")
             return None
+    
+    def _generate_descriptive_id(self, obj_info: Dict[str, Any]) -> str:
+        """Generate a descriptive ID that includes key adjectives."""
+        base_type = obj_info['type']
+        vector_space = obj_info.get('vector_space')
+        
+        # Extract key descriptive terms
+        descriptors = []
+        
+        # Add color descriptor
+        if vector_space:
+            if vector_space['red'] > 0.5:
+                descriptors.append('red')
+            elif vector_space['green'] > 0.5:
+                descriptors.append('green')
+            elif vector_space['blue'] > 0.5:
+                descriptors.append('blue')
+            elif vector_space['red'] > 0.5 and vector_space['green'] > 0.5:
+                descriptors.append('yellow')
+            elif vector_space['red'] > 0.5 and vector_space['blue'] > 0.5:
+                descriptors.append('purple')
+            elif vector_space['green'] > 0.5 and vector_space['blue'] > 0.5:
+                descriptors.append('cyan')
+            
+            # Add size descriptor
+            if vector_space['scaleX'] > 1.5 or vector_space['scaleY'] > 1.5 or vector_space['scaleZ'] > 1.5:
+                descriptors.append('big')
+            elif vector_space['scaleX'] < 0.75 or vector_space['scaleY'] < 0.75 or vector_space['scaleZ'] < 0.75:
+                descriptors.append('small')
+        
+        # Create descriptive ID
+        if descriptors:
+            return f"{'_'.join(descriptors)}_{base_type}_{self.object_counter}"
+        else:
+            return f"{base_type}_{self.object_counter}"
+    
+    def _extract_colors_from_vector(self, vector_space: VectorSpace) -> List[str]:
+        """Extract color names from vector space."""
+        colors = []
+        if vector_space['red'] > 0.5:
+            colors.append('red')
+        if vector_space['green'] > 0.5:
+            colors.append('green')
+        if vector_space['blue'] > 0.5:
+            colors.append('blue')
+        return colors
+    
+    def _extract_sizes_from_vector(self, vector_space: VectorSpace) -> List[str]:
+        """Extract size descriptors from vector space."""
+        sizes = []
+        if vector_space['scaleX'] > 1.5 or vector_space['scaleY'] > 1.5 or vector_space['scaleZ'] > 1.5:
+            sizes.append('big')
+        elif vector_space['scaleX'] < 0.75 or vector_space['scaleY'] < 0.75 or vector_space['scaleZ'] < 0.75:
+            sizes.append('small')
+        return sizes
     
     def _apply_default_properties(self, vector_space: VectorSpace, obj_info: Dict[str, Any]):
         """Apply default properties to a vector space based on object information."""
@@ -336,21 +411,109 @@ class SentenceInterpreter:
         return target_objects
     
     def _find_objects_by_description(self, np: NounPhrase) -> List[str]:
-        """Find objects in the scene that match a noun phrase description."""
-        matching_objects = []
+        """Find objects in the scene that match a noun phrase description using vector distance."""
+        # Get all objects with their match scores
+        object_scores = []
         
         for scene_obj in self.scene.objects:
             if self._object_matches_description(scene_obj, np):
-                matching_objects.append(scene_obj.object_id)
+                # Calculate distance for ranking (lower is better)
+                distance = 0.0
+                if hasattr(np, 'vector') and np.vector:
+                    distance = self._calculate_vector_distance(scene_obj.vector, np.vector)
+                
+                object_scores.append((scene_obj.object_id, distance))
         
-        return matching_objects
+        # Sort by distance (best matches first) and return object IDs
+        object_scores.sort(key=lambda x: x[1])
+        return [obj_id for obj_id, _ in object_scores]
     
     def _object_matches_description(self, scene_obj: SceneObject, np: NounPhrase) -> bool:
-        """Check if a scene object matches a noun phrase description."""
-        # Simple matching based on object type
-        if np.noun and np.noun in scene_obj.object_id:
+        """Check if a scene object matches a noun phrase description using vector distance."""
+        # First check if basic noun type matches
+        if np.noun and np.noun != scene_obj.name:
+            return False
+        
+        # If no vector information in the noun phrase, just match by type
+        if not hasattr(np, 'vector') or not np.vector:
             return True
-        return False
+        
+        # Use vector distance calculation for sophisticated matching
+        distance = self._calculate_vector_distance(scene_obj.vector, np.vector)
+        
+        # Lower distance means better match - threshold for acceptance
+        MATCH_THRESHOLD = 0.3
+        return distance <= MATCH_THRESHOLD
+    
+    def _calculate_vector_distance(self, obj_vector: VectorSpace, query_vector: VectorSpace) -> float:
+        """Calculate sophisticated vector distance between object and query."""
+        # Define feature categories with different weights
+        feature_weights = {
+            # Color features (high weight - very specific)
+            'red': 2.0, 'green': 2.0, 'blue': 2.0,
+            # Size features (medium weight)
+            'scaleX': 1.5, 'scaleY': 1.5, 'scaleZ': 1.5,
+            # Position features (low weight - less relevant for matching)
+            'locX': 0.5, 'locY': 0.5, 'locZ': 0.5,
+            # Shape features (high weight)
+            'noun': 2.0, 'adj': 1.0
+        }
+        
+        total_distance = 0.0
+        total_weight = 0.0
+        
+        # Calculate weighted distance for each feature
+        for feature, weight in feature_weights.items():
+            try:
+                obj_value = obj_vector[feature]
+                query_value = query_vector[feature]
+                
+                # Special handling for binary features (colors)
+                if feature in ['red', 'green', 'blue']:
+                    # For colors, check if both are "on" (>0.5) or both are "off" (<0.5)
+                    obj_on = obj_value > 0.5
+                    query_on = query_value > 0.5
+                    
+                    if obj_on == query_on:
+                        # Perfect match for this color
+                        distance = 0.0
+                    else:
+                        # Mismatch - one has color, other doesn't
+                        distance = 1.0
+                
+                # Handle scale features
+                elif feature.startswith('scale'):
+                    # For scale, check if both indicate same size category
+                    obj_size = self._categorize_scale(obj_value)
+                    query_size = self._categorize_scale(query_value)
+                    
+                    if obj_size == query_size:
+                        distance = 0.0
+                    else:
+                        distance = abs(obj_value - query_value)
+                
+                # Handle other features with simple distance
+                else:
+                    distance = abs(obj_value - query_value)
+                
+                total_distance += distance * weight
+                total_weight += weight
+                
+            except (ValueError, IndexError):
+                # Feature not found in vector, skip it
+                continue
+        
+        # Return normalized distance (0.0 = perfect match, 1.0 = completely different)
+        return total_distance / total_weight if total_weight > 0 else 1.0
+    
+    def _categorize_scale(self, scale_value: float) -> str:
+        """Categorize a scale value into size categories."""
+        if scale_value >= 1.5:
+            return 'large'
+        elif scale_value <= 0.75:
+            return 'small' 
+        else:
+            return 'normal'
     
     def _modify_scene_object(self, obj_id: str, vp: VerbPhrase) -> bool:
         """Modify a scene object based on a verb phrase."""
@@ -478,7 +641,8 @@ class SentenceInterpreter:
         """Get a summary of the current scene state."""
         return {
             'total_objects': len(self.scene.objects),
-            'object_types': list(set(obj.name.split('_')[0] if '_' in obj.name else obj.name for obj in self.scene.objects)),
+            'object_types': list(set(obj.name for obj in self.scene.objects)),
+            'object_ids': [obj.object_id for obj in self.scene.objects],
             'execution_history': len(self.execution_history),
             'last_action': self.execution_history[-1] if self.execution_history else None
         }
@@ -492,7 +656,7 @@ class SentenceInterpreter:
         self.execution_history = []
         print("✅ Scene cleared")
     
-    def set_renderer(self, renderer: VPythonRenderer):
+    def set_renderer(self, renderer):
         """Set a new renderer for the interpreter."""
         self.renderer = renderer
         print("✅ Renderer updated")

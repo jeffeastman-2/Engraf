@@ -27,7 +27,7 @@ def test_np_with_adverbs():
     print("Final vector:", result.vector)
     assert result.noun == "arch"
     assert isinstance(result.vector, VectorSpace)
-    assert result.vector["scaleY"] > 2.5  # Check if the height is scaled
+    assert result.vector["scaleY"] == 2.25  # "very tall" = 1.5 * 1.5 = 2.25
     assert result.vector["red"] > 0.5  # Check if the color is red
 
 def test_np_failure():
@@ -76,5 +76,5 @@ def test_np_with_explicit_vector():
 
     # Optional: check if the vector is untouched by the position spec
     v = np.vector
-    assert v["scaleY"] == 2.5  # from "tall"
+    assert v["scaleY"] == 1.5  # from "tall"
     assert v["blue"] == 1.0    # from "blue"

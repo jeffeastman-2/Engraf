@@ -2,6 +2,7 @@
 
 import pytest
 from engraf.interpreter.sentence_interpreter import SentenceInterpreter
+from engraf.visualizer.renderers.mock_renderer import MockRenderer
 
 
 class TestSentenceInterpreter:
@@ -9,7 +10,7 @@ class TestSentenceInterpreter:
     
     def setup_method(self):
         """Setup for each test method."""
-        self.interpreter = SentenceInterpreter()
+        self.interpreter = SentenceInterpreter(renderer=MockRenderer())
         
     def teardown_method(self):
         """Cleanup after each test method."""
@@ -32,34 +33,33 @@ class TestSentenceInterpreter:
         assert 'draw' in result['actions_performed']
         assert len(self.interpreter.scene.objects) == 1
     
-    def test_creation_with_adjectives(self):
-        """Test object creation with adjectives: 'draw a red cube'."""
-        result = self.interpreter.interpret("draw a red cube")
-        
+    def test_create_blue_cylinder(self):
+        """Test creating a blue cylinder"""
+        result = self.interpreter.interpret("create a blue cylinder")
         assert result['success'] == True
         assert len(result['objects_created']) == 1
         
-        # Check that object has red color
         obj_id = result['objects_created'][0]
-        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.name == obj_id)
-        assert scene_obj.vector['red'] == 1.0
-        assert scene_obj.vector['green'] == 0.0
-        assert scene_obj.vector['blue'] == 0.0
+        obj = next(obj for obj in self.interpreter.scene.objects if obj.object_id == obj_id)
+        assert obj.object_id == obj_id
+        assert obj.vector['blue'] == 1.0  # Blue color
+        assert obj.vector['red'] == 0.0
+        assert obj.vector['green'] == 0.0
     
     def test_creation_with_size_adjectives(self):
         """Test object creation with size adjectives: 'draw a big sphere'."""
         result = self.interpreter.interpret("draw a big sphere")
-        
+    
         assert result['success'] == True
         assert len(result['objects_created']) == 1
-        
+    
         # Check that object has increased scale (big=2.0 + sphere=0.0 = 2.0)
         obj_id = result['objects_created'][0]
-        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.name == obj_id)
-        assert scene_obj.vector['scaleX'] == 2.0
+        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.object_id == obj_id)
+        assert scene_obj.vector['scaleX'] == 2.0  # Big scale
         assert scene_obj.vector['scaleY'] == 2.0
         assert scene_obj.vector['scaleZ'] == 2.0
-    
+
     def test_conjunction_creation(self):
         """Test conjunction creation: 'draw a cube and a sphere'."""
         result = self.interpreter.interpret("draw a cube and a sphere")
@@ -73,20 +73,20 @@ class TestSentenceInterpreter:
     def test_multiple_adjectives(self):
         """Test multiple adjectives: 'draw a big red cube'."""
         result = self.interpreter.interpret("draw a big red cube")
-        
+    
         assert result['success'] == True
         assert len(result['objects_created']) == 1
-        
+    
         # Check both color and size
         obj_id = result['objects_created'][0]
-        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.name == obj_id)
-        assert scene_obj.vector['red'] == 1.0
+        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.object_id == obj_id)
+        assert scene_obj.vector['red'] == 1.0  # Red color
         assert scene_obj.vector['green'] == 0.0
         assert scene_obj.vector['blue'] == 0.0
-        assert scene_obj.vector['scaleX'] == 2.0
+        assert scene_obj.vector['scaleX'] == 2.0  # Big scale
         assert scene_obj.vector['scaleY'] == 2.0
         assert scene_obj.vector['scaleZ'] == 2.0
-    
+
     def test_scene_summary(self):
         """Test scene summary functionality."""
         self.interpreter.interpret("draw a red cube")
@@ -164,7 +164,7 @@ class TestSentenceInterpreter:
         
         assert result['success'] == True
         obj_id = result['objects_created'][0]
-        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.name == obj_id)
+        scene_obj = next(obj for obj in self.interpreter.scene.objects if obj.object_id == obj_id)
         
         # Check default position
         assert scene_obj.vector['locX'] == 0.0
@@ -194,3 +194,32 @@ class TestSentenceInterpreter:
         
         assert result['success'] == False
         assert 'Unknown token' in result['message']
+    
+    def test_complex_comparative_sentence(self):
+        """Test complex comparative sentence parsing."""
+        # This tests the parsing of comparative constructions with pronouns
+        # and spatial relationships
+        result = self.interpreter.interpret("make them more transparent than the purple circle at [3, 3, 3]")
+        
+        # The sentence should parse successfully even if execution might fail
+        # due to missing objects to reference with "them"
+        assert result['sentence_parsed'] is not None
+        assert result['sentence_parsed'].predicate.verb == 'make'
+        assert result['sentence_parsed'].predicate.noun_phrase.vector['pronoun'] == 1.0
+        assert result['sentence_parsed'].predicate.noun_phrase.vector['plural'] == 1.0
+        assert result['sentence_parsed'].predicate.noun_phrase.vector['transparency'] == 3.0  # 2.0 * 1.5 scaling
+        
+        # Check the comparative prepositional phrase
+        pp = result['sentence_parsed'].predicate.noun_phrase.preps[0]
+        assert pp.preposition == 'than'
+        assert pp.noun_phrase.noun == 'circle'
+        assert pp.noun_phrase.vector['red'] == 0.5
+        assert pp.noun_phrase.vector['blue'] == 0.5
+        assert pp.noun_phrase.vector['green'] == 0.0
+        
+        # Check the spatial location
+        spatial_pp = pp.noun_phrase.preps[0]
+        assert spatial_pp.preposition == 'at'
+        assert spatial_pp.noun_phrase.vector['locX'] == 3.0
+        assert spatial_pp.noun_phrase.vector['locY'] == 3.0
+        assert spatial_pp.noun_phrase.vector['locZ'] == 3.0

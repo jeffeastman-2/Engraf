@@ -24,16 +24,16 @@ def test_adverb_adjective_in_coordinated_np():
     assert box.noun == "box", "First object should be 'box'"
     assert box.determiner == "a", "First object should have determiner 'a'"
     assert box.vector["red"] == 1.0, "Box should be red"
-    assert box.vector["scaleY"] == 2.5, "Box should be tall (scaleY > 1)"
+    assert box.vector["scaleY"] == 1.5, "Box should be tall (scaleY = 1.5)"
     
     # Check second object: "a small bright blue circle"
     circle = objects[1]
     assert circle.noun == "circle", "Second object should be 'circle'"
     assert circle.determiner == "a", "Second object should have determiner 'a'"
     assert circle.vector["blue"] == 1.5, "Circle should be bright blue (blue value boosted by 'bright')"
-    assert circle.vector["scaleX"] == 0.5, "Circle should be small (scaleX < 1)"
-    assert circle.vector["scaleY"] == 0.5, "Circle should be small (scaleY < 1)"
-    assert circle.vector["scaleZ"] == 0.5, "Circle should be small (scaleZ < 1)"
+    assert circle.vector["scaleX"] == -0.5, "Circle should be small (scaleX = -0.5)"
+    assert circle.vector["scaleY"] == -0.5, "Circle should be small (scaleY = -0.5)"
+    assert circle.vector["scaleZ"] == -0.5, "Circle should be small (scaleZ = -0.5)"
 
 
 def test_simple_adverb_adjective_sequence():

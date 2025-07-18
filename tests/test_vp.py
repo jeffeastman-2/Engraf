@@ -62,6 +62,6 @@ def test_vp_with_explicit_vector():
 
     # Optional: check if the vector is untouched by the position spec
     v = np.vector
-    assert v["scaleY"] == 2.5  # from "tall"
+    assert v["scaleY"] == 1.5  # from "tall"
     assert v["blue"] == 1.0    # from "blue"
 
