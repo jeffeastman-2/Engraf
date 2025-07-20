@@ -45,6 +45,7 @@ class SentenceInterpreter:
         self.transform_interpreter = TransformInterpreter()
         self.object_counter = 0
         self.execution_history = []
+        self.last_acted_object = None  # Track the most recently acted upon object
         
     def interpret(self, sentence: str) -> Dict[str, Any]:
         """
@@ -68,6 +69,9 @@ class SentenceInterpreter:
             
             if parsed_sentence is None:
                 return self._create_result(False, "Failed to parse sentence", sentence)
+            
+            # Store the parsed sentence for access in transform methods
+            self._current_sentence_parsed = parsed_sentence
             
             # Step 3: Execute the parsed sentence
             result = self._execute_sentence(parsed_sentence, sentence)
@@ -180,11 +184,20 @@ class SentenceInterpreter:
                 obj_id = self._create_scene_object(obj_info)
                 if obj_id:
                     created_objects.append(obj_id)
+                    # Update the most recently acted upon object
+                    self.last_acted_object = obj_id
         
         return created_objects
     
     def _handle_modification_verb(self, vp: VerbPhrase) -> List[str]:
         """Handle modification verbs like 'move', 'color', 'scale'."""
+        print(f"🔧 _handle_modification_verb called with verb: {vp.verb}")
+        print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
+        if vp.noun_phrase and vp.noun_phrase.preps:
+            print(f"🔧 vp.noun_phrase.preps: {vp.noun_phrase.preps}")
+        else:
+            print(f"🔧 No prepositional phrases found")
+        
         modified_objects = []
         
         # Find target objects (could be from noun phrase or pronoun)
@@ -193,6 +206,8 @@ class SentenceInterpreter:
         for obj_id in target_objects:
             if self._modify_scene_object(obj_id, vp):
                 modified_objects.append(obj_id)
+                # Update the most recently acted upon object
+                self.last_acted_object = obj_id
         
         return modified_objects
     
@@ -397,10 +412,16 @@ class SentenceInterpreter:
         target_objects = []
         
         # Check for pronouns (e.g., "move it")
-        if vp.noun_phrase and hasattr(vp.noun_phrase, 'pronoun'):
-            # Get the most recently created object
-            if self.scene.objects:
-                target_objects.append(self.scene.objects[-1].object_id)
+        if vp.noun_phrase and vp.noun_phrase.pronoun:
+            # Get the most recently acted upon object for "it", all objects for "them"/"they"
+            if vp.noun_phrase.pronoun.lower() == "it":
+                if self.last_acted_object:
+                    target_objects.append(self.last_acted_object)
+                elif self.scene.objects:
+                    # Fallback to most recently created object if no object has been acted upon
+                    target_objects.append(self.scene.objects[-1].object_id)
+            elif vp.noun_phrase.pronoun.lower() in ("them", "they"):
+                target_objects.extend([obj.object_id for obj in self.scene.objects])
         
         # Check for specific noun phrases
         elif vp.noun_phrase:
@@ -441,13 +462,13 @@ class SentenceInterpreter:
         # Use vector distance calculation for sophisticated matching
         distance = self._calculate_vector_distance(scene_obj.vector, np.vector)
         
-        # Lower distance means better match - threshold for acceptance
-        MATCH_THRESHOLD = 0.3
+        # Lower distance means better match - threshold for acceptance (more lenient since we focus on semantic features)
+        MATCH_THRESHOLD = 0.5
         return distance <= MATCH_THRESHOLD
     
     def _calculate_vector_distance(self, obj_vector: VectorSpace, query_vector: VectorSpace) -> float:
         """Calculate sophisticated vector distance between object and query."""
-        # Define feature categories with different weights
+        # Define feature categories with different weights - ONLY semantic features, not POS features
         feature_weights = {
             # Color features (high weight - very specific)
             'red': 2.0, 'green': 2.0, 'blue': 2.0,
@@ -455,8 +476,8 @@ class SentenceInterpreter:
             'scaleX': 1.5, 'scaleY': 1.5, 'scaleZ': 1.5,
             # Position features (low weight - less relevant for matching)
             'locX': 0.5, 'locY': 0.5, 'locZ': 0.5,
-            # Shape features (high weight)
-            'noun': 2.0, 'adj': 1.0
+            # Other semantic features
+            'texture': 1.0, 'transparency': 1.0
         }
         
         total_distance = 0.0
@@ -517,6 +538,7 @@ class SentenceInterpreter:
     
     def _modify_scene_object(self, obj_id: str, vp: VerbPhrase) -> bool:
         """Modify a scene object based on a verb phrase."""
+        print(f"🔧 _modify_scene_object called with obj_id: {obj_id}, verb: {vp.verb}")
         try:
             # Find the scene object
             scene_obj = None
@@ -526,23 +548,36 @@ class SentenceInterpreter:
                     break
             
             if not scene_obj:
+                print(f"🔧 Scene object not found: {obj_id}")
                 return False
             
             verb = vp.verb
+            print(f"🔧 Processing verb: {verb}")
             
             # Handle different modification verbs
             if verb == 'color' and hasattr(vp, 'adjective_complement'):
                 # Color the object
                 for adj in vp.adjective_complement:
-                    self._apply_adjective(scene_obj.vector_space, adj)
+                    self._apply_adjective(scene_obj.vector, adj)
             
-            elif verb == 'move' and hasattr(vp, 'preposition'):
-                # Move the object
-                self._apply_movement(scene_obj, vp.preposition)
+            elif verb in ['move'] and vp.noun_phrase and vp.noun_phrase.preps:
+                # Move the object using prepositional phrases
+                for pp in vp.noun_phrase.preps:
+                    if pp.preposition == 'to':
+                        self._apply_movement(scene_obj, pp)
+            
+            elif verb in ['rotate', 'xrotate', 'yrotate', 'zrotate'] and vp.noun_phrase:
+                # Rotate the object
+                print(f"🔧 Calling _apply_rotation for {verb}")
+                self._apply_rotation(scene_obj, vp, verb)
             
             elif verb == 'scale' and vp.noun_phrase:
                 # Scale the object
-                self._apply_scaling(scene_obj, vp.noun_phrase)
+                print(f"🔧 Calling _apply_scaling for {verb}")
+                self._apply_scaling(scene_obj, vp)
+            
+            # Update the visual representation
+            self.renderer.update_object(scene_obj)
             
             print(f"✅ Modified object: {obj_id}")
             return True
@@ -564,12 +599,69 @@ class SentenceInterpreter:
             if vector['locZ'] != 0.0:
                 scene_obj.vector['locZ'] = vector['locZ']
     
-    def _apply_scaling(self, scene_obj: SceneObject, noun_phrase: NounPhrase):
-        """Apply scaling to an object based on noun phrase."""
-        # Simple scaling based on adjectives
-        if hasattr(noun_phrase, 'adjectives'):
-            for adj in noun_phrase.adjectives:
-                self._apply_adjective(scene_obj.vector_space, adj)
+    def _apply_scaling(self, scene_obj: SceneObject, vp: VerbPhrase):
+        """Apply scaling to an object based on verb phrase."""
+        print(f"🔧 _apply_scaling called with scene_obj: {scene_obj.name}")
+        print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
+        
+        # The prepositional phrases are correctly attached to the noun phrase in the VerbPhrase
+        # Access them directly without hasattr check
+        if vp.noun_phrase and vp.noun_phrase.preps:
+            print(f"🔧 Found {len(vp.noun_phrase.preps)} prepositional phrases")
+            for pp in vp.noun_phrase.preps:
+                print(f"🔧 Processing PP: {pp.preposition}")
+                if pp.preposition == 'by' and hasattr(pp.noun_phrase, 'vector'):
+                    vector = pp.noun_phrase.vector
+                    print(f"🔧 Vector: locX={vector['locX']}, locY={vector['locY']}, locZ={vector['locZ']}")
+                    print(f"🔧 Before scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
+                    
+                    # Scale values come from the location vector components
+                    if vector['locX'] != 0.0:
+                        scene_obj.vector['scaleX'] = vector['locX']
+                    if vector['locY'] != 0.0:
+                        scene_obj.vector['scaleY'] = vector['locY']
+                    if vector['locZ'] != 0.0:
+                        scene_obj.vector['scaleZ'] = vector['locZ']
+                    
+                    print(f"🔧 After scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
+        else:
+            print(f"🔧 No prepositional phrases found in noun phrase")
+        
+        # Simple scaling based on adjectives (if any)
+        if vp.noun_phrase and hasattr(vp.noun_phrase, 'adjectives'):
+            for adj in vp.noun_phrase.adjectives:
+                self._apply_adjective(scene_obj.vector, adj)
+    
+    def _apply_rotation(self, scene_obj: SceneObject, vp: VerbPhrase, verb: str):
+        """Apply rotation to an object based on verb phrase and rotation verb."""
+        print(f"🔧 _apply_rotation called with scene_obj: {scene_obj.name}, verb: {verb}")
+        print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
+        
+        # The prepositional phrases are correctly attached to the noun phrase in the VerbPhrase
+        # Access them directly without hasattr check
+        if vp.noun_phrase and vp.noun_phrase.preps:
+            print(f"🔧 Found {len(vp.noun_phrase.preps)} prepositional phrases")
+            for pp in vp.noun_phrase.preps:
+                print(f"🔧 Processing PP: {pp.preposition}")
+                if pp.preposition == 'by' and hasattr(pp.noun_phrase, 'vector'):
+                    vector = pp.noun_phrase.vector
+                    angle = vector.get('number', 0.0)
+                    print(f"🔧 Extracted angle: {angle}")
+                    print(f"🔧 Before rotation: rotX={scene_obj.vector['rotX']}, rotY={scene_obj.vector['rotY']}, rotZ={scene_obj.vector['rotZ']}")
+                    
+                    if verb == 'xrotate':
+                        scene_obj.vector['rotX'] = angle
+                    elif verb == 'yrotate':
+                        scene_obj.vector['rotY'] = angle
+                    elif verb == 'zrotate':
+                        scene_obj.vector['rotZ'] = angle
+                    elif verb == 'rotate':
+                        # Default to Z-axis rotation
+                        scene_obj.vector['rotZ'] = angle
+                    
+                    print(f"🔧 After rotation: rotX={scene_obj.vector['rotX']}, rotY={scene_obj.vector['rotY']}, rotZ={scene_obj.vector['rotZ']}")
+        else:
+            print(f"🔧 No prepositional phrases found in noun phrase")
     
     def _execute_subject(self, subject: Union[NounPhrase, ConjunctionPhrase]) -> Dict[str, Any]:
         """Execute subject-related operations."""
@@ -611,19 +703,19 @@ class SentenceInterpreter:
         """Apply sentence vector properties to a scene object."""
         # Apply color properties
         if 'red' in sentence_vector:
-            scene_obj.vector_space['red'] = sentence_vector['red']
+            scene_obj.vector['red'] = sentence_vector['red']
         if 'green' in sentence_vector:
-            scene_obj.vector_space['green'] = sentence_vector['green']
+            scene_obj.vector['green'] = sentence_vector['green']
         if 'blue' in sentence_vector:
-            scene_obj.vector_space['blue'] = sentence_vector['blue']
+            scene_obj.vector['blue'] = sentence_vector['blue']
         
         # Apply size properties
         if 'scaleX' in sentence_vector:
-            scene_obj.vector_space['scaleX'] = sentence_vector['scaleX']
+            scene_obj.vector['scaleX'] = sentence_vector['scaleX']
         if 'scaleY' in sentence_vector:
-            scene_obj.vector_space['scaleY'] = sentence_vector['scaleY']
+            scene_obj.vector['scaleY'] = sentence_vector['scaleY']
         if 'scaleZ' in sentence_vector:
-            scene_obj.vector_space['scaleZ'] = sentence_vector['scaleZ']
+            scene_obj.vector['scaleZ'] = sentence_vector['scaleZ']
     
     def _create_result(self, success: bool, message: str, sentence: str) -> Dict[str, Any]:
         """Create a standardized result dictionary."""

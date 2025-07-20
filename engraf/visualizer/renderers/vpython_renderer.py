@@ -152,13 +152,37 @@ class VPythonRenderer(RendererBase):
     
     def clear_scene(self) -> None:
         """Clear all objects from the scene."""
+        # First, clear our tracked objects
         for obj in self.rendered_objects.values():
-            obj.visible = False
+            if hasattr(obj, 'visible'):
+                obj.visible = False
+            # Delete the object reference
             del obj
         self.rendered_objects.clear()
         
-        # Note: Disabled unwanted object clearing to debug the issue
-        # self._clear_unwanted_objects()
+        # Clear all objects from the VPython scene
+        if not self.headless and self.scene is not None:
+            try:
+                # Get a copy of the scene objects list since we'll be modifying it
+                scene_objects = list(self.scene.objects)
+                
+                # Remove all objects from the scene
+                for obj in scene_objects:
+                    if hasattr(obj, 'visible'):
+                        obj.visible = False
+                    # VPython objects are automatically removed when they go out of scope
+                    # and their visible property is set to False
+                
+                # Force garbage collection to ensure objects are properly cleaned up
+                import gc
+                gc.collect()
+                
+            except Exception as e:
+                # If there's any issue clearing the scene, log it but continue
+                print(f"Warning: Error clearing VPython scene: {e}")
+        
+        # Re-enabled unwanted object clearing for complete cleanup
+        self._clear_unwanted_objects()
     
     def _clear_unwanted_objects(self) -> None:
         """Clear any unwanted objects that VPython might have created after scene completion."""
