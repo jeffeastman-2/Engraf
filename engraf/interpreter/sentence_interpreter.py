@@ -157,19 +157,27 @@ class SentenceInterpreter:
         verb = vp.verb
         result['actions_performed'].append(verb)
         
-        # Handle creation verbs
-        if verb in ['draw', 'create', 'make', 'build']:
-            created_objects = self._handle_creation_verb(vp)
-            result['objects_created'].extend(created_objects)
+        # Check if verb phrase has vector space information
+        if hasattr(vp, 'vector') and vp.vector:
+            # Handle creation verbs using vector space
+            if vp.vector['create'] > 0.0:
+                created_objects = self._handle_creation_verb(vp)
+                result['objects_created'].extend(created_objects)
+            
+            # Handle modification verbs using vector space
+            elif vp.vector['transform'] > 0.0 or vp.vector['style'] > 0.0:
+                modified_objects = self._handle_modification_verb(vp)
+                result['objects_modified'].extend(modified_objects)
+            
+            # Handle other vector space intents
+            elif vp.vector['organize'] > 0.0 or vp.vector['edit'] > 0.0 or vp.vector['select'] > 0.0:
+                print(f"⚠️  Unsupported verb intent for: {verb}")
+            
+            else:
+                print(f"⚠️  No recognized intent vector for: {verb}")
         
-        # Handle modification verbs
-        elif verb in ['move', 'color', 'scale', 'rotate', 'resize']:
-            modified_objects = self._handle_modification_verb(vp)
-            result['objects_modified'].extend(modified_objects)
-        
-        # Handle other verbs
         else:
-            print(f"⚠️  Unknown verb: {verb}")
+            print(f"⚠️  No vector space information for verb: {verb}")
         
         return result
     
@@ -367,45 +375,8 @@ class SentenceInterpreter:
             vector_space['green'] = 1.0
             vector_space['blue'] = 1.0
         
-        # Apply adjectives if present
-        adjectives = obj_info.get('adjectives', [])
-        for adj in adjectives:
-            self._apply_adjective(vector_space, adj)
-    
-    def _apply_adjective(self, vector_space: VectorSpace, adjective: str):
-        """Apply an adjective to a vector space."""
-        # Color adjectives
-        color_map = {
-            'red': {'red': 1.0, 'green': 0.0, 'blue': 0.0},
-            'green': {'red': 0.0, 'green': 1.0, 'blue': 0.0},
-            'blue': {'red': 0.0, 'green': 0.0, 'blue': 1.0},
-            'yellow': {'red': 1.0, 'green': 1.0, 'blue': 0.0},
-            'purple': {'red': 0.8, 'green': 0.0, 'blue': 0.8},
-            'orange': {'red': 1.0, 'green': 0.5, 'blue': 0.0},
-            'white': {'red': 1.0, 'green': 1.0, 'blue': 1.0},
-            'black': {'red': 0.0, 'green': 0.0, 'blue': 0.0},
-        }
-        
-        if adjective in color_map:
-            color = color_map[adjective]
-            vector_space['red'] = color['red']
-            vector_space['green'] = color['green']
-            vector_space['blue'] = color['blue']
-        
-        # Size adjectives
-        elif adjective in ['big', 'large', 'huge']:
-            vector_space['scaleX'] = 2.0
-            vector_space['scaleY'] = 2.0
-            vector_space['scaleZ'] = 2.0
-        elif adjective in ['small', 'little', 'tiny']:
-            vector_space['scaleX'] = 0.5
-            vector_space['scaleY'] = 0.5
-            vector_space['scaleZ'] = 0.5
-        elif adjective == 'tall':
-            vector_space['scaleY'] = 2.0
-        elif adjective == 'wide':
-            vector_space['scaleX'] = 2.0
-            vector_space['scaleZ'] = 2.0
+        # Note: Adjectives are already applied by ATN parsing via NounPhrase.apply_adjective()
+        # No need to manually apply them again here
     
     def _resolve_target_objects(self, vp: VerbPhrase) -> List[str]:
         """Resolve target objects for modification verbs."""
@@ -554,27 +525,49 @@ class SentenceInterpreter:
             verb = vp.verb
             print(f"🔧 Processing verb: {verb}")
             
-            # Handle different modification verbs
-            if verb == 'color' and hasattr(vp, 'adjective_complement'):
-                # Color the object
-                for adj in vp.adjective_complement:
-                    self._apply_adjective(scene_obj.vector, adj)
+            # Check if verb phrase has vector space information
+            if hasattr(vp, 'vector') and vp.vector:
+                # Handle style verbs (color, texture, etc.) using vector space
+                if vp.vector['style'] > 0.0 and hasattr(vp, 'adjective_complement'):
+                    # Style the object - adjectives are already applied during ATN parsing
+                    # so we just update the visual representation
+                    pass
+                
+                # Handle transform verbs (move, rotate, scale) using vector space
+                elif vp.vector['transform'] > 0.0 and vp.noun_phrase:
+                    if vp.noun_phrase.preps:
+                        # Process prepositional phrases using semantic dimensions
+                        for pp in vp.noun_phrase.preps:
+                            # Check for movement using directional_target dimension
+                            if hasattr(pp, 'vector') and pp.vector['directional_target'] > 0.5:
+                                self._apply_movement(scene_obj, pp)
+                            # Check for rotation/scaling using directional_agency dimension
+                            elif hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5:
+                                if hasattr(pp.noun_phrase, 'vector'):
+                                    vector = pp.noun_phrase.vector
+                                    
+                                    # Check if this is a rotation verb context
+                                    if vp.verb in ['rotate', 'xrotate', 'yrotate', 'zrotate'] or (hasattr(vp, 'vector') and vp.vector and (vp.vector['rotX'] > 0.5 or vp.vector['rotY'] > 0.5 or vp.vector['rotZ'] > 0.5)):
+                                        print(f"🔧 Calling _apply_rotation for {vp.verb}")
+                                        self._apply_rotation(scene_obj, vp, vp.verb)
+                                    # If the vector has a 'number' field, it's likely scaling
+                                    elif 'number' in vector and vector['number'] != 0.0:
+                                        # Scaling with numeric factors
+                                        print(f"🔧 Calling _apply_scaling for {vp.verb}")
+                                        self._apply_scaling(scene_obj, vp)
+                                    else:
+                                        # Default to scaling with vector components
+                                        print(f"🔧 Calling _apply_scaling for {vp.verb}")
+                                        self._apply_scaling(scene_obj, vp)
+                    else:
+                        # Transform verb without prepositional phrases - could be basic transform
+                        print(f"🔧 Transform verb {verb} without prepositions")
+                
+                else:
+                    print(f"⚠️  Unsupported verb intent for modification: {verb}")
             
-            elif verb in ['move'] and vp.noun_phrase and vp.noun_phrase.preps:
-                # Move the object using prepositional phrases
-                for pp in vp.noun_phrase.preps:
-                    if pp.preposition == 'to':
-                        self._apply_movement(scene_obj, pp)
-            
-            elif verb in ['rotate', 'xrotate', 'yrotate', 'zrotate'] and vp.noun_phrase:
-                # Rotate the object
-                print(f"🔧 Calling _apply_rotation for {verb}")
-                self._apply_rotation(scene_obj, vp, verb)
-            
-            elif verb == 'scale' and vp.noun_phrase:
-                # Scale the object
-                print(f"🔧 Calling _apply_scaling for {verb}")
-                self._apply_scaling(scene_obj, vp)
+            else:
+                print(f"⚠️  No vector space information for verb: {verb}")
             
             # Update the visual representation
             self.renderer.update_object(scene_obj)
@@ -609,8 +602,9 @@ class SentenceInterpreter:
         if vp.noun_phrase and vp.noun_phrase.preps:
             print(f"🔧 Found {len(vp.noun_phrase.preps)} prepositional phrases")
             for pp in vp.noun_phrase.preps:
-                print(f"🔧 Processing PP: {pp.preposition}")
-                if pp.preposition == 'by' and hasattr(pp.noun_phrase, 'vector'):
+                print(f"🔧 Processing PP with vector dimensions")
+                # Use semantic dimensions instead of hardcoded preposition strings
+                if hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5 and hasattr(pp.noun_phrase, 'vector'):
                     vector = pp.noun_phrase.vector
                     print(f"🔧 Vector: locX={vector['locX']}, locY={vector['locY']}, locZ={vector['locZ']}")
                     print(f"🔧 Before scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
@@ -627,10 +621,8 @@ class SentenceInterpreter:
         else:
             print(f"🔧 No prepositional phrases found in noun phrase")
         
-        # Simple scaling based on adjectives (if any)
-        if vp.noun_phrase and hasattr(vp.noun_phrase, 'adjectives'):
-            for adj in vp.noun_phrase.adjectives:
-                self._apply_adjective(scene_obj.vector, adj)
+        # Note: Adjectives are already applied during ATN parsing via NounPhrase.apply_adjective()
+        # No need to manually apply them again here
     
     def _apply_rotation(self, scene_obj: SceneObject, vp: VerbPhrase, verb: str):
         """Apply rotation to an object based on verb phrase and rotation verb."""
@@ -642,22 +634,39 @@ class SentenceInterpreter:
         if vp.noun_phrase and vp.noun_phrase.preps:
             print(f"🔧 Found {len(vp.noun_phrase.preps)} prepositional phrases")
             for pp in vp.noun_phrase.preps:
-                print(f"🔧 Processing PP: {pp.preposition}")
-                if pp.preposition == 'by' and hasattr(pp.noun_phrase, 'vector'):
+                print(f"🔧 Processing PP with vector dimensions")
+                # Use semantic dimensions instead of hardcoded preposition strings
+                if hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5 and hasattr(pp.noun_phrase, 'vector'):
                     vector = pp.noun_phrase.vector
-                    angle = vector.get('number', 0.0)
-                    print(f"🔧 Extracted angle: {angle}")
+                    print(f"🔧 Vector: locX={vector['locX']}, locY={vector['locY']}, locZ={vector['locZ']}")
                     print(f"🔧 Before rotation: rotX={scene_obj.vector['rotX']}, rotY={scene_obj.vector['rotY']}, rotZ={scene_obj.vector['rotZ']}")
                     
-                    if verb == 'xrotate':
-                        scene_obj.vector['rotX'] = angle
-                    elif verb == 'yrotate':
-                        scene_obj.vector['rotY'] = angle
-                    elif verb == 'zrotate':
-                        scene_obj.vector['rotZ'] = angle
-                    elif verb == 'rotate':
-                        # Default to Z-axis rotation
-                        scene_obj.vector['rotZ'] = angle
+                    # Check if we have a vector literal with X,Y,Z coordinates
+                    if vector['vector'] > 0.5 and (vector['locX'] != 0.0 or vector['locY'] != 0.0 or vector['locZ'] != 0.0):
+                        # Multi-axis rotation from vector coordinates [x,y,z]
+                        scene_obj.vector['rotX'] = vector['locX']  # X rotation from locX
+                        scene_obj.vector['rotY'] = vector['locY']  # Y rotation from locY
+                        scene_obj.vector['rotZ'] = vector['locZ']  # Z rotation from locZ
+                        print(f"🔧 Applied multi-axis rotation from vector [{vector['locX']}, {vector['locY']}, {vector['locZ']}]")
+                    else:
+                        # Single-axis rotation - check for single angle value
+                        angle = vector.get('number', 0.0) if hasattr(vector, 'get') else vector['number']
+                        print(f"🔧 Extracted single angle: {angle}")
+                        
+                        # Use semantic rotation axis dimensions instead of hardcoded verb strings
+                        if hasattr(vp, 'vector') and vp.vector:
+                            if vp.vector['rotX'] > 0.5:
+                                scene_obj.vector['rotX'] = angle
+                            elif vp.vector['rotY'] > 0.5:
+                                scene_obj.vector['rotY'] = angle
+                            elif vp.vector['rotZ'] > 0.5:
+                                scene_obj.vector['rotZ'] = angle
+                            else:
+                                # Default to Z-axis rotation for generic 'rotate' verb
+                                scene_obj.vector['rotZ'] = angle
+                        else:
+                            # Fallback to Z-axis rotation if no vector information
+                            scene_obj.vector['rotZ'] = angle
                     
                     print(f"🔧 After rotation: rotX={scene_obj.vector['rotX']}, rotY={scene_obj.vector['rotY']}, rotZ={scene_obj.vector['rotZ']}")
         else:

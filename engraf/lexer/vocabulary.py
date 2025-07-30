@@ -118,30 +118,39 @@ SEMANTIC_VECTOR_SPACE = {
     # transform
     'move': vector_from_features("verb action transform"),
     'rotate': vector_from_features("verb action transform"),
-    'xrotate': vector_from_features("verb action transform"),  # rotate around x-axis
-    'yrotate': vector_from_features("verb action transform"),  # rotate around y-axis
-    'zrotate': vector_from_features("verb action transform"),  # rotate around z-axis
+    'xrotate': vector_from_features("verb action transform", rotX=1.0),  # rotate around x-axis
+    'yrotate': vector_from_features("verb action transform", rotY=1.0),  # rotate around y-axis
+    'zrotate': vector_from_features("verb action transform", rotZ=1.0),  # rotate around z-axis
     'scale': vector_from_features("verb action transform"),
 
     # generic (no third term)
     'redo': vector_from_features("verb action"),
     'undo': vector_from_features("verb action"),
 
-    # Prepositions
-    'on': vector_from_features("prep"),
-    'over': vector_from_features("prep"),
-    'under': vector_from_features("prep"),
-    'above': vector_from_features("prep"),
-    'below': vector_from_features("prep"),
-    'with': vector_from_features("prep"),
-    'to': vector_from_features("prep"),
-    'from': vector_from_features("prep"),
-    'in': vector_from_features("prep"),
-    'at': vector_from_features("prep"),
-    'by': vector_from_features("prep"),
-    'near': vector_from_features("prep"),
-    'of': vector_from_features("prep"),
-    'than': vector_from_features("prep"),
+    # Prepositions with semantic dimensions
+    # Spatial vertical relationships
+    'on': vector_from_features("prep", spatial_vertical=0.5),      # contact-high
+    'over': vector_from_features("prep", spatial_vertical=1.0),    # higher
+    'above': vector_from_features("prep", spatial_vertical=1.0),   # higher
+    'under': vector_from_features("prep", spatial_vertical=-1.0),  # lower
+    'below': vector_from_features("prep", spatial_vertical=-1.0),  # lower
+    
+    # Spatial proximity relationships
+    'in': vector_from_features("prep", spatial_proximity=0.3),     # containment
+    'at': vector_from_features("prep", spatial_proximity=0.5),     # specific location
+    'near': vector_from_features("prep", spatial_proximity=1.0),   # close
+    
+    # Directional/movement relationships
+    'to': vector_from_features("prep", directional_target=1.0),    # toward destination
+    'from': vector_from_features("prep", directional_target=-1.0), # away from source
+    
+    # Agency/instrumentality relationships
+    'by': vector_from_features("prep", directional_agency=1.0),    # agent/means
+    'with': vector_from_features("prep", directional_agency=0.7),  # accompaniment/instrument
+    
+    # Relational dimensions
+    'of': vector_from_features("prep", relational_possession=1.0), # belongs to, part of
+    'than': vector_from_features("prep", relational_comparison=1.0), # comparison baseline
     
     # Additional verbs for time travel
     'go': vector_from_features("verb action"),

@@ -19,8 +19,14 @@ VECTOR_DIMENSIONS = [
     "style",     # color, texture
     "organize",  # group, ungroup, align, position
     "edit",      # delete, undo, redo, copy, paste
-    "select"     # select
-
+    "select",    # select
+    # Semantic preposition dimensions
+    "spatial_vertical",      # above/over (+), below/under (-), on (contact)
+    "spatial_proximity",     # near (+), at (specific), in (containment)
+    "directional_target",    # to (+), from (-)
+    "directional_agency",    # by (+), with (accompaniment)
+    "relational_possession", # of (belongs to, part of)
+    "relational_comparison"  # than (comparison baseline)
 ]
 
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
@@ -112,7 +118,7 @@ class VectorSpace:
         return new_vs
 
 
-def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None):
+def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None, **semantic_dims):
     vs = VectorSpace(word)
     for tag in pos.split():
         if tag in VECTOR_DIMENSIONS:
@@ -126,5 +132,14 @@ def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color
     if adverb is not None: vs["adv"] = adverb
     if texture is not None: vs["texture"] = texture
     if transparency is not None: vs["transparency"] = transparency
+    if number is not None: vs["number"] = number
+    
+    # Handle semantic dimensions for prepositions
+    for dim_name, dim_value in semantic_dims.items():
+        if dim_name in VECTOR_DIMENSIONS:
+            vs[dim_name] = dim_value
+        else:
+            raise ValueError(f"Unknown semantic dimension '{dim_name}' in vector_from_features")
+    
     return vs
 
