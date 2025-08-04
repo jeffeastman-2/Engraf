@@ -7,6 +7,7 @@ VECTOR_DIMENSIONS = [
     "verb", "tobe", "action", "prep", "det", "def", "adv", "adj", "noun", "pronoun",
     "number", "vector", "singular", "plural", "conj", "disj", "tobe", "unit",
     "comp",      # comparative forms (rougher, taller, etc.)
+    "super",     # superlative forms (roughest, tallest, etc.)
     "locX", "locY", "locZ",
     "scaleX", "scaleY", "scaleZ",
     "rotX", "rotY", "rotZ",

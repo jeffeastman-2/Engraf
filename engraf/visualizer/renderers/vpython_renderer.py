@@ -466,10 +466,10 @@ class VPythonRenderer(RendererBase):
     
     def update_object(self, obj: SceneObject) -> None:
         """Update an existing object in the scene."""
-        if obj.name in self.rendered_objects:
+        if obj.object_id in self.rendered_objects:
             # Remove the old object
-            self.rendered_objects[obj.name].visible = False
-            del self.rendered_objects[obj.name]
+            self.rendered_objects[obj.object_id].visible = False
+            del self.rendered_objects[obj.object_id]
         
         # Render the updated object
         self.render_object(obj)

@@ -201,20 +201,26 @@ def vector_from_word(word: str) -> VectorSpace:
             return v
 
     # Try base form in case it's a comparative adjective
-    base_adj, is_comparative = base_adjective_from_comparative(word)
-    if is_comparative and base_adj != word:
+    base_adj, form_type = base_adjective_from_comparative(word)
+    if form_type != 'base' and base_adj != word:
         base_vector = SEMANTIC_VECTOR_SPACE.get(base_adj.lower())
         if base_vector:
             v = base_vector.copy()
             v.word = word
-            # Mark as comparative and boost intensity
-            v["comp"] = 1.0  # Mark as comparative form
+            # Mark as comparative or superlative and boost intensity
+            if form_type == 'comparative':
+                v["comp"] = 1.0  # Mark as comparative form
+                multiplier = 1.2  # moderate boost for comparatives
+            elif form_type == 'superlative':
+                v["super"] = 1.0  # Mark as superlative form
+                multiplier = 1.5  # stronger boost for superlatives
+            
             if v["adj"] > 0:
-                # Scale semantic features by 1.2 for comparative effect
+                # Scale semantic features differently for comparative vs superlative
                 semantic_features = ["scaleX", "scaleY", "scaleZ", "red", "green", "blue", "texture", "transparency"]
                 for key in semantic_features:
                     if v[key] != 0:
-                        v[key] = v[key] * 1.2
+                        v[key] = v[key] * multiplier
             return v
 
     # Still unknown? Raise
@@ -222,8 +228,14 @@ def vector_from_word(word: str) -> VectorSpace:
 
 from engraf.utils.noun_inflector import singularize_noun
 
-def base_adjective_from_comparative(word: str) -> tuple[str, bool]:
-    """Convert comparative adjective to base form. Returns (base_form, is_comparative)."""
+def base_adjective_from_comparative(word: str) -> tuple[str, str]:
+    """Convert comparative adjective to base form. Returns (base_form, form_type).
+    
+    form_type can be:
+    - 'base': not a comparative/superlative form
+    - 'comparative': -er form (bigger, taller, etc.)
+    - 'superlative': -est form (biggest, tallest, etc.)
+    """
     word = word.lower()
     
     # Handle -er endings (rougher -> rough, taller -> tall)
@@ -231,40 +243,38 @@ def base_adjective_from_comparative(word: str) -> tuple[str, bool]:
         # Special cases where we need to handle doubled consonants
         if word.endswith('gger'):  # bigger -> big
             base = word[:-3]
-            return base, True
+            return base, 'comparative'
         elif word.endswith('tter'):  # fatter -> fat
             base = word[:-3]
-            return base, True
+            return base, 'comparative'
         elif word.endswith('nner'):  # thinner -> thin
             base = word[:-3]
-            return base, True
+            return base, 'comparative'
         elif word.endswith('dder'):  # redder -> red
             base = word[:-3]
-            return base, True
+            return base, 'comparative'
         elif word.endswith('er'):
             base = word[:-2]
-            return base, True
+            return base, 'comparative'
     
     # Handle -est endings (roughest -> rough, tallest -> tall)
     if word.endswith('est'):
         # Special cases where we need to handle doubled consonants
         if word.endswith('ggest'):  # biggest -> big
             base = word[:-4]
-            return base, True
+            return base, 'superlative'
         elif word.endswith('ttest'):  # fattest -> fat
             base = word[:-4]
-            return base, True
+            return base, 'superlative'
         elif word.endswith('nnest'):  # thinnest -> thin
             base = word[:-4]
-            return base, True
+            return base, 'superlative'
         elif word.endswith('ddest'):  # reddest -> red
             base = word[:-4]
-            return base, True
+            return base, 'superlative'
         elif word.endswith('est'):
             base = word[:-3]
-            return base, True
-            base = word[:-3]
-            return base, True
+            return base, 'superlative'
     
     # Not a comparative/superlative
-    return word, False
+    return word, 'base'
