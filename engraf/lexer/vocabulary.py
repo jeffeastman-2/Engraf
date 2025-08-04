@@ -222,6 +222,7 @@ def vector_from_word(word: str) -> VectorSpace:
         base_vector = SEMANTIC_VECTOR_SPACE.get(singular.lower())
         if base_vector:
             v = base_vector.copy()
+            v.word = word  # Preserve the original word
             if is_plural:
                 v["plural"] = 1.0
                 v["singular"] = 0.0

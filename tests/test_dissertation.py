@@ -7,8 +7,8 @@ from engraf.lexer.vector_space import VectorSpace, vector_from_features
 input = [
 "DRAW A ROUGH RED CIRCLE AT [-1, 2.2, 5.55]",
 "*MOVE A CIRCLES TO [3, 4, 5]",  # Expected failure: number agreement error
-"MOVE 3 CIRCLES TO [3, 4, 5]",
-"MOVE THE BLUE CIRCLE TO [3, 4, 5]",
+"*MOVE 3 CIRCLES TO [3, 4, 5]",
+"*MOVE THE BLUE CIRCLE TO [3, 4, 5]",
 "MOVE THE ROUGH CIRCLE TO [3, 4, 5]",
 "MOVE IT TO [3, 3, 3]",
 "MAKE THEM LARGE",

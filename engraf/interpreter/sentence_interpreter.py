@@ -21,6 +21,9 @@ from engraf.visualizer.transforms.transform_interpreter import TransformInterpre
 # Import specialized handlers
 from .handlers import ObjectCreator, ObjectModifier, ObjectResolver, SceneManager
 
+# Import semantic agreement validation
+from .semantic_validator import SemanticAgreementValidator
+
 
 class SentenceInterpreter:
     """
@@ -62,6 +65,9 @@ class SentenceInterpreter:
             self.object_resolver
         )
         
+        # Initialize semantic agreement validator
+        self.semantic_validator = SemanticAgreementValidator(self.scene)
+        
     def interpret(self, sentence: str) -> Dict[str, Any]:
         """
         Interpret a natural language sentence and execute the corresponding actions.
@@ -88,10 +94,15 @@ class SentenceInterpreter:
             # Store the parsed sentence for access in transform methods
             self._current_sentence_parsed = parsed_sentence
             
-            # Step 3: Execute the parsed sentence
+            # Step 3: Validate semantic agreement with scene state
+            is_valid, error_msg = self.semantic_validator.validate_command(parsed_sentence, sentence)
+            if not is_valid:
+                return self.scene_manager.create_result(False, error_msg, sentence)
+            
+            # Step 4: Execute the parsed sentence
             result = self._execute_sentence(parsed_sentence, sentence)
             
-            # Step 4: Update the visual scene
+            # Step 5: Update the visual scene
             if result['success']:
                 self.renderer.render_scene(self.scene)
             

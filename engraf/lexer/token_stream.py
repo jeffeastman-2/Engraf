@@ -1,5 +1,6 @@
 from engraf.lexer.vocabulary import SEMANTIC_VECTOR_SPACE, vector_from_word
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
+from engraf.utils.noun_inflector import singularize_noun
 import re
 
 
@@ -77,6 +78,12 @@ def tokenize(sentence):
             if two_word.lower() in SEMANTIC_VECTOR_SPACE:
                 vs = vector_from_word(two_word.lower())
                 if vs is not None:
+                    # For compound nouns, store singular form
+                    if vs["noun"] > 0:
+                        singular_form, was_plural = singularize_noun(two_word)
+                        vs.word = singular_form
+                    else:
+                        vs.word = two_word.lower()
                     result.append(vs)
                     i += 2  # Skip both tokens
                     continue
@@ -87,6 +94,12 @@ def tokenize(sentence):
                 if three_word.lower() in SEMANTIC_VECTOR_SPACE:
                     vs = vector_from_word(three_word.lower())
                     if vs is not None:
+                        # For compound nouns, store singular form
+                        if vs["noun"] > 0:
+                            singular_form, was_plural = singularize_noun(three_word)
+                            vs.word = singular_form
+                        else:
+                            vs.word = three_word.lower()
                         result.append(vs)
                         i += 3  # Skip all three tokens
                         continue
@@ -101,15 +114,26 @@ def tokenize(sentence):
         elif tok.startswith("[") and tok.endswith("]"):
             nums = re.findall(r"-?\d+(?:\.\d+)?", tok)
             x, y, z = map(float, nums)
-            result.append(vector_from_features(loc=[x, y, z], pos="vector"))  
+            vs = vector_from_features(loc=[x, y, z], pos="vector")
+            vs.word = tok  # Preserve the original vector word
+            result.append(vs)  
         elif re.fullmatch(r"-?\d+(?:\.\d+)?", tok):  # match integers and floats
             vs = vector_from_features(pos="det def number")
+            vs.word = tok  # Preserve the original number word
             vs["number"] = float(tok)
             result.append(vs)
         else:
             vs = vector_from_word(tok.lower())
             if vs is None:
                 raise ValueError(f"Unknown token: {tok}")
+            
+            # For nouns, store the singular form in vs.word for consistent object matching
+            if vs["noun"] > 0:  # This is a noun
+                singular_form, was_plural = singularize_noun(tok)
+                vs.word = singular_form
+            else:
+                vs.word = tok.lower()  # Preserve original for non-nouns
+            
             result.append(vs)
         
         i += 1

@@ -246,8 +246,8 @@ class TestMultiAxisRotation(unittest.TestCase):
         # Try to rotate when no objects exist
         result = self.interpreter.interpret('rotate it by [45,45,45]')
         
-        # Command should still succeed (parsing worked) but no objects modified
-        self.assertTrue(result['success'])
+        # Command should fail due to semantic validation (no objects to rotate)
+        self.assertFalse(result['success'])
         self.assertEqual(len(result['objects_modified']), 0)
     
     def test_fractional_rotation_values(self):
