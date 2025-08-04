@@ -158,6 +158,34 @@ SEMANTIC_VECTOR_SPACE = {
     'forward': vector_from_features("adv"),
     # Conjunctions
     'and': vector_from_features("conj"),
+    
+    # Disjunctions
+    'or': vector_from_features("disj"),
+    
+    # Negation
+    'not': vector_from_features("neg"),
+    'no': vector_from_features("neg"),
+    
+    # Modal verbs
+    'can': vector_from_features("verb modal"),
+    'could': vector_from_features("verb modal"),
+    'may': vector_from_features("verb modal"),
+    'might': vector_from_features("verb modal"),
+    'must': vector_from_features("verb modal"),
+    'shall': vector_from_features("verb modal"),
+    'should': vector_from_features("verb modal"),
+    'will': vector_from_features("verb modal"),
+    'would': vector_from_features("verb modal"),
+    
+    # Question markers
+    'who': vector_from_features("question"),
+    'what': vector_from_features("question"),
+    'where': vector_from_features("question"),
+    'when': vector_from_features("question"),
+    'why': vector_from_features("question"),
+    'how': vector_from_features("question"),
+    'which': vector_from_features("question"),
+    
     # To be verbs
     'is': vector_from_features("tobe"),
     'are': vector_from_features("tobe"),
@@ -237,6 +265,24 @@ def base_adjective_from_comparative(word: str) -> tuple[str, str]:
     - 'superlative': -est form (biggest, tallest, etc.)
     """
     word = word.lower()
+    
+    # Handle irregular comparative/superlative forms first
+    irregular_forms = {
+        "better": ("good", "comparative"),
+        "best": ("good", "superlative"),
+        "worse": ("bad", "comparative"),
+        "worst": ("bad", "superlative"),
+        "more": ("much", "comparative"),
+        "most": ("much", "superlative"),
+        "further": ("far", "comparative"),
+        "furthest": ("far", "superlative"),
+        "farther": ("far", "comparative"),
+        "farthest": ("far", "superlative")
+    }
+    
+    if word in irregular_forms:
+        # For irregular forms, return as base form since we don't have the base adjective in vocabulary
+        return word, 'base'
     
     # Handle -er endings (rougher -> rough, taller -> tall)
     if word.endswith('er'):
