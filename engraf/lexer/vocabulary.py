@@ -23,7 +23,6 @@ SEMANTIC_VECTOR_SPACE = {
     'icosahedron': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'pyramid': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'prism': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
-    'table': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     
     # Units
     'degree': vector_from_features("noun unit", number=1.0),  # angular unit
@@ -74,19 +73,19 @@ SEMANTIC_VECTOR_SPACE = {
     'extremely': vector_from_features("adv", adverb=2.0),
     'slightly': vector_from_features("adv", adverb=0.75),
     # Determiners
-    'the': vector_from_features("det def", number=1.0),
-    'one': vector_from_features("det def", number=1.0),
-    'two': vector_from_features("det def", number=2.0),
-    'three': vector_from_features("det def", number=3.0),
-    'four': vector_from_features("det def", number=4.0),
-    'five': vector_from_features("det def", number=5.0),
-    'six': vector_from_features("det def", number=6.0),
-    'seven': vector_from_features("det def", number=7.0),
-    'eight': vector_from_features("det def", number=8.0),
-    'nine': vector_from_features("det def", number=9.0),
-    'ten': vector_from_features("det def", number=10.0),
-    'a': vector_from_features("det", number=1.0),
-    'an': vector_from_features("det", number=1.0),
+    'the': vector_from_features("det def singular", number=1.0),
+    'one': vector_from_features("det def singular", number=1.0),
+    'two': vector_from_features("det def plural", number=2.0),
+    'three': vector_from_features("det def plural", number=3.0),
+    'four': vector_from_features("det def plural", number=4.0),
+    'five': vector_from_features("det def plural", number=5.0),
+    'six': vector_from_features("det def plural", number=6.0),
+    'seven': vector_from_features("det def plural", number=7.0),
+    'eight': vector_from_features("det def plural", number=8.0),
+    'nine': vector_from_features("det def plural", number=9.0),
+    'ten': vector_from_features("det def plural", number=10.0),
+    'a': vector_from_features("det singular", number=1.0),
+    'an': vector_from_features("det singular", number=1.0),
 
     # Verbs
     # create
