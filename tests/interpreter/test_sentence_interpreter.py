@@ -21,7 +21,7 @@ class TestSentenceInterpreter:
         assert self.interpreter.scene is not None
         assert self.interpreter.renderer is not None
         assert self.interpreter.object_counter == 0
-        assert len(self.interpreter.execution_history) == 0
+        assert len(self.interpreter._execution_history) == 0
     
     def test_simple_creation_sentence(self):
         """Test simple object creation: 'draw a cube'."""
@@ -120,13 +120,13 @@ class TestSentenceInterpreter:
     
     def test_execution_history_tracking(self):
         """Test that execution history is tracked."""
-        initial_history_len = len(self.interpreter.execution_history)
+        initial_history_len = len(self.interpreter._execution_history)
         
         self.interpreter.interpret("draw a cube")
-        assert len(self.interpreter.execution_history) == initial_history_len + 1
+        assert len(self.interpreter._execution_history) == initial_history_len + 1
         
         self.interpreter.interpret("draw a sphere")
-        assert len(self.interpreter.execution_history) == initial_history_len + 2
+        assert len(self.interpreter._execution_history) == initial_history_len + 2
     
     def test_result_structure(self):
         """Test the structure of interpretation results."""

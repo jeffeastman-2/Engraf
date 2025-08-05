@@ -15,6 +15,7 @@ from engraf.pos.sentence_phrase import SentencePhrase
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
+from engraf.visualizer.scene.temporal_scenes import TemporalScenes
 # VPython renderer will be imported conditionally to avoid hanging
 from engraf.visualizer.transforms.transform_interpreter import TransformInterpreter
 
@@ -45,12 +46,13 @@ class SentenceInterpreter:
         
         # Core components
         self.renderer = renderer
-        self.scene = SceneModel()
+        self.temporal_scenes = TemporalScenes()
+        self.scene = self.temporal_scenes.get_current_scene()  # For backward compatibility
         self.transform_interpreter = TransformInterpreter()
         
         # State tracking using references for handlers
         self._object_counter = [0]  # Use list for mutable reference
-        self.execution_history = []
+        self._execution_history = []  # Use underscore for consistency
         self._last_acted_object = [None]  # Use list for mutable reference
         
         # Initialize specialized handlers
@@ -60,7 +62,7 @@ class SentenceInterpreter:
         self.scene_manager = SceneManager(
             self.scene, 
             self.renderer, 
-            self.execution_history, 
+            self._execution_history, 
             self._object_counter,
             self.object_resolver
         )
@@ -79,6 +81,13 @@ class SentenceInterpreter:
             Dict containing execution results and metadata
         """
         try:
+            # Step 0: Check for temporal navigation commands
+            sentence_lower = sentence.lower().strip()
+            if "go back in time" in sentence_lower:
+                return self.go_back_in_time()
+            elif "go forward in time" in sentence_lower:
+                return self.go_forward_in_time()
+            
             # Step 1: Tokenize the sentence
             tokens = tokenize(sentence)
             if not tokens:
@@ -104,6 +113,9 @@ class SentenceInterpreter:
             
             # Step 5: Update the visual scene
             if result['success']:
+                # Take a snapshot after successful operations that modify the scene
+                if result.get('objects_created') or result.get('objects_modified'):
+                    self.temporal_scenes.add_scene_snapshot(self.scene)
                 self.renderer.render_scene(self.scene)
             
             return result
@@ -139,7 +151,7 @@ class SentenceInterpreter:
                 tobe_result = self.scene_manager.execute_tobe_sentence(parsed_sentence)
                 result.update(tobe_result)
             
-            self.execution_history.append(result)
+            self._execution_history.append(result)
             return result
             
         except Exception as e:
@@ -245,6 +257,71 @@ class SentenceInterpreter:
         
         return modified_objects
     
+    # Temporal navigation methods
+    def go_back_in_time(self) -> Dict[str, Any]:
+        """Go back to previous scene state."""
+        if self.temporal_scenes.can_go_back():
+            success = self.temporal_scenes.go_back()
+            if success:
+                self.scene = self.temporal_scenes.get_current_scene()
+                # Update all handlers to use the new scene reference
+                self._update_handlers_scene_reference()
+                self.renderer.render_scene(self.scene)
+                return {
+                    'success': True,
+                    'message': 'Traveled back in time',
+                    'current_scene_index': self.temporal_scenes.get_current_index(),
+                    'total_scenes': len(self.temporal_scenes)
+                }
+            else:
+                return {'success': False, 'message': 'Failed to go back in time'}
+        else:
+            return {'success': False, 'message': 'Cannot go back any further'}
+    
+    def go_forward_in_time(self) -> Dict[str, Any]:
+        """Go forward to next scene state."""
+        if self.temporal_scenes.can_go_forward():
+            success = self.temporal_scenes.go_forward()
+            if success:
+                self.scene = self.temporal_scenes.get_current_scene()
+                # Update all handlers to use the new scene reference
+                self._update_handlers_scene_reference()
+                self.renderer.render_scene(self.scene)
+                return {
+                    'success': True,
+                    'message': 'Traveled forward in time',
+                    'current_scene_index': self.temporal_scenes.get_current_index(),
+                    'total_scenes': len(self.temporal_scenes)
+                }
+            else:
+                return {'success': False, 'message': 'Failed to go forward in time'}
+        else:
+            return {'success': False, 'message': 'Cannot go forward any further'}
+    
+    def get_temporal_status(self) -> Dict[str, Any]:
+        """Get current temporal navigation status."""
+        return {
+            'current_scene_index': self.temporal_scenes.get_current_index(),
+            'total_scenes': len(self.temporal_scenes),
+            'can_go_back': self.temporal_scenes.can_go_back(),
+            'can_go_forward': self.temporal_scenes.can_go_forward()
+        }
+    
+    def _update_handlers_scene_reference(self):
+        """Update all handlers to reference the current scene."""
+        # Update the handlers to use the new scene reference
+        self.object_resolver = ObjectResolver(self.scene, self._last_acted_object)
+        self.object_creator = ObjectCreator(self.scene, self._object_counter)
+        self.object_modifier = ObjectModifier(self.scene, self.renderer, self.object_resolver)
+        self.scene_manager = SceneManager(
+            self.scene, 
+            self.renderer, 
+            self._execution_history,
+            self._object_counter,
+            self.object_resolver
+        )
+        self.semantic_validator = SemanticAgreementValidator(self.scene)
+
     # Public interface methods delegating to SceneManager
     def get_scene_summary(self) -> Dict[str, Any]:
         """Get a summary of the current scene state."""
