@@ -7,6 +7,7 @@ allowed when there are at least 3 circles in the scene.
 """
 
 from engraf.visualizer.scene.scene_model import SceneModel
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
 
 
 class SemanticAgreementValidator:
@@ -29,7 +30,23 @@ class SemanticAgreementValidator:
         if not sentence or not sentence.predicate:
             return True, None
             
-        verb_phrase = sentence.predicate
+        # Handle ConjunctionPhrase by validating each component
+        if isinstance(sentence.predicate, ConjunctionPhrase):
+            # This is a ConjunctionPhrase - validate each component
+            for component in sentence.predicate.flatten():
+                is_valid, error_msg = self._validate_single_phrase(component)
+                if not is_valid:
+                    return False, error_msg
+            return True, None
+        else:
+            # This is a single verb phrase
+            return self._validate_single_phrase(sentence.predicate)
+    
+    def _validate_single_phrase(self, verb_phrase):
+        """Validate a single verb phrase."""
+        if not verb_phrase:
+            return True, None
+            
         noun_phrase = verb_phrase.noun_phrase
         
         if not noun_phrase or not noun_phrase.vector:
@@ -40,8 +57,8 @@ class SemanticAgreementValidator:
             # Creation verbs don't need existing objects - they create new ones
             return True, None
             
-        # Extract requested quantity and target noun from the sentence structure
-        requested_quantity, target_noun = self._analyze_sentence_request(sentence, original_text)
+        # Extract requested quantity and target noun from the verb phrase
+        requested_quantity, target_noun = self._analyze_verb_phrase(verb_phrase)
         
         if requested_quantity is None:
             return True, None  # No specific quantity requested
@@ -55,24 +72,23 @@ class SemanticAgreementValidator:
             else:
                 return True, None  # Pronoun resolved successfully
             
-        # Handle regular nouns - count matching objects in scene
-        available_count = self._count_objects_by_noun(target_noun)
+        # Handle regular nouns - count matching objects in scene with full attribute matching
+        available_count = self._count_matching_objects(noun_phrase)
         
-        # Check if we have enough objects
+        # Check if we have enough objects that match all attributes (including color)
         if requested_quantity > available_count:
             determiner = noun_phrase.determiner or str(int(requested_quantity))
-            noun_display = target_noun or "objects"
+            noun_display = self._describe_noun_phrase(noun_phrase)
             error_msg = f"Semantic error: Cannot {verb_phrase.verb} {determiner} {noun_display} - only {available_count} available in scene"
             return False, error_msg
             
         return True, None
     
-    def _analyze_sentence_request(self, sentence, original_text=None):
+    def _analyze_verb_phrase(self, verb_phrase):
         """
-        Analyze the sentence to extract the requested quantity and target noun.
+        Analyze the verb phrase to extract the requested quantity and target noun.
         Returns (requested_quantity, target_noun) or (None, None) if not applicable.
         """
-        verb_phrase = sentence.predicate
         noun_phrase = verb_phrase.noun_phrase
         
         if not noun_phrase or not noun_phrase.vector:
@@ -134,3 +150,54 @@ class SemanticAgreementValidator:
             if obj.name == noun:
                 count += 1
         return count
+
+    def _count_matching_objects(self, noun_phrase):
+        """Count objects in the scene that match ALL attributes in the noun phrase (noun, color, etc.)."""
+        if not noun_phrase or not noun_phrase.noun:
+            return 0
+            
+        count = 0
+        for obj in self.scene.objects:
+            if self._object_matches_noun_phrase(obj, noun_phrase):
+                count += 1
+        return count
+    
+    def _object_matches_noun_phrase(self, obj, noun_phrase):
+        """Check if an object matches all attributes specified in the noun phrase."""
+        # Must match the base noun
+        if obj.name != noun_phrase.noun:
+            return False
+            
+        # Check color attributes if specified
+        if noun_phrase.vector:
+            # Check for specific color requirements
+            color_features = ['red', 'green', 'blue']
+            for color in color_features:
+                # If the noun phrase specifies this color (e.g., "blue circle")
+                if noun_phrase.vector[color] > 0:
+                    # The object must also have this color
+                    if not (obj.vector and obj.vector[color] > 0):
+                        return False
+                        
+        # Object matches all specified attributes
+        return True
+    
+    def _describe_noun_phrase(self, noun_phrase):
+        """Generate a descriptive string for the noun phrase including adjectives."""
+        if not noun_phrase:
+            return "objects"
+            
+        description_parts = []
+        
+        # Add color adjectives if present
+        if noun_phrase.vector:
+            color_features = ['red', 'green', 'blue']
+            for color in color_features:
+                if noun_phrase.vector[color] > 0:
+                    description_parts.append(color)
+        
+        # Add the base noun
+        if noun_phrase.noun:
+            description_parts.append(noun_phrase.noun)
+        
+        return " ".join(description_parts) if description_parts else "objects"

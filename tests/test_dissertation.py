@@ -38,12 +38,17 @@ input = [
 input_lower = [s.lower() for s in input]
 
 def test_dissertation_sentences_parsing():
-    """Test parsing of all dissertation sentences and report which ones succeed/fail"""
-    from engraf.atn.subnet_sentence import run_sentence
+    """Test parsing and semantic validation of all dissertation sentences and report which ones succeed/fail"""
+    from engraf.interpreter.sentence_interpreter import SentenceInterpreter
+    from engraf.visualizer.renderers.mock_renderer import MockRenderer
     
     print("\n" + "="*80)
-    print("DISSERTATION SENTENCES PARSING REPORT")
+    print("DISSERTATION SENTENCES PARSING AND SEMANTIC VALIDATION REPORT")
     print("="*80)
+    
+    # Create interpreter with MockRenderer
+    mock_renderer = MockRenderer()
+    interpreter = SentenceInterpreter(renderer=mock_renderer)
     
     successful_parses = []
     failed_parses = []
@@ -63,33 +68,35 @@ def test_dissertation_sentences_parsing():
         print("-" * 60)
         
         try:
-            tokens = TokenStream(tokenize(clean_sentence))
-            result = run_sentence(tokens)
+            # Use full sentence interpretation (parsing + semantic validation)
+            result = interpreter.interpret(clean_sentence)
             
-            if result is not None:
+            if result['success']:
                 if expected_to_fail:
-                    print(f"🔶 UNEXPECTED SUCCESS: Was expected to fail but parsed successfully")
-                    print(f"    Result: {result}")
+                    print(f"🔶 UNEXPECTED SUCCESS: Was expected to fail but interpreted successfully")
+                    print(f"    Result: {result['message']}")
                     unexpected_successes.append((i, clean_sentence))
                 else:
-                    print(f"✅ SUCCESS: Parsed successfully")
-                    print(f"    Result: {result}")
+                    print(f"✅ SUCCESS: Interpreted successfully")
+                    print(f"    Result: {result['message']}")
                     successful_parses.append((i, clean_sentence))
             else:
                 if expected_to_fail:
-                    print(f"✅ EXPECTED FAILURE: Parser correctly rejected invalid grammar")
+                    print(f"✅ EXPECTED FAILURE: Interpreter correctly rejected invalid command")
+                    print(f"    Error: {result['message']}")
                     expected_failures.append((i, clean_sentence))
                 else:
-                    print(f"❌ UNEXPECTED FAILURE: Parser returned None")
+                    print(f"❌ UNEXPECTED FAILURE: Interpreter returned failure")
+                    print(f"    Error: {result['message']}")
                     unexpected_failures.append((i, clean_sentence))
                 
         except Exception as e:
             if expected_to_fail:
-                print(f"✅ EXPECTED FAILURE: Parser correctly rejected invalid grammar")
+                print(f"✅ EXPECTED FAILURE: Interpreter correctly rejected invalid command")
                 print(f"    Error: {e}")
                 expected_failures.append((i, clean_sentence))
             else:
-                print(f"💥 UNEXPECTED ERROR: Exception during parsing: {e}")
+                print(f"💥 UNEXPECTED ERROR: Exception during interpretation: {e}")
                 unexpected_failures.append((i, clean_sentence))
     
     # Summary report
