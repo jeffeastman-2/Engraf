@@ -218,3 +218,128 @@ class TestResolvePronoun:
         
         with pytest.raises(ValueError, match="Unrecognized pronoun"):
             resolve_pronoun("unknown", scene)
+
+
+class TestSceneModelCopy:
+    """Test the SceneModel copy functionality."""
+    
+    def test_copy_empty_scene(self):
+        """Test copying an empty scene."""
+        scene = SceneModel()
+        copied_scene = scene.copy()
+        
+        assert copied_scene is not scene
+        assert copied_scene.objects == []
+        assert copied_scene.recent == []
+        
+        # Verify they are independent
+        obj = SceneObject(name="cube", vector=VectorSpace(word="test"))
+        scene.add_object(obj)
+        
+        assert len(scene.objects) == 1
+        assert len(copied_scene.objects) == 0
+    
+    def test_copy_scene_with_objects(self):
+        """Test copying a scene with objects."""
+        scene = SceneModel()
+        
+        # Add some objects
+        obj1 = SceneObject(name="cube", vector=VectorSpace(word="test1"), object_id="obj1")
+        obj2 = SceneObject(name="sphere", vector=VectorSpace(word="test2"), object_id="obj2")
+        scene.add_object(obj1)
+        scene.add_object(obj2)
+        
+        # Copy the scene
+        copied_scene = scene.copy()
+        
+        # Verify structure
+        assert copied_scene is not scene
+        assert len(copied_scene.objects) == 2
+        assert len(copied_scene.recent) == 1  # recent contains last added object
+        
+        # Verify objects are deep copied
+        assert copied_scene.objects[0] is not scene.objects[0]
+        assert copied_scene.objects[1] is not scene.objects[1]
+        assert copied_scene.recent[0] is not scene.recent[0]
+        
+        # Verify object data is preserved
+        assert copied_scene.objects[0].object_id == "obj1"
+        assert copied_scene.objects[0].name == "cube"
+        assert copied_scene.objects[1].object_id == "obj2"
+        assert copied_scene.objects[1].name == "sphere"
+        assert copied_scene.recent[0].object_id == "obj2"
+    
+    def test_copy_independence(self):
+        """Test that copied scenes are completely independent."""
+        scene = SceneModel()
+        obj1 = SceneObject(name="cube", vector=VectorSpace(word="test1"), object_id="obj1")
+        scene.add_object(obj1)
+        
+        # Copy the scene
+        copied_scene = scene.copy()
+        
+        # Modify original scene
+        obj2 = SceneObject(name="sphere", vector=VectorSpace(word="test2"), object_id="obj2")
+        scene.add_object(obj2)
+        
+        # Modify object in original scene
+        scene.objects[0].name = "modified_cube"
+        
+        # Copied scene should be unaffected
+        assert len(copied_scene.objects) == 1
+        assert copied_scene.objects[0].object_id == "obj1"
+        assert copied_scene.objects[0].name == "cube"  # Not modified
+        
+        # Modify copied scene
+        obj3 = SceneObject(name="cylinder", vector=VectorSpace(word="test3"), object_id="obj3")
+        copied_scene.add_object(obj3)
+        
+        # Original scene should be unaffected by changes to copy
+        assert len(scene.objects) == 2
+        assert scene.objects[0].name == "modified_cube"
+        assert scene.objects[1].object_id == "obj2"
+    
+    def test_copy_vector_space_independence(self):
+        """Test that vector spaces in copied objects are independent."""
+        scene = SceneModel()
+        
+        # Create object with vector space
+        vector = VectorSpace(word="test")
+        vector["red"] = 1.0
+        vector["scaleX"] = 2.0
+        obj = SceneObject(name="cube", vector=vector, object_id="obj1")
+        scene.add_object(obj)
+        
+        # Copy the scene
+        copied_scene = scene.copy()
+        
+        # Modify vector in original
+        scene.objects[0].vector["red"] = 0.5
+        scene.objects[0].vector["blue"] = 1.0
+        
+        # Copied object's vector should be unaffected
+        copied_vector = copied_scene.objects[0].vector
+        assert copied_vector["red"] == 1.0
+        assert copied_vector["blue"] == 0.0
+        assert copied_vector["scaleX"] == 2.0
+    
+    def test_copy_recent_object_mapping(self):
+        """Test that recent objects list properly maps to copied objects."""
+        scene = SceneModel()
+        
+        # Add multiple objects
+        obj1 = SceneObject(name="cube", vector=VectorSpace(word="test1"), object_id="obj1")
+        obj2 = SceneObject(name="sphere", vector=VectorSpace(word="test2"), object_id="obj2")
+        obj3 = SceneObject(name="cylinder", vector=VectorSpace(word="test3"), object_id="obj3")
+        
+        scene.add_object(obj1)
+        scene.add_object(obj2)
+        scene.add_object(obj3)
+        
+        # Copy the scene
+        copied_scene = scene.copy()
+        
+        # Verify recent object is properly mapped to copied version
+        assert copied_scene.recent[0] is copied_scene.objects[2]  # Should reference copied obj3
+        assert copied_scene.recent[0] is not scene.recent[0]     # Should not reference original
+        assert copied_scene.recent[0].object_id == "obj3"        # Should have same object_id

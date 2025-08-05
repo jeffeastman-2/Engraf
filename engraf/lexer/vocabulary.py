@@ -155,6 +155,8 @@ SEMANTIC_VECTOR_SPACE = {
     'go': vector_from_features("verb action"),
     'back': vector_from_features("adv"),
     'forward': vector_from_features("adv"),
+    'time': vector_from_features("noun"),
+    
     # Conjunctions
     'and': vector_from_features("conj"),
     

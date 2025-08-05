@@ -1,6 +1,7 @@
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.vector_space import VectorSpace
 from typing import List
+import copy
 
 
 class SceneModel:
@@ -45,6 +46,26 @@ class SceneModel:
         # Return the best match by similarity
         candidates.sort(key=lambda pair: pair[0], reverse=True)
         return candidates[0][1]
+    
+    def copy(self):
+        """
+        Create a deep copy of the scene model.
+        
+        Returns:
+            SceneModel: A new SceneModel instance with deep copies of all objects
+        """
+        new_scene = SceneModel()
+        
+        # Deep copy all objects
+        new_scene.objects = [copy.deepcopy(obj) for obj in self.objects]
+        
+        # Deep copy recent objects list
+        # We need to map the old objects to new objects to maintain references
+        if self.recent:
+            obj_mapping = {id(old_obj): new_obj for old_obj, new_obj in zip(self.objects, new_scene.objects)}
+            new_scene.recent = [obj_mapping.get(id(obj), copy.deepcopy(obj)) for obj in self.recent]
+        
+        return new_scene
     
 
 def resolve_pronoun(word, scene: SceneModel):
