@@ -2,7 +2,7 @@ from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.sentence_phrase import SentencePhrase
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.lexer.vocabulary import vector_from_word
+from engraf.An_N_Space_Model.vocabulary import vector_from_word
 
 
 

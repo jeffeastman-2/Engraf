@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from engraf.lexer.vocabulary import vector_from_word, base_adjective_from_comparative
+from engraf.An_N_Space_Model.vocabulary import vector_from_word, base_adjective_from_comparative
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.sentence import build_sentence_atn
 from engraf.atn.core import run_atn

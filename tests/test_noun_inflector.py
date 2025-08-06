@@ -235,7 +235,7 @@ class TestNounInflectorIntegration:
     
     def test_vocabulary_integration(self):
         """Test that inflector works with vocabulary lookups."""
-        from engraf.lexer.vocabulary import vector_from_word, has_word
+        from engraf.An_N_Space_Model.vocabulary import vector_from_word, has_word
         
         # Test that singular forms are in vocabulary
         assert has_word("circle")
@@ -254,7 +254,7 @@ class TestNounInflectorIntegration:
     
     def test_plural_vector_creation(self):
         """Test that plural nouns get proper vectors with plural marking."""
-        from engraf.lexer.vocabulary import vector_from_word
+        from engraf.An_N_Space_Model.vocabulary import vector_from_word
         
         try:
             # Test plural of known word

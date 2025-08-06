@@ -7,7 +7,7 @@ words in the semantic vector space.
 """
 
 import pytest
-from engraf.lexer.vocabulary import vector_from_word
+from engraf.An_N_Space_Model.vocabulary import vector_from_word
 from engraf.lexer.vector_space import VectorSpace, VECTOR_DIMENSIONS
 
 

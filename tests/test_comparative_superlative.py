@@ -7,7 +7,7 @@ forms (biggest, reddest) in the semantic vector space.
 """
 
 import pytest
-from engraf.lexer.vocabulary import vector_from_word, base_adjective_from_comparative
+from engraf.An_N_Space_Model.vocabulary import vector_from_word, base_adjective_from_comparative
 from engraf.lexer.vector_space import VectorSpace, VECTOR_DIMENSIONS
 
 
