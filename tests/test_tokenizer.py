@@ -2,7 +2,7 @@ import pytest
 from engraf.lexer.token_stream import tokenize
 from engraf.lexer.vector_space import VectorSpace
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-from engraf.An_N_Space_Model.vocabulary import add_to_vocabulary, get_from_vocabulary, has_word
+from engraf.lexer.vocabulary_builder import add_to_vocabulary, get_from_vocabulary, has_word
 
 def assert_vector_has_pos(vs: VectorSpace, expected_pos: str):
     assert isinstance(vs, VectorSpace)

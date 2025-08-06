@@ -18,9 +18,12 @@ Note: Run from the project root directory to ensure proper module imports.
 
 import os
 import sys
+import time
 
-# Add the current directory to the path so we can import engraf modules
-sys.path.insert(0, os.path.abspath('.'))
+# Add the project root to the Python path if not already there
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from engraf.interpreter.sentence_interpreter import SentenceInterpreter
 from engraf.visualizer.renderers.vpython_renderer import VPythonRenderer
@@ -74,6 +77,10 @@ def demo_basic_commands():
             print(f"   💥 Error: {e}")
         
         print()
+        
+        # Add a 2-second pause between demo sentences for better visualization
+        if i < len(demo_sentences):
+            time.sleep(2)
     
     print("✅ Basic demo complete! Objects created in 3D scene.")
     print()

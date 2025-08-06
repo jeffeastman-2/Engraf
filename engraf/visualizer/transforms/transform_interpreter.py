@@ -13,7 +13,7 @@ from engraf.visualizer.transforms.transform_matrix import TransformMatrix
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.lexer.vocabulary import get_from_vocabulary
+from engraf.lexer.vocabulary_builder import get_from_vocabulary
 
 
 class TransformInterpreter:

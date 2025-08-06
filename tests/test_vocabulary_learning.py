@@ -5,7 +5,7 @@ Test vocabulary learning from quoted definitions
 
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_sentence import run_sentence
-from engraf.An_N_Space_Model.vocabulary import add_to_vocabulary, has_word
+from engraf.lexer.vocabulary_builder import add_to_vocabulary, has_word
 
 def test_vocabulary_learning_sequence():
     """Test that vocabulary is learned from quoted definitions and used in subsequent sentences"""

@@ -1,4 +1,5 @@
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE, vector_from_word
+from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vocabulary_builder import vector_from_word
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 from engraf.utils.noun_inflector import singularize_noun
 import re
