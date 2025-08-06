@@ -51,21 +51,8 @@ class TransformInterpreter:
         # Check if this is a transformation verb using semantic categories
         if verb_vector and self._is_transform_verb(verb_vector):
             return self._interpret_transform_verb(verb_phrase, verb_vector)
-        
-        # Fall back to original string-based matching for compatibility
-        # Check for movement verbs
-        if verb in ["move", "translate", "place", "position"]:
-            return self._interpret_movement(verb_phrase)
-        
-        # Check for rotation verbs
-        elif verb in ["rotate", "turn", "spin", "roll", "xrotate", "yrotate", "zrotate"]:
-            return self._interpret_rotation(verb_phrase)
-        
-        # Check for scaling verbs
-        elif verb in ["scale", "resize", "enlarge", "shrink", "make"]:
-            return self._interpret_scaling(verb_phrase)
-        
-        return None
+        else:            # Not a transformation verb, return None
+            return None
     
     def _is_transform_verb(self, verb_vector) -> bool:
         """
@@ -81,9 +68,9 @@ class TransformInterpreter:
             return False
         
         # Check for transform action category (move, rotate, scale)
-        return (verb_vector["verb"] > 0 and 
-                verb_vector["action"] > 0 and 
-                (verb_vector["move"] > 0 or verb_vector["rotate"] > 0 or verb_vector["scale"] > 0))
+        return (verb_vector.isa("verb") and 
+                verb_vector.isa("action") and 
+                (verb_vector.isa("move") or verb_vector.isa("rotate") or verb_vector.isa("scale")))
     
     def _interpret_transform_verb(self, verb_phrase: VerbPhrase, verb_vector) -> Optional[TransformMatrix]:
         """
@@ -96,35 +83,33 @@ class TransformInterpreter:
         Returns:
             TransformMatrix if interpretation succeeds, None otherwise
         """
-        verb = verb_phrase.verb.lower()
-        
-        # Handle specific rotation verbs
-        if verb == "xrotate":
+        # Handle specific axis rotation verbs using vector space features
+        if verb_vector.isa("rotate") and verb_vector.isa("rotX"):
             degrees = self._extract_degrees(verb_phrase)
             if degrees is not None:
                 return TransformMatrix.rotation_x(degrees)
             return TransformMatrix.rotation_x(90)  # Default 90 degrees
         
-        elif verb == "yrotate":
+        elif verb_vector.isa("rotate") and verb_vector.isa("rotY"):
             degrees = self._extract_degrees(verb_phrase)
             if degrees is not None:
                 return TransformMatrix.rotation_y(degrees)
             return TransformMatrix.rotation_y(90)  # Default 90 degrees
         
-        elif verb == "zrotate":
+        elif verb_vector.isa("rotate") and verb_vector.isa("rotZ"):
             degrees = self._extract_degrees(verb_phrase)
             if degrees is not None:
                 return TransformMatrix.rotation_z(degrees)
             return TransformMatrix.rotation_z(90)  # Default 90 degrees
         
-        # Handle general transform verbs
-        elif verb in ["move", "position"]:
+        # Handle general transform verbs using vector space features
+        elif verb_vector.isa("move"):
             return self._interpret_movement(verb_phrase)
         
-        elif verb in ["rotate"]:
+        elif verb_vector.isa("rotate"):
             return self._interpret_rotation(verb_phrase)
         
-        elif verb in ["scale"]:
+        elif verb_vector.isa("scale"):
             return self._interpret_scaling(verb_phrase)
         
         return None

@@ -91,7 +91,7 @@ SEMANTIC_VECTOR_SPACE = {
     # create
     'create': vector_from_features("verb action create"),
     'draw': vector_from_features("verb action create"),
-    'make': vector_from_features("verb action create"),
+    'make': vector_from_features("verb action create scale style"),
     'build': vector_from_features("verb action create"),
     'place': vector_from_features("verb action create"),
 

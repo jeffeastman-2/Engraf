@@ -48,7 +48,11 @@ def demo_basic_commands():
     # Demo sentences with positioning to spread objects out
     demo_sentences = [
         "draw a red cube at [0, 0, 0]",
+        "move it to [2, 3, 4]",
+        "make it bigger",
+        "color it blue",
         "draw a big blue sphere at [3, 0, 0]",
+        "move it above the cube",
         "draw a green cylinder at [-3, 0, 0]",
         "draw a small yellow pyramid at [0, 3, 0]",
         "draw a purple box at [0, -3, 0]",

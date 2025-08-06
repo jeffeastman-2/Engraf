@@ -62,10 +62,16 @@ class VectorSpace:
     def isa(self, category: str) -> bool:
         """Returns True if the category is 'active' in this vector."""
         try:
-            idx = VECTOR_DIMENSIONS.index(category.lower())
+            # Try exact match first
+            idx = VECTOR_DIMENSIONS.index(category)
             return self.vector[idx] > 0.0  # threshold hardcoded here
         except ValueError:
-            return False
+            try:
+                # Try lowercase match for backwards compatibility
+                idx = VECTOR_DIMENSIONS.index(category.lower())
+                return self.vector[idx] > 0.0
+            except ValueError:
+                return False
 
     def cosine_similarity(self, other):
         # Calculate dot product
