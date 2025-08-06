@@ -56,7 +56,7 @@ class ObjectModifier:
                     pass
                 
                 # Handle transform verbs (move, rotate, scale) using vector space
-                elif vp.vector['transform'] > 0.0 and vp.noun_phrase:
+                elif (vp.vector['move'] > 0.0 or vp.vector['rotate'] > 0.0 or vp.vector['scale'] > 0.0) and vp.noun_phrase:
                     if vp.noun_phrase.preps:
                         # Process prepositional phrases using semantic dimensions
                         for pp in vp.noun_phrase.preps:

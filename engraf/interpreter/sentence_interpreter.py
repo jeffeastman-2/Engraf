@@ -203,7 +203,7 @@ class SentenceInterpreter:
                 result['objects_created'].extend(created_objects)
             
             # Handle modification verbs using vector space
-            elif vp.vector['transform'] > 0.0 or vp.vector['style'] > 0.0:
+            elif (vp.vector['move'] > 0.0 or vp.vector['rotate'] > 0.0 or vp.vector['scale'] > 0.0 or vp.vector['style'] > 0.0):
                 modified_objects = self._handle_modification_verb(vp)
                 result['objects_modified'].extend(modified_objects)
             

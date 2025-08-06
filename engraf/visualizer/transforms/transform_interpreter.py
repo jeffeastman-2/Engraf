@@ -80,10 +80,10 @@ class TransformInterpreter:
         if not verb_vector:
             return False
         
-        # Check for transform action category
+        # Check for transform action category (move, rotate, scale)
         return (verb_vector["verb"] > 0 and 
                 verb_vector["action"] > 0 and 
-                verb_vector["transform"] > 0)
+                (verb_vector["move"] > 0 or verb_vector["rotate"] > 0 or verb_vector["scale"] > 0))
     
     def _interpret_transform_verb(self, verb_phrase: VerbPhrase, verb_vector) -> Optional[TransformMatrix]:
         """
@@ -170,7 +170,7 @@ class TransformInterpreter:
             semantic_info["affects_selection"] = True
         elif semantic_info["category"] == "style":
             semantic_info["affects_appearance"] = True
-        elif semantic_info["category"] == "transform":
+        elif semantic_info["category"] in ["move", "rotate", "scale"]:
             semantic_info["affects_position"] = True
         
         return semantic_info
@@ -189,7 +189,7 @@ class TransformInterpreter:
             return None
         
         # Check each semantic category
-        categories = ["create", "edit", "organize", "select", "style", "transform"]
+        categories = ["create", "edit", "organize", "select", "style", "move", "rotate", "scale"]
         
         for category in categories:
             if verb_vector[category] > 0:

@@ -42,6 +42,9 @@ VECTOR_DIMENSIONS = [
     # High-level verb intent vectors
     "create",    # creation verbs (draw, create, place, make)
     "transform", # transformation verbs (move, rotate, scale)
+    "move",      # movement verbs (move, shift, translate)
+    "rotate",   # rotation verbs (rotate, spin)
+    "scale",     # scaling verbs (scale, resize)
     "style",     # styling verbs (color, texture)
     "organize",  # organization verbs (group, ungroup, align, position)
     "edit",      # editing verbs (delete, undo, redo, copy, paste)

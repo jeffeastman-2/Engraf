@@ -203,7 +203,7 @@ class TestMultiAxisRotation(unittest.TestCase):
         # The fact that rotation was applied correctly indicates that:
         # 1. vector=1.0 was detected (vector literal parsing)
         # 2. directional_agency=1.0 was detected (for "by" preposition)
-        # 3. transform=1.0 was detected (on rotate verb)
+        # 3. rotate=1.0 was detected (on rotate verb)
         # 4. Rotation classification logic worked correctly
         
         rotated_object = self.interpreter.scene.objects[0]

@@ -409,7 +409,7 @@ class TestTransformInterpreter:
         assert result is not None
         assert result["verb"] == "move"
         assert result["is_action"] == True
-        assert result["category"] == "transform"
+        assert result["category"] == "move"
         assert result["affects_position"] == True
         assert "vector" in result
     
@@ -573,9 +573,9 @@ class TestTransformInterpreter:
     
     def test_get_verb_category(self):
         """Test the _get_verb_category method."""
-        # Test transform verb
+        # Test move verb
         transform_vector = get_from_vocabulary("move")
-        assert self.interpreter._get_verb_category(transform_vector) == "transform"
+        assert self.interpreter._get_verb_category(transform_vector) == "move"
         
         # Test create verb
         create_vector = get_from_vocabulary("create")

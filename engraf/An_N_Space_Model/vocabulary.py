@@ -115,12 +115,12 @@ SEMANTIC_VECTOR_SPACE = {
     'texture': vector_from_features("verb action style"),
 
     # transform
-    'move': vector_from_features("verb action transform"),
-    'rotate': vector_from_features("verb action transform"),
-    'xrotate': vector_from_features("verb action transform", rotX=1.0),  # rotate around x-axis
-    'yrotate': vector_from_features("verb action transform", rotY=1.0),  # rotate around y-axis
-    'zrotate': vector_from_features("verb action transform", rotZ=1.0),  # rotate around z-axis
-    'scale': vector_from_features("verb action transform"),
+    'move': vector_from_features("verb action move"),
+    'rotate': vector_from_features("verb action rotate"),
+    'xrotate': vector_from_features("verb action rotate", rotX=1.0),  # rotate around x-axis
+    'yrotate': vector_from_features("verb action rotate", rotY=1.0),  # rotate around y-axis
+    'zrotate': vector_from_features("verb action rotate", rotZ=1.0),  # rotate around z-axis
+    'scale': vector_from_features("verb action scale"),
 
     # generic (no third term)
     'redo': vector_from_features("verb action"),
