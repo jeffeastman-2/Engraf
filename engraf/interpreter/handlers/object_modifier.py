@@ -60,8 +60,8 @@ class ObjectModifier:
                     if vp.noun_phrase.preps:
                         # Process prepositional phrases using semantic dimensions
                         for pp in vp.noun_phrase.preps:
-                            # Check for movement using directional_target dimension
-                            if hasattr(pp, 'vector') and pp.vector['directional_target'] > 0.5:
+                            # Check for movement using directional_target dimension OR spatial relationships
+                            if hasattr(pp, 'vector') and (pp.vector['directional_target'] > 0.5 or abs(pp.vector['spatial_vertical']) > 0.5):
                                 self._apply_movement(scene_obj, pp)
                             # Check for rotation/scaling using directional_agency dimension
                             elif hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5:
@@ -103,16 +103,108 @@ class ObjectModifier:
     
     def _apply_movement(self, scene_obj: SceneObject, preposition):
         """Apply movement to an object based on prepositional phrase."""
-        # This would integrate with the transform interpreter
-        # For now, simple implementation
+        print(f"🔧 _apply_movement called for {scene_obj.name}")
+        print(f"🔧 Preposition: {preposition.preposition}")
+        
+        # Handle spatial relationships like "above the cube"
+        if hasattr(preposition, 'vector') and abs(preposition.vector['spatial_vertical']) > 0.5:
+            print(f"🔧 Processing spatial relationship: {preposition.preposition}")
+            
+            # Find the reference object (e.g., "the cube" in "above the cube")
+            if hasattr(preposition, 'noun_phrase') and preposition.noun_phrase:
+                ref_description = preposition.noun_phrase
+                print(f"🔧 Looking for reference object: {ref_description.noun}")
+                
+                # Find the reference object in the scene
+                ref_object_ids = self.object_resolver.find_objects_by_description(ref_description)
+                if ref_object_ids:
+                    ref_obj_id = ref_object_ids[0]  # Use the first match
+                    
+                    # Get the actual SceneObject from the scene
+                    ref_obj = None
+                    for obj in self.scene.objects:
+                        if obj.object_id == ref_obj_id:
+                            ref_obj = obj
+                            break
+                    
+                    if ref_obj:
+                        print(f"🔧 Found reference object: {ref_obj.name}")
+                        
+                        # Calculate the new position based on spatial relationship
+                        new_x, new_y, new_z = self._calculate_spatial_position(
+                            scene_obj, ref_obj, preposition.preposition, preposition.vector['spatial_vertical']
+                        )
+                        
+                        # Update the object's position
+                        scene_obj.vector['locX'] = new_x
+                        scene_obj.vector['locY'] = new_y
+                        scene_obj.vector['locZ'] = new_z
+                        
+                        print(f"🔧 Moved {scene_obj.name} to [{new_x}, {new_y}, {new_z}]")
+                        return
+                    else:
+                        print(f"🔧 Reference object {ref_obj_id} not found in scene")
+                else:
+                    print(f"🔧 Reference object not found for spatial relationship")        # Handle direct coordinate movement (original logic)
         if hasattr(preposition, 'noun_phrase') and hasattr(preposition.noun_phrase, 'vector'):
             vector = preposition.noun_phrase.vector
+            print(f"🔧 Direct coordinate movement: [{vector['locX']}, {vector['locY']}, {vector['locZ']}]")
             if vector['locX'] != 0.0:
                 scene_obj.vector['locX'] = vector['locX']
             if vector['locY'] != 0.0:
                 scene_obj.vector['locY'] = vector['locY']
             if vector['locZ'] != 0.0:
                 scene_obj.vector['locZ'] = vector['locZ']
+    
+    def _calculate_spatial_position(self, moving_obj: SceneObject, ref_obj: SceneObject, preposition: str, vertical_factor: float):
+        """Calculate the position for spatial relationships like 'above', 'below', etc."""
+        # Get reference object's position and size
+        ref_x = ref_obj.vector['locX']
+        ref_y = ref_obj.vector['locY'] 
+        ref_z = ref_obj.vector['locZ']
+        
+        # Calculate reference object's effective size based on its type
+        ref_half_height = self._get_object_half_height(ref_obj)
+        moving_half_height = self._get_object_half_height(moving_obj)
+        
+        print(f"🔧 Reference {ref_obj.name}: center=[{ref_x}, {ref_y}, {ref_z}], half_height={ref_half_height}")
+        print(f"🔧 Moving {moving_obj.name}: half_height={moving_half_height}")
+        
+        # Start with reference object's X and Z coordinates (side-by-side)
+        new_x = ref_x
+        new_z = ref_z
+        
+        # Calculate Y position based on spatial relationship using semantic vertical_factor
+        if vertical_factor > 0:
+            # Place object above reference object (positive vertical factor)
+            # Reference object top: ref_y + ref_half_height
+            # Moving object bottom should be at reference object top
+            # Moving object center should be at: ref_obj_top + moving_half_height
+            new_y = ref_y + ref_half_height + moving_half_height
+        elif vertical_factor < 0:
+            # Place object below reference object (negative vertical factor)
+            new_y = ref_y - ref_half_height - moving_half_height
+        else:
+            # Default to same level (zero vertical factor)
+            new_y = ref_y
+        
+        print(f"🔧 Calculated position for vertical_factor={vertical_factor}: [{new_x}, {new_y}, {new_z}]")
+        return new_x, new_y, new_z
+    
+    def _get_object_half_height(self, obj: SceneObject):
+        """Get the half-height of an object based on its type and size."""
+        # Object centers are their locations
+        # Cube size is the edge length whereas sphere size is only the radius
+        
+        if 'cube' in obj.name.lower():
+            # For cubes, scaleY represents the edge length, so half-height is scaleY/2
+            return obj.vector['scaleY'] / 2.0
+        elif 'sphere' in obj.name.lower():
+            # For spheres, scaleY represents the radius, so half-height equals the radius
+            return obj.vector['scaleY']
+        else:
+            # Default: assume scaleY is half-height
+            return obj.vector['scaleY']
     
     def _apply_scaling(self, scene_obj: SceneObject, vp: VerbPhrase):
         """Apply scaling to an object based on verb phrase."""

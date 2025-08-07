@@ -71,7 +71,7 @@ class ObjectResolver:
         return [obj_id for obj_id, _ in object_scores]
     
     def _object_matches_description(self, scene_obj: SceneObject, np: NounPhrase) -> bool:
-        """Check if a scene object matches a noun phrase description using vector distance."""
+        """Check if a scene object matches a noun phrase description using two-pass approach."""
         # First check if basic noun type matches
         if np.noun and np.noun != scene_obj.name:
             return False
@@ -80,12 +80,53 @@ class ObjectResolver:
         if not hasattr(np, 'vector') or not np.vector:
             return True
         
-        # Use vector distance calculation for sophisticated matching
-        distance = self._calculate_vector_distance(scene_obj.vector, np.vector)
+        # Check for clear feature mismatches (e.g., "red cube" vs blue cube)
+        if self._has_feature_mismatch(scene_obj.vector, np.vector):
+            return False
         
-        # Lower distance means better match - threshold for acceptance (more lenient since we focus on semantic features)
-        MATCH_THRESHOLD = 0.5
-        return distance <= MATCH_THRESHOLD
+        # If we get here, the noun matches and there's no clear feature conflict
+        # This is a valid candidate - the find_objects_by_description method will
+        # use vector distance to rank multiple candidates
+        return True
+    
+    def _has_feature_mismatch(self, obj_vector: VectorSpace, query_vector: VectorSpace) -> bool:
+        """Check if there's a clear feature mismatch (e.g., color conflict)."""
+        # Check for color mismatches - reject if query specifies a color that conflicts with object's color
+        color_features = ['red', 'green', 'blue']
+        
+        for color in color_features:
+            try:
+                obj_value = obj_vector[color]
+                query_value = query_vector[color]
+                
+                # If query strongly specifies this color (>0.5) but object doesn't have it (<=0.5)
+                if query_value > 0.5 and obj_value <= 0.5:
+                    return True
+                    
+            except (ValueError, IndexError):
+                # Feature not found in vector, skip it
+                continue
+        
+        # Also check for conflicting colors: if object has a strong color and query has a different strong color
+        try:
+            obj_colors = []
+            query_colors = []
+            
+            # Find which colors the object has
+            for color in color_features:
+                if obj_vector[color] > 0.5:
+                    obj_colors.append(color)
+                if query_vector[color] > 0.5:
+                    query_colors.append(color)
+            
+            # If both have colors and none overlap, it's a mismatch
+            if obj_colors and query_colors and not any(c in obj_colors for c in query_colors):
+                return True
+                
+        except (ValueError, IndexError):
+            pass
+        
+        return False
     
     def _calculate_vector_distance(self, obj_vector: VectorSpace, query_vector: VectorSpace) -> float:
         """Calculate sophisticated vector distance between object and query."""

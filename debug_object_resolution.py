@@ -70,6 +70,21 @@ def debug_object_resolution():
         matches = interpreter.object_resolver._object_matches_description(obj, np)
         print(f"Object '{obj.object_id}' (name='{obj.name}') matches: {matches}")
         print(f"  Noun check: np.noun='{np.noun}' == obj.name='{obj.name}' -> {np.noun == obj.name}")
+        
+        # If noun check passes, let's see what happens with vector distance
+        if np.noun == obj.name:
+            print(f"  → Noun check passed, checking vector distance...")
+            print(f"  → Object vector: {obj.vector}")
+            print(f"  → Query vector: {np.vector}")
+            print(f"  → Has vector: {hasattr(np, 'vector') and np.vector is not None}")
+            
+            if hasattr(np, 'vector') and np.vector:
+                distance = interpreter.object_resolver._calculate_vector_distance(obj.vector, np.vector)
+                print(f"  → Vector distance: {distance}")
+                print(f"  → Threshold: 0.5")
+                print(f"  → Distance <= threshold: {distance <= 0.5}")
+            else:
+                print(f"  → No vector, would return True")
 
 if __name__ == "__main__":
     debug_object_resolution()
