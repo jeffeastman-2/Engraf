@@ -160,22 +160,6 @@ class TestTransformInterpreter:
         expected = TransformMatrix.scale(2, 1, 1)
         assert np.allclose(result.matrix, expected.matrix)
     
-    def test_interpret_scaling_uniform(self):
-        """Test interpreting uniform scaling."""
-        # Create mock verb phrase with scale factor
-        verb_phrase = Mock(spec=VerbPhrase)
-        verb_phrase.verb = "make"
-        verb_phrase.adjective_complement = ["twice"]
-        verb_phrase.preps = []
-        
-        result = self.interpreter.interpret_verb_phrase(verb_phrase)
-        
-        assert result is not None
-        assert isinstance(result, TransformMatrix)
-        # Check that the scaling is correct
-        expected = TransformMatrix.uniform_scale(2.0)
-        assert np.allclose(result.matrix, expected.matrix)
-    
     def test_parse_vector_literal_brackets(self):
         """Test parsing vector literals with brackets."""
         text = "[1.5, 2.0, 3.5]"

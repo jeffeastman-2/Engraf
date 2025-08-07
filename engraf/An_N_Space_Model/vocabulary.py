@@ -91,7 +91,7 @@ SEMANTIC_VECTOR_SPACE = {
     # create
     'create': vector_from_features("verb action create"),
     'draw': vector_from_features("verb action create"),
-    'make': vector_from_features("verb action create scale style"),
+    'make': vector_from_features("verb action create transform"),
     'build': vector_from_features("verb action create"),
     'place': vector_from_features("verb action create"),
 
@@ -111,16 +111,16 @@ SEMANTIC_VECTOR_SPACE = {
     'select': vector_from_features("verb action select"),
 
     # style
-    'color': vector_from_features("verb action style"),
-    'texture': vector_from_features("verb action style"),
+    'color': vector_from_features("verb action transform style"),
+    'texture': vector_from_features("verb action transform texture"),
 
     # modify
-    'move': vector_from_features("verb action move"),
-    'rotate': vector_from_features("verb action rotate"),
-    'xrotate': vector_from_features("verb action rotate", rotX=1.0),  # rotate around x-axis
-    'yrotate': vector_from_features("verb action rotate", rotY=1.0),  # rotate around y-axis
-    'zrotate': vector_from_features("verb action rotate", rotZ=1.0),  # rotate around z-axis
-    'scale': vector_from_features("verb action scale"),
+    'move': vector_from_features("verb action transform move"),
+    'rotate': vector_from_features("verb action transform rotate"),
+    'xrotate': vector_from_features("verb action transform rotate", rotX=1.0),  # rotate around x-axis
+    'yrotate': vector_from_features("verb action transform rotate", rotY=1.0),  # rotate around y-axis
+    'zrotate': vector_from_features("verb action transform rotate", rotZ=1.0),  # rotate around z-axis
+    'scale': vector_from_features("verb action transform scale"),
 
     # generic (no third term)
     'redo': vector_from_features("verb action"),

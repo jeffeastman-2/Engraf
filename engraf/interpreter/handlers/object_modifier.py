@@ -50,17 +50,14 @@ class ObjectModifier:
             # Check if verb phrase has vector space information
             if hasattr(vp, 'vector') and vp.vector:
                 print(f"🔧 VerbPhrase has vector: {vp.vector}")
-                print(f"🔧 vp.vector.isa('style'): {vp.vector.isa('style')}")
-                print(f"🔧 vp.vector.isa('move'): {vp.vector.isa('move')}")
-                print(f"🔧 vp.vector.isa('rotate'): {vp.vector.isa('rotate')}")
-                print(f"🔧 vp.vector.isa('scale'): {vp.vector.isa('scale')}")
+                print(f"🔧 vp.vector.isa('transform'): {vp.vector.isa('transform')}")
                 print(f"🔧 hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
                 if hasattr(vp, 'adjective_complement'):
                     print(f"🔧 vp.adjective_complement: {vp.adjective_complement}")
                     print(f"🔧 bool(vp.adjective_complement): {bool(vp.adjective_complement)}")
                 
-                # Handle transform verbs (move, rotate, scale) using vector space
-                if (vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale')) and vp.noun_phrase:
+                # Handle transform verbs (move, rotate, scale, ...) using vector space
+                if vp.vector.isa('transform') and vp.noun_phrase:
                     print(f"🔧 Taking transform verb path with noun_phrase")
                     if vp.noun_phrase.preps:
                         print(f"🔧 Processing prepositional phrases")
@@ -92,12 +89,12 @@ class ObjectModifier:
                         print(f"🔧 Transform verb {verb} without prepositions")
                         
                         # Check for adjective complements that might indicate scaling
-                        if vp.vector.isa('scale') and hasattr(vp, 'adjective_complement') and vp.adjective_complement:
-                            print(f"🔧 Found adjective complements for scaling: {vp.adjective_complement}")
+                        # Generic transform verbs like 'make' can use adjective complements for scaling
+                        if hasattr(vp, 'adjective_complement') and vp.adjective_complement:
+                            print(f"🔧 Found adjective complements for transformation: {vp.adjective_complement}")
                             self._apply_adjective_scaling(scene_obj, vp)
                         else:
-                            print(f"🔧 No adjective complements for scaling")
-                            print(f"    vp.vector.isa('scale'): {vp.vector.isa('scale')}")
+                            print(f"🔧 No adjective complements for transformation")
                             print(f"    hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
                             print(f"    vp.adjective_complement: {vp.adjective_complement if hasattr(vp, 'adjective_complement') else 'N/A'}")
                 
@@ -110,7 +107,7 @@ class ObjectModifier:
                 
                 else:
                     print(f"🔧 Not taking any verb transformation path")
-                    print(f"    Transform condition: {(vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale'))}")
+                    print(f"    Transform condition: {vp.vector.isa('transform') }")
                     print(f"    Has noun_phrase: {vp.noun_phrase is not None}")
                     if vp.noun_phrase:
                         print(f"    noun_phrase.preps: {vp.noun_phrase.preps}")
