@@ -200,7 +200,7 @@ class SentenceInterpreter:
             # Check if this is a modification verb (with adjective complement like "bigger")
             # This takes priority over creation verbs for cases like "make it bigger"
             if (hasattr(vp, 'adjective_complement') and vp.adjective_complement and 
-                (vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale') or vp.vector.isa('style'))):
+                vp.vector.isa('transform')):
                 modified_objects = self._handle_modification_verb(vp)
                 result['objects_modified'].extend(modified_objects)
             
@@ -210,7 +210,7 @@ class SentenceInterpreter:
                 result['objects_created'].extend(created_objects)
             
             # Handle modification verbs using vector space (fallback for verbs without adjective complement)
-            elif (vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale') or vp.vector.isa('style')):
+            elif vp.vector.isa('transform'):
                 modified_objects = self._handle_modification_verb(vp)
                 result['objects_modified'].extend(modified_objects)
             
