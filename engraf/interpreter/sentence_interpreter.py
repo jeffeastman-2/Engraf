@@ -197,18 +197,25 @@ class SentenceInterpreter:
         
         # Check if verb phrase has vector space information
         if hasattr(vp, 'vector') and vp.vector:
+            # Check if this is a modification verb (with adjective complement like "bigger")
+            # This takes priority over creation verbs for cases like "make it bigger"
+            if (hasattr(vp, 'adjective_complement') and vp.adjective_complement and 
+                (vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale') or vp.vector.isa('style'))):
+                modified_objects = self._handle_modification_verb(vp)
+                result['objects_modified'].extend(modified_objects)
+            
             # Handle creation verbs using vector space
-            if vp.vector['create'] > 0.0:
+            elif vp.vector.isa('create'):
                 created_objects = self._handle_creation_verb(vp)
                 result['objects_created'].extend(created_objects)
             
-            # Handle modification verbs using vector space
-            elif (vp.vector['move'] > 0.0 or vp.vector['rotate'] > 0.0 or vp.vector['scale'] > 0.0 or vp.vector['style'] > 0.0):
+            # Handle modification verbs using vector space (fallback for verbs without adjective complement)
+            elif (vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale') or vp.vector.isa('style')):
                 modified_objects = self._handle_modification_verb(vp)
                 result['objects_modified'].extend(modified_objects)
             
             # Handle other vector space intents
-            elif vp.vector['organize'] > 0.0 or vp.vector['edit'] > 0.0 or vp.vector['select'] > 0.0:
+            elif vp.vector.isa('organize') or vp.vector.isa('edit') or vp.vector.isa('select'):
                 print(f"⚠️  Unsupported verb intent for: {verb}")
             
             else:

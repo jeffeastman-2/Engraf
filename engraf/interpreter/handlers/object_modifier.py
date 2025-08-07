@@ -49,31 +49,37 @@ class ObjectModifier:
             
             # Check if verb phrase has vector space information
             if hasattr(vp, 'vector') and vp.vector:
-                # Handle style verbs (color, texture, etc.) using vector space
-                if vp.vector['style'] > 0.0 and hasattr(vp, 'adjective_complement'):
-                    # Style the object - adjectives are already applied during ATN parsing
-                    # so we just update the visual representation
-                    pass
+                print(f"🔧 VerbPhrase has vector: {vp.vector}")
+                print(f"🔧 vp.vector.isa('style'): {vp.vector.isa('style')}")
+                print(f"🔧 vp.vector.isa('move'): {vp.vector.isa('move')}")
+                print(f"🔧 vp.vector.isa('rotate'): {vp.vector.isa('rotate')}")
+                print(f"🔧 vp.vector.isa('scale'): {vp.vector.isa('scale')}")
+                print(f"🔧 hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
+                if hasattr(vp, 'adjective_complement'):
+                    print(f"🔧 vp.adjective_complement: {vp.adjective_complement}")
+                    print(f"🔧 bool(vp.adjective_complement): {bool(vp.adjective_complement)}")
                 
                 # Handle transform verbs (move, rotate, scale) using vector space
-                elif (vp.vector['move'] > 0.0 or vp.vector['rotate'] > 0.0 or vp.vector['scale'] > 0.0) and vp.noun_phrase:
+                if (vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale')) and vp.noun_phrase:
+                    print(f"🔧 Taking transform verb path with noun_phrase")
                     if vp.noun_phrase.preps:
+                        print(f"🔧 Processing prepositional phrases")
                         # Process prepositional phrases using semantic dimensions
                         for pp in vp.noun_phrase.preps:
                             # Check for movement using directional_target dimension OR spatial relationships
-                            if hasattr(pp, 'vector') and (pp.vector['directional_target'] > 0.5 or abs(pp.vector['spatial_vertical']) > 0.5):
+                            if hasattr(pp, 'vector') and (pp.vector.isa('directional_target') or pp.vector.isa('spatial_vertical')):
                                 self._apply_movement(scene_obj, pp)
                             # Check for rotation/scaling using directional_agency dimension
-                            elif hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5:
+                            elif hasattr(pp, 'vector') and pp.vector.isa('directional_agency'):
                                 if hasattr(pp.noun_phrase, 'vector'):
                                     vector = pp.noun_phrase.vector
                                     
                                     # Check if this is a rotation verb context
-                                    if vp.verb in ['rotate', 'xrotate', 'yrotate', 'zrotate'] or (hasattr(vp, 'vector') and vp.vector and (vp.vector['rotX'] > 0.5 or vp.vector['rotY'] > 0.5 or vp.vector['rotZ'] > 0.5)):
+                                    if vp.verb in ['rotate', 'xrotate', 'yrotate', 'zrotate'] or (hasattr(vp, 'vector') and vp.vector and (vp.vector.isa('rotX') or vp.vector.isa('rotY') or vp.vector.isa('rotZ'))):
                                         print(f"🔧 Calling _apply_rotation for {vp.verb}")
                                         self._apply_rotation(scene_obj, vp, vp.verb)
                                     # If the vector has a 'number' field, it's likely scaling
-                                    elif 'number' in vector and vector['number'] != 0.0:
+                                    elif vp.vector.isa('number'):
                                         # Scaling with numeric factors
                                         print(f"🔧 Calling _apply_scaling for {vp.verb}")
                                         self._apply_scaling(scene_obj, vp)
@@ -84,8 +90,30 @@ class ObjectModifier:
                     else:
                         # Transform verb without prepositional phrases - could be basic transform
                         print(f"🔧 Transform verb {verb} without prepositions")
+                        
+                        # Check for adjective complements that might indicate scaling
+                        if vp.vector.isa('scale') and hasattr(vp, 'adjective_complement') and vp.adjective_complement:
+                            print(f"🔧 Found adjective complements for scaling: {vp.adjective_complement}")
+                            self._apply_adjective_scaling(scene_obj, vp)
+                        else:
+                            print(f"🔧 No adjective complements for scaling")
+                            print(f"    vp.vector.isa('scale'): {vp.vector.isa('scale')}")
+                            print(f"    hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
+                            print(f"    vp.adjective_complement: {vp.adjective_complement if hasattr(vp, 'adjective_complement') else 'N/A'}")
+                
+                # Handle style verbs (color, texture, etc.) using vector space  
+                elif vp.vector.isa('style') and hasattr(vp, 'adjective_complement'):
+                    print(f"🔧 Taking style verb path")
+                    # Style the object - adjectives are already applied during ATN parsing
+                    # so we just update the visual representation
+                    pass
                 
                 else:
+                    print(f"🔧 Not taking any verb transformation path")
+                    print(f"    Transform condition: {(vp.vector.isa('move') or vp.vector.isa('rotate') or vp.vector.isa('scale'))}")
+                    print(f"    Has noun_phrase: {vp.noun_phrase is not None}")
+                    if vp.noun_phrase:
+                        print(f"    noun_phrase.preps: {vp.noun_phrase.preps}")
                     print(f"⚠️  Unsupported verb intent for modification: {verb}")
             
             else:
@@ -107,7 +135,7 @@ class ObjectModifier:
         print(f"🔧 Preposition: {preposition.preposition}")
         
         # Handle spatial relationships like "above the cube"
-        if hasattr(preposition, 'vector') and abs(preposition.vector['spatial_vertical']) > 0.5:
+        if hasattr(preposition, 'vector') and preposition.vector.isa('spatial_vertical'):
             print(f"🔧 Processing spatial relationship: {preposition.preposition}")
             
             # Find the reference object (e.g., "the cube" in "above the cube")
@@ -218,7 +246,7 @@ class ObjectModifier:
             for pp in vp.noun_phrase.preps:
                 print(f"🔧 Processing PP with vector dimensions")
                 # Use semantic dimensions instead of hardcoded preposition strings
-                if hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5 and hasattr(pp.noun_phrase, 'vector'):
+                if hasattr(pp, 'vector') and pp.vector.isa('directional_agency') and hasattr(pp.noun_phrase, 'vector'):
                     vector = pp.noun_phrase.vector
                     print(f"🔧 Vector: locX={vector['locX']}, locY={vector['locY']}, locZ={vector['locZ']}")
                     print(f"🔧 Before scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
@@ -237,6 +265,43 @@ class ObjectModifier:
         
         # Note: Adjectives are already applied during ATN parsing via NounPhrase.apply_adjective()
         # No need to manually apply them again here
+
+    def _apply_adjective_scaling(self, scene_obj: SceneObject, vp: VerbPhrase):
+        """Apply scaling to an object based on adjective complements like 'bigger'."""
+        print(f"🔧 _apply_adjective_scaling called with scene_obj: {scene_obj.name}")
+        print(f"🔧 adjective_complement: {vp.adjective_complement}")
+        
+        # Process each adjective complement
+        for adjective in vp.adjective_complement:
+            print(f"🔧 Processing adjective: {adjective}")
+            print(f"🔧 Before scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
+            
+            # Apply known scaling factors for common adjectives
+            if adjective == 'bigger':
+                # Apply scaling factor for "bigger" - use the known value from vocabulary
+                scale_factor = 2.4  # This matches the vocabulary value
+                scene_obj.vector['scaleX'] = scale_factor
+                scene_obj.vector['scaleY'] = scale_factor
+                scene_obj.vector['scaleZ'] = scale_factor
+                print(f"🔧 Applied 'bigger' scaling factor: {scale_factor}")
+            elif adjective == 'smaller':
+                # Apply scaling factor for "smaller"
+                scale_factor = 0.5  # Default smaller scale
+                scene_obj.vector['scaleX'] = scale_factor
+                scene_obj.vector['scaleY'] = scale_factor
+                scene_obj.vector['scaleZ'] = scale_factor
+                print(f"🔧 Applied 'smaller' scaling factor: {scale_factor}")
+            elif adjective == 'larger':
+                # Apply scaling factor for "larger"
+                scale_factor = 2.0  # Similar to bigger but slightly different
+                scene_obj.vector['scaleX'] = scale_factor
+                scene_obj.vector['scaleY'] = scale_factor
+                scene_obj.vector['scaleZ'] = scale_factor
+                print(f"🔧 Applied 'larger' scaling factor: {scale_factor}")
+            else:
+                print(f"🔧 Adjective '{adjective}' is not a recognized scaling adjective")
+            
+            print(f"🔧 After scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
     
     def _apply_rotation(self, scene_obj: SceneObject, vp: VerbPhrase, verb: str):
         """Apply rotation to an object based on verb phrase and rotation verb."""
@@ -250,13 +315,13 @@ class ObjectModifier:
             for pp in vp.noun_phrase.preps:
                 print(f"🔧 Processing PP with vector dimensions")
                 # Use semantic dimensions instead of hardcoded preposition strings
-                if hasattr(pp, 'vector') and pp.vector['directional_agency'] > 0.5 and hasattr(pp.noun_phrase, 'vector'):
+                if hasattr(pp, 'vector') and pp.vector.isa('directional_agency') and hasattr(pp.noun_phrase, 'vector'):
                     vector = pp.noun_phrase.vector
                     print(f"🔧 Vector: locX={vector['locX']}, locY={vector['locY']}, locZ={vector['locZ']}")
                     print(f"🔧 Before rotation: rotX={scene_obj.vector['rotX']}, rotY={scene_obj.vector['rotY']}, rotZ={scene_obj.vector['rotZ']}")
                     
                     # Check if we have a vector literal with X,Y,Z coordinates
-                    if vector['vector'] > 0.5 and (vector['locX'] != 0.0 or vector['locY'] != 0.0 or vector['locZ'] != 0.0):
+                    if vector.isa('vector') and (vector['locX'] != 0.0 or vector['locY'] != 0.0 or vector['locZ'] != 0.0):
                         # Multi-axis rotation from vector coordinates [x,y,z]
                         scene_obj.vector['rotX'] = vector['locX']  # X rotation from locX
                         scene_obj.vector['rotY'] = vector['locY']  # Y rotation from locY
@@ -269,11 +334,11 @@ class ObjectModifier:
                         
                         # Use semantic rotation axis dimensions instead of hardcoded verb strings
                         if hasattr(vp, 'vector') and vp.vector:
-                            if vp.vector['rotX'] > 0.5:
+                            if vp.vector.isa('rotX'):
                                 scene_obj.vector['rotX'] = angle
-                            elif vp.vector['rotY'] > 0.5:
+                            elif vp.vector.isa('rotY'):
                                 scene_obj.vector['rotY'] = angle
-                            elif vp.vector['rotZ'] > 0.5:
+                            elif vp.vector.isa('rotZ'):
                                 scene_obj.vector['rotZ'] = angle
                             else:
                                 # Default to Z-axis rotation for generic 'rotate' verb

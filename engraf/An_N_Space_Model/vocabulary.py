@@ -114,7 +114,7 @@ SEMANTIC_VECTOR_SPACE = {
     'color': vector_from_features("verb action style"),
     'texture': vector_from_features("verb action style"),
 
-    # transform
+    # modify
     'move': vector_from_features("verb action move"),
     'rotate': vector_from_features("verb action rotate"),
     'xrotate': vector_from_features("verb action rotate", rotX=1.0),  # rotate around x-axis
