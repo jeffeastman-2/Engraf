@@ -76,7 +76,6 @@ engraf/
 │   │   ├── scene_model.py       # Scene graph management
 │   │   └── scene_object.py      # 3D object representations
 │   └── transforms/        # Geometric transformations
-│       ├── transform_interpreter.py  # Transform parsing
 │       └── transform_matrix.py       # Matrix operations
 └── utils/                 # Utility functions
     ├── actions.py         # Action definitions

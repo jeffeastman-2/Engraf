@@ -17,7 +17,6 @@ from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.temporal_scenes import TemporalScenes
 # VPython renderer will be imported conditionally to avoid hanging
-from engraf.visualizer.transforms.transform_interpreter import TransformInterpreter
 
 # Import specialized handlers
 from .handlers import ObjectCreator, ObjectModifier, ObjectResolver, SceneManager
@@ -48,7 +47,6 @@ class SentenceInterpreter:
         self.renderer = renderer
         self.temporal_scenes = TemporalScenes()
         self.scene = self.temporal_scenes.get_current_scene()  # For backward compatibility
-        self.transform_interpreter = TransformInterpreter()
         
         # State tracking using references for handlers
         self._object_counter = [0]  # Use list for mutable reference

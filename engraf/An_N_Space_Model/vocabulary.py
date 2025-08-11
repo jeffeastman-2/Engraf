@@ -193,5 +193,32 @@ SEMANTIC_VECTOR_SPACE = {
     'was': vector_from_features("tobe"),
     'were': vector_from_features("tobe"),
     'be': vector_from_features("tobe"),
-    'been': vector_from_features("tobe")
+    'been': vector_from_features("tobe"),
+    
+    # Directional adverbs and spatial prepositions for movement
+    'up': vector_from_features("adv prep", spatial_vertical=1.0, locY=1.0),       # upward direction
+    'down': vector_from_features("adv prep", spatial_vertical=-1.0, locY=-1.0),   # downward direction
+    'left': vector_from_features("adv prep", locX=-1.0),                          # leftward direction
+    'right': vector_from_features("adv prep", locX=1.0),                          # rightward direction
+    'forward': vector_from_features("adv prep", locZ=1.0),                        # forward direction
+    'backward': vector_from_features("adv prep", locZ=-1.0),                      # backward direction
+    'back': vector_from_features("adv prep", locZ=-1.0),                          # backward direction (synonym)
+    
+    # Rotational prepositions
+    'around': vector_from_features("prep", directional_agency=0.8),               # rotational context
+    'about': vector_from_features("prep", directional_agency=0.8),                # rotational context (synonym)
+    
+    # Axis references
+    'x': vector_from_features("noun", rotX=1.0),                                  # x-axis reference
+    'y': vector_from_features("noun", rotY=1.0),                                  # y-axis reference
+    'z': vector_from_features("noun", rotZ=1.0),                                  # z-axis reference
+    'x-axis': vector_from_features("noun", rotX=1.0),                             # x-axis explicit
+    'y-axis': vector_from_features("noun", rotY=1.0),                             # y-axis explicit
+    'z-axis': vector_from_features("noun", rotZ=1.0),                             # z-axis explicit
+    
+    # Additional spatial prepositions not yet covered
+    'behind': vector_from_features("prep", spatial_proximity=0.7, locZ=-1.0),     # behind/back position
+    'beside': vector_from_features("prep", spatial_proximity=0.8, locX=1.0),      # beside/next to
+    'next': vector_from_features("prep", spatial_proximity=0.8),                  # next to context
+    'front': vector_from_features("prep", spatial_proximity=0.7, locZ=1.0)        # front position
 }
