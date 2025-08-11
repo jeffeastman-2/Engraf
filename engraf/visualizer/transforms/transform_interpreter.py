@@ -245,8 +245,6 @@ class TransformInterpreter:
         
         Examples:
         - "scale by [2, 1, 1]" -> scale(2, 1, 1)
-        - "make it twice as big" -> uniform_scale(2)
-        - "resize to half" -> uniform_scale(0.5)
         """
         # Check for coordinate vector in prepositional phrases
         for prep in verb_phrase.preps:
@@ -254,11 +252,6 @@ class TransformInterpreter:
                 coords = self._extract_coordinates(prep)
                 if coords:
                     return TransformMatrix.scale(*coords)
-        
-        # Check for uniform scaling
-        scale_factor = self._extract_scale_factor(verb_phrase)
-        if scale_factor is not None:
-            return TransformMatrix.uniform_scale(scale_factor)
         
         return None
     
@@ -381,38 +374,6 @@ class TransformInterpreter:
             amount = self._extract_numeric_amount_from_np(verb_phrase.amount)
             if amount is not None:
                 return amount
-        
-        return None
-    
-    def _extract_scale_factor(self, verb_phrase: VerbPhrase) -> Optional[float]:
-        """
-        Extract scale factor from a verb phrase.
-        
-        Examples:
-        - "make it twice as big" -> 2.0
-        - "scale by 1.5" -> 1.5
-        - "resize to half" -> 0.5
-        """
-        # Look for scale-related keywords
-        scale_keywords = {
-            "twice": 2.0,
-            "double": 2.0,
-            "half": 0.5,
-            "quarter": 0.25,
-            "triple": 3.0
-        }
-        
-        # Check adjective complements
-        for adj in verb_phrase.adjective_complement:
-            if adj.lower() in scale_keywords:
-                return scale_keywords[adj.lower()]
-        
-        # Check for numeric amounts
-        for prep in verb_phrase.preps:
-            if prep.preposition == "by":
-                amount = self._extract_numeric_amount(prep)
-                if amount is not None:
-                    return amount
         
         return None
     

@@ -262,35 +262,6 @@ class TestTransformInterpreter:
         
         assert result == 90.0
     
-    def test_extract_scale_factor_keyword(self):
-        """Test extracting scale factor from keyword."""
-        # Create mock verb phrase with scale keyword
-        verb_phrase = Mock(spec=VerbPhrase)
-        verb_phrase.adjective_complement = ["twice"]
-        verb_phrase.preps = []
-        
-        result = self.interpreter._extract_scale_factor(verb_phrase)
-        
-        assert result == 2.0
-    
-    def test_extract_scale_factor_numeric(self):
-        """Test extracting numeric scale factor."""
-        # Create mock prepositional phrase with numeric scale
-        prep = Mock(spec=PrepositionalPhrase)
-        prep.preposition = "by"
-        prep.noun_phrase = Mock(spec=NounPhrase)
-        prep.noun_phrase.determiner = "1.5"
-        prep.noun_phrase.noun = "factor"
-        
-        # Create mock verb phrase
-        verb_phrase = Mock(spec=VerbPhrase)
-        verb_phrase.adjective_complement = []
-        verb_phrase.preps = [prep]
-        
-        result = self.interpreter._extract_scale_factor(verb_phrase)
-        
-        assert result == 1.5
-    
     def test_extract_numeric_amount_from_np_determiner(self):
         """Test extracting numeric amount from noun phrase determiner."""
         noun_phrase = Mock(spec=NounPhrase)
