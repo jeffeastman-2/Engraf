@@ -40,6 +40,15 @@ class VectorSpace:
             idx = VECTOR_DIMENSIONS.index(key)
             self.vector[idx] = value
 
+    def __contains__(self, key):
+        """Support for 'key in vector' syntax."""
+        try:
+            if isinstance(key, int):
+                return 0 <= key < len(self.vector)
+            return key in VECTOR_DIMENSIONS
+        except:
+            return False
+
     def __iadd__(self, other):
         if isinstance(other, VectorSpace):
             self.vector += other.vector

@@ -138,6 +138,9 @@ class VPythonRenderer(RendererBase):
         Args:
             obj: The scene object to render
         """
+        # Ensure the object's transformation properties are up to date
+        obj.update_transformations()
+        
         # Get the shape name from the object (extract from names like "cube_1", "sphere_2", etc.)
         shape_name = obj.name.split('_')[0].lower() if '_' in obj.name else obj.name.lower()
         
@@ -219,38 +222,28 @@ class VPythonRenderer(RendererBase):
     
     def _create_cube(self, obj: SceneObject) -> vp.compound:
         """Create a cube/box object."""
-        # Extract properties from the object
-        position = self._extract_position(obj)
-        size = self._extract_size(obj)
-        color = self._extract_color(obj)
-        
-        # Create the cube
+        # Create the cube with default values - transformations will be applied later
         cube = vp.box(
-            pos=position,
-            size=size,
-            color=color
+            pos=vp.vector(0, 0, 0),
+            size=vp.vector(1, 1, 1),
+            color=vp.vector(1, 1, 1)
         )
         
-        # Apply any transformations
+        # Apply all transformations from SceneObject properties
         self._apply_transformations(cube, obj)
         
         return cube
     
     def _create_sphere(self, obj: SceneObject) -> vp.compound:
         """Create a sphere object."""
-        position = self._extract_position(obj)
-        size = self._extract_size(obj)
-        color = self._extract_color(obj)
-        
-        # Use the average of the size components as radius
-        radius = np.mean([size.x, size.y, size.z])
-        
+        # Create the sphere with default values - transformations will be applied later
         sphere = vp.sphere(
-            pos=position,
-            radius=radius,
-            color=color
+            pos=vp.vector(0, 0, 0),
+            radius=0.5,
+            color=vp.vector(1, 1, 1)
         )
         
+        # Apply all transformations from SceneObject properties
         self._apply_transformations(sphere, obj)
         
         return sphere
@@ -274,17 +267,15 @@ class VPythonRenderer(RendererBase):
     
     def _create_cylinder(self, obj: SceneObject) -> vp.compound:
         """Create a cylinder object."""
-        position = self._extract_position(obj)
-        size = self._extract_size(obj)
-        color = self._extract_color(obj)
-        
+        # Create the cylinder with default values - transformations will be applied later
         cylinder = vp.cylinder(
-            pos=position,
-            radius=size.x,
-            height=size.y,
-            color=color
+            pos=vp.vector(0, 0, 0),
+            radius=0.5,
+            height=1.0,
+            color=vp.vector(1, 1, 1)
         )
         
+        # Apply all transformations from SceneObject properties
         self._apply_transformations(cylinder, obj)
         
         return cylinder
@@ -442,30 +433,56 @@ class VPythonRenderer(RendererBase):
         return vp.vector(1, 1, 1)  # Default to white
     
     def _apply_transformations(self, vpython_obj: vp.compound, obj: SceneObject) -> None:
-        """Apply any transformations stored in the object's modifiers."""
-        if not obj.modifiers:
-            return
+        """Apply transformations using SceneObject properties directly - clean approach."""
         
-        # Look for transformation matrices in modifiers
-        for modifier in obj.modifiers:
-            if hasattr(modifier, 'matrix'):
-                # Apply the transformation matrix
-                self._apply_transform_matrix(vpython_obj, modifier.matrix)
+        # Apply position
+        if obj.position:
+            vpython_obj.pos = vp.vector(obj.position['x'], obj.position['y'], obj.position['z'])
+        
+        # Apply color
+        if obj.color:
+            vpython_obj.color = vp.vector(obj.color['r'], obj.color['g'], obj.color['b'])
+        
+        # Apply scale/size
+        if obj.scale:
+            if hasattr(vpython_obj, 'size'):
+                # For objects with size property (box, etc.)
+                vpython_obj.size = vp.vector(obj.scale['x'], obj.scale['y'], obj.scale['z'])
+            elif hasattr(vpython_obj, 'radius') and hasattr(vpython_obj, 'height'):
+                # For cylinder objects
+                vpython_obj.radius = obj.scale['x']  # Use X scale for radius
+                vpython_obj.height = obj.scale['y']  # Use Y scale for height
+            elif hasattr(vpython_obj, 'radius'):
+                # For sphere objects, use average scale as radius
+                vpython_obj.radius = (obj.scale['x'] + obj.scale['y'] + obj.scale['z']) / 3
+        
+        # Apply rotation using individual rotation values
+        if obj.has_rotation():
+            print(f"🔧 Applying rotations: X={obj.rotation['x']}°, Y={obj.rotation['y']}°, Z={obj.rotation['z']}°")
+            
+            # Get rotation in radians
+            rot_radians = obj.get_rotation_radians()
+            
+            # Apply rotations using VPython's rotate method
+            # VPython rotations are applied around the object's center
+            if rot_radians['x'] != 0.0:
+                vpython_obj.rotate(angle=rot_radians['x'], axis=vp.vector(1, 0, 0))
+            if rot_radians['y'] != 0.0:
+                vpython_obj.rotate(angle=rot_radians['y'], axis=vp.vector(0, 1, 0))
+            if rot_radians['z'] != 0.0:
+                vpython_obj.rotate(angle=rot_radians['z'], axis=vp.vector(0, 0, 1))
     
     def _apply_transform_matrix(self, vpython_obj: vp.compound, matrix: np.ndarray) -> None:
-        """Apply a 4x4 transformation matrix to a VPython object."""
-        # Extract translation
-        translation = matrix[:3, 3]
-        
-        # Apply translation
-        vpython_obj.pos += vp.vector(translation[0], translation[1], translation[2])
-        
-        # For now, skip rotation and scaling transformations
-        # VPython doesn't directly support matrix transformations
-        # This could be enhanced to decompose the matrix and apply individual transformations
+        """Legacy matrix transformation method - now using direct SceneObject properties instead."""
+        # Note: This method is kept for backward compatibility but is not used
+        # in the new architecture where SceneObject properties are used directly
+        pass
     
     def update_object(self, obj: SceneObject) -> None:
         """Update an existing object in the scene."""
+        # Ensure the object's transformation properties are up to date
+        obj.update_transformations()
+        
         if obj.object_id in self.rendered_objects:
             # Remove the old object
             self.rendered_objects[obj.object_id].visible = False

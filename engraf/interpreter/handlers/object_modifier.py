@@ -165,7 +165,11 @@ class ObjectModifier:
                         scene_obj.vector['locY'] = new_y
                         scene_obj.vector['locZ'] = new_z
                         
+                        # Update transformation properties from vector (critical for renderer)
+                        scene_obj.update_transformations()
+                        
                         print(f"🔧 Moved {scene_obj.name} to [{new_x}, {new_y}, {new_z}]")
+                        print(f"🔧 Updated transformation properties: position={scene_obj.position}")
                         return
                     else:
                         print(f"🔧 Reference object {ref_obj_id} not found in scene")
@@ -180,6 +184,10 @@ class ObjectModifier:
                 scene_obj.vector['locY'] = vector['locY']
             if vector['locZ'] != 0.0:
                 scene_obj.vector['locZ'] = vector['locZ']
+            
+            # Update transformation properties from vector (critical for renderer)
+            scene_obj.update_transformations()
+            print(f"🔧 Updated transformation properties: position={scene_obj.position}")
     
     def _calculate_spatial_position(self, moving_obj: SceneObject, ref_obj: SceneObject, preposition: str, vertical_factor: float):
         """Calculate the position for spatial relationships like 'above', 'below', etc."""
@@ -257,6 +265,10 @@ class ObjectModifier:
                         scene_obj.vector['scaleZ'] = vector['locZ']
                     
                     print(f"🔧 After scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
+                    
+                    # Update transformation properties from vector (critical for renderer)
+                    scene_obj.update_transformations()
+                    print(f"🔧 Updated transformation properties: scale={scene_obj.scale}")
         else:
             print(f"🔧 No prepositional phrases found in noun phrase")
         
@@ -299,6 +311,10 @@ class ObjectModifier:
                 print(f"🔧 Adjective '{adjective}' is not a recognized scaling adjective")
             
             print(f"🔧 After scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
+        
+        # Update transformation properties from vector (critical for renderer)
+        scene_obj.update_transformations()
+        print(f"🔧 Updated transformation properties: scale={scene_obj.scale}")
     
     def _apply_rotation(self, scene_obj: SceneObject, vp: VerbPhrase, verb: str):
         """Apply rotation to an object based on verb phrase and rotation verb."""
@@ -326,7 +342,7 @@ class ObjectModifier:
                         print(f"🔧 Applied multi-axis rotation from vector [{vector['locX']}, {vector['locY']}, {vector['locZ']}]")
                     else:
                         # Single-axis rotation - check for single angle value
-                        angle = vector.get('number', 0.0) if hasattr(vector, 'get') else vector['number']
+                        angle = vector['number'] if hasattr(vector, '__getitem__') else 0.0
                         print(f"🔧 Extracted single angle: {angle}")
                         
                         # Use semantic rotation axis dimensions instead of hardcoded verb strings
@@ -344,6 +360,10 @@ class ObjectModifier:
                             # Fallback to Z-axis rotation if no vector information
                             scene_obj.vector['rotZ'] = angle
                     
+                    # Update the SceneObject's transformation properties from the vector
+                    scene_obj.update_transformations()
+                    
                     print(f"🔧 After rotation: rotX={scene_obj.vector['rotX']}, rotY={scene_obj.vector['rotY']}, rotZ={scene_obj.vector['rotZ']}")
+                    print(f"🔧 SceneObject rotation: {scene_obj.rotation}")
         else:
             print(f"🔧 No prepositional phrases found in noun phrase")

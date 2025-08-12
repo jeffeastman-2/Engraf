@@ -54,6 +54,7 @@ def demo_basic_commands():
         "draw a big blue sphere at [3, 0, 0]",
         "move it above the cube",
         "draw a green cylinder at [-3, 0, 0]",
+        "rotate it by 90 degrees",
         "draw a small yellow pyramid at [0, 3, 0]",
         "draw a purple box at [0, -3, 0]",
         "draw an orange arch at [6, 0, 0]"

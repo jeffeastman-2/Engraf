@@ -184,7 +184,7 @@ class TestPronounCommands:
                     if hasattr(parsed, 'predicate') and hasattr(parsed.predicate, 'noun_phrase'):
                         np = parsed.predicate.noun_phrase
                         if hasattr(np, 'vector'):
-                            pronoun_value = np.vector.get('pronoun', 0)
+                            pronoun_value = np.vector['pronoun']
                             print(f"Pronoun value in noun phrase: {pronoun_value}")
                             
             except Exception as e:

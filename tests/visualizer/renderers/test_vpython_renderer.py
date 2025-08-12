@@ -24,6 +24,21 @@ class TestMockVPythonRenderer:
         """Set up test fixtures."""
         self.renderer = MockVPythonRenderer(width=800, height=600, title="Test")
     
+    def create_mock_vector(self, **kwargs):
+        """Create a properly mocked VectorSpace object that supports SceneObject requirements."""
+        vector = Mock(spec=VectorSpace)
+        # Mock the __contains__ method to check for specific keys
+        def contains_mock(self_mock, key):
+            return key in kwargs
+        vector.__contains__ = contains_mock
+        
+        # Mock __getitem__ to return values from kwargs or 0.0 as default
+        def getitem_mock(self_mock, key):
+            return kwargs.get(key, 0.0)
+        vector.__getitem__ = getitem_mock
+        
+        return vector
+    
     def test_initialization(self):
         """Test that the mock renderer initializes correctly."""
         assert self.renderer.width == 800
@@ -34,8 +49,9 @@ class TestMockVPythonRenderer:
     
     def test_render_object(self):
         """Test rendering a single object."""
-        # Create a mock scene object
-        vector = Mock(spec=VectorSpace)
+        # Create a mock scene object with proper vector behavior
+        vector = self.create_mock_vector()
+        
         obj = SceneObject("cube", vector)
         
         # Render the object
@@ -55,8 +71,8 @@ class TestMockVPythonRenderer:
         # Create a mock scene with multiple objects
         scene = SceneModel()
         
-        vector1 = Mock(spec=VectorSpace)
-        vector2 = Mock(spec=VectorSpace)
+        vector1 = self.create_mock_vector()
+        vector2 = self.create_mock_vector()
         
         obj1 = SceneObject("cube", vector1)
         obj2 = SceneObject("sphere", vector2)
@@ -75,7 +91,7 @@ class TestMockVPythonRenderer:
     def test_clear_scene(self):
         """Test clearing the scene."""
         # Add some objects
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         obj = SceneObject("cube", vector)
         self.renderer.render_object(obj)
         
@@ -90,7 +106,7 @@ class TestMockVPythonRenderer:
     def test_update_object(self):
         """Test updating an object."""
         # Create and render an object
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         obj = SceneObject("cube", vector)
         self.renderer.render_object(obj)
         
@@ -105,7 +121,7 @@ class TestMockVPythonRenderer:
     def test_get_object_info(self):
         """Test getting object information."""
         # Create and render an object
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         obj = SceneObject("cube", vector)
         self.renderer.render_object(obj)
         
@@ -146,6 +162,21 @@ class TestVPythonRenderer:
         
         self.renderer = VPythonRenderer(width=800, height=600, title="Test", headless=True)
     
+    def create_mock_vector(self, **kwargs):
+        """Create a properly mocked VectorSpace object that supports SceneObject requirements."""
+        vector = Mock(spec=VectorSpace)
+        # Mock the __contains__ method to check for specific keys
+        def contains_mock(self_mock, key):
+            return key in kwargs
+        vector.__contains__ = contains_mock
+        
+        # Mock __getitem__ to return values from kwargs or 0.0 as default
+        def getitem_mock(self_mock, key):
+            return kwargs.get(key, 0.0)
+        vector.__getitem__ = getitem_mock
+        
+        return vector
+    
     def teardown_method(self):
         """Clean up test fixtures."""
         self.vp_patcher.stop()
@@ -167,7 +198,7 @@ class TestVPythonRenderer:
     def test_render_cube(self):
         """Test rendering a cube object."""
         # Create a cube object with vector
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(side_effect=lambda key: {
             "locX": 1.0, "locY": 2.0, "locZ": 3.0,
             "scaleX": 2.0, "scaleY": 2.0, "scaleZ": 2.0,
@@ -188,7 +219,7 @@ class TestVPythonRenderer:
     def test_render_sphere(self):
         """Test rendering a sphere object."""
         # Create a sphere object
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(side_effect=lambda key: {
             "locX": 0.0, "locY": 0.0, "locZ": 0.0,
             "scaleX": 1.0, "scaleY": 1.0, "scaleZ": 1.0,
@@ -209,7 +240,7 @@ class TestVPythonRenderer:
     def test_extract_position(self):
         """Test extracting position from object vector."""
         # Create object with position
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(side_effect=lambda key: {
             "locX": 1.0, "locY": 2.0, "locZ": 3.0
         }.get(key, 0.0))
@@ -227,7 +258,7 @@ class TestVPythonRenderer:
     def test_extract_size(self):
         """Test extracting size from object vector."""
         # Create object with size
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(side_effect=lambda key: {
             "scaleX": 2.0, "scaleY": 3.0, "scaleZ": 4.0
         }.get(key, 1.0))
@@ -245,7 +276,7 @@ class TestVPythonRenderer:
     def test_extract_color(self):
         """Test extracting color from object vector."""
         # Create object with color
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(side_effect=lambda key: {
             "red": 1.0, "green": 0.5, "blue": 0.2
         }.get(key, 1.0))
@@ -265,9 +296,9 @@ class TestVPythonRenderer:
         # Create a scene with multiple objects
         scene = SceneModel()
         
-        vector1 = Mock(spec=VectorSpace)
+        vector1 = self.create_mock_vector()
         vector1.__getitem__ = Mock(return_value=0.0)
-        vector2 = Mock(spec=VectorSpace)
+        vector2 = self.create_mock_vector()
         vector2.__getitem__ = Mock(return_value=0.0)
         
         obj1 = SceneObject("cube", vector1)
@@ -287,7 +318,7 @@ class TestVPythonRenderer:
     def test_clear_scene(self):
         """Test clearing the scene."""
         # Add some objects
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(return_value=0.0)
         obj = SceneObject("cube", vector)
         self.renderer.render_object(obj)
@@ -355,15 +386,29 @@ class TestRendererIntegration:
         self.renderer = MockVPythonRenderer()
         self.scene = SceneModel()
     
+    def create_mock_vector(self, **kwargs):
+        """Create a properly mocked VectorSpace object that supports SceneObject requirements."""
+        vector = Mock(spec=VectorSpace)
+        # Mock the __contains__ method to check for specific keys
+        def contains_mock(self_mock, key):
+            return key in kwargs
+        vector.__contains__ = contains_mock
+        
+        # Mock __getitem__ to return values from kwargs or 0.0 as default
+        def getitem_mock(self_mock, key):
+            return kwargs.get(key, 0.0)
+        vector.__getitem__ = getitem_mock
+        
+        return vector
+    
     def test_render_scene_with_transforms(self):
         """Test rendering a scene with transformed objects."""
         # Create object with transformation
-        vector = Mock(spec=VectorSpace)
-        vector.__getitem__ = Mock(side_effect=lambda key: {
-            "locX": 1.0, "locY": 2.0, "locZ": 3.0,
-            "scaleX": 2.0, "scaleY": 2.0, "scaleZ": 2.0,
-            "red": 1.0, "green": 0.0, "blue": 0.0
-        }.get(key, 0.0))
+        vector = self.create_mock_vector(
+            locX=1.0, locY=2.0, locZ=3.0,
+            scaleX=2.0, scaleY=2.0, scaleZ=2.0,
+            red=1.0, green=0.0, blue=0.0
+        )
         
         obj = SceneObject("cube", vector)
         
@@ -386,7 +431,7 @@ class TestRendererIntegration:
         
         for obj_type in object_types:
             # Create object of specific type
-            vector = Mock(spec=VectorSpace)
+            vector = self.create_mock_vector()
             vector.__getitem__ = Mock(return_value=0.0)
             
             obj = SceneObject(obj_type, vector)
@@ -401,7 +446,7 @@ class TestRendererIntegration:
     def test_update_object_properties(self):
         """Test updating object properties."""
         # Create and render initial object
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(return_value=0.0)
         
         obj = SceneObject("cube", vector)
@@ -418,7 +463,7 @@ class TestRendererIntegration:
     def test_scene_with_multiple_updates(self):
         """Test multiple updates to the same scene."""
         # Create initial scene
-        vector = Mock(spec=VectorSpace)
+        vector = self.create_mock_vector()
         vector.__getitem__ = Mock(return_value=0.0)
         
         obj1 = SceneObject("cube", vector)
