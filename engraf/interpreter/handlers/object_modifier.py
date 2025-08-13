@@ -5,9 +5,10 @@ This module handles modifications to existing scene objects,
 including transformations like movement, rotation, and scaling.
 """
 
-from typing import List
+from typing import List, Union
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.visualizer.scene.scene_object import SceneObject
+from engraf.visualizer.scene.scene_assembly import SceneAssembly
 from engraf.lexer.vector_space import VectorSpace
 
 
@@ -29,23 +30,20 @@ class ObjectModifier:
         self.renderer = renderer
         self.object_resolver = object_resolver
     
-    def modify_scene_object(self, obj_id: str, vp: VerbPhrase) -> bool:
-        """Modify a scene object based on a verb phrase."""
-        print(f"🔧 _modify_scene_object called with obj_id: {obj_id}, verb: {vp.verb}")
+    def modify_scene_object(self, entity_id: str, vp: VerbPhrase) -> bool:
+        """Modify a scene entity (object or assembly) based on a verb phrase."""
+        print(f"🔧 _modify_scene_object called with entity_id: {entity_id}, verb: {vp.verb}")
         try:
-            # Find the scene object
-            scene_obj = None
-            for obj in self.scene.objects:
-                if obj.object_id == obj_id:
-                    scene_obj = obj
-                    break
+            # Find the scene entity (could be object or assembly)
+            scene_entity = self.scene.find_entity_by_id(entity_id)
             
-            if not scene_obj:
-                print(f"🔧 Scene object not found: {obj_id}")
+            if not scene_entity:
+                print(f"🔧 Scene entity not found: {entity_id}")
                 return False
             
             verb = vp.verb
             print(f"🔧 Processing verb: {verb}")
+            print(f"🔧 Entity type: {type(scene_entity).__name__}")
             
             # Check if verb phrase has vector space information
             if hasattr(vp, 'vector') and vp.vector:
@@ -65,7 +63,7 @@ class ObjectModifier:
                         for pp in vp.noun_phrase.preps:
                             # Check for movement using directional_target dimension OR spatial relationships
                             if hasattr(pp, 'vector') and (pp.vector.isa('directional_target') or pp.vector.isa('spatial_location')):
-                                self._apply_movement(scene_obj, pp)
+                                self._apply_movement(scene_entity, pp)
                             # Check for rotation/scaling using directional_agency dimension
                             elif hasattr(pp, 'vector') and pp.vector.isa('directional_agency'):
                                 if hasattr(pp.noun_phrase, 'vector'):
@@ -74,16 +72,16 @@ class ObjectModifier:
                                     # Check if this is a rotation verb context
                                     if vp.verb in ['rotate', 'xrotate', 'yrotate', 'zrotate'] or (hasattr(vp, 'vector') and vp.vector and (vp.vector.isa('rotX') or vp.vector.isa('rotY') or vp.vector.isa('rotZ'))):
                                         print(f"🔧 Calling _apply_rotation for {vp.verb}")
-                                        self._apply_rotation(scene_obj, vp, vp.verb)
+                                        self._apply_rotation(scene_entity, vp, vp.verb)
                                     # If the vector has a 'number' field, it's likely scaling
                                     elif vp.vector.isa('number'):
                                         # Scaling with numeric factors
                                         print(f"🔧 Calling _apply_scaling for {vp.verb}")
-                                        self._apply_scaling(scene_obj, vp)
+                                        self._apply_scaling(scene_entity, vp)
                                     else:
                                         # Default to scaling with vector components
                                         print(f"🔧 Calling _apply_scaling for {vp.verb}")
-                                        self._apply_scaling(scene_obj, vp)
+                                        self._apply_scaling(scene_entity, vp)
                     else:
                         # Transform verb without prepositional phrases - could be basic transform
                         print(f"🔧 Transform verb {verb} without prepositions")
@@ -92,7 +90,7 @@ class ObjectModifier:
                         # Generic transform verbs like 'make' can use adjective complements for scaling
                         if hasattr(vp, 'adjective_complement') and vp.adjective_complement:
                             print(f"🔧 Found adjective complements for transformation: {vp.adjective_complement}")
-                            self._apply_adjective_scaling(scene_obj, vp)
+                            self._apply_adjective_scaling(scene_entity, vp)
                         else:
                             print(f"🔧 No adjective complements for transformation")
                             print(f"    hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
@@ -117,21 +115,27 @@ class ObjectModifier:
                 print(f"⚠️  No vector space information for verb: {verb}")
             
             # Update the visual representation
-            self.renderer.update_object(scene_obj)
+            if isinstance(scene_entity, SceneAssembly):
+                # For assemblies, update each constituent object
+                for obj in scene_entity.objects:
+                    self.renderer.update_object(obj)
+            else:
+                # For individual objects, update directly
+                self.renderer.update_object(scene_entity)
             
-            print(f"✅ Modified object: {obj_id}")
+            print(f"✅ Modified entity: {entity_id}")
             return True
             
         except Exception as e:
-            print(f"❌ Failed to modify object {obj_id}: {e}")
+            print(f"❌ Failed to modify entity {entity_id}: {e}")
             return False
     
-    def _apply_movement(self, scene_obj: SceneObject, preposition):
-        """Apply movement to an object based on prepositional phrase."""
-        print(f"🔧 _apply_movement called for {scene_obj.name}")
+    def _apply_movement(self, scene_entity: Union[SceneObject, SceneAssembly], preposition):
+        """Apply movement to an object or assembly based on prepositional phrase."""
+        print(f"🔧 _apply_movement called for {scene_entity.name}")
         print(f"🔧 Preposition: {preposition.preposition}")
         
-        # Handle spatial relationships like "above the cube"
+        # First, check for spatial relationships like "above the cube"
         if hasattr(preposition, 'vector') and preposition.vector.isa('spatial_location'):
             print(f"🔧 Processing spatial relationship: {preposition.preposition}")
             
@@ -155,39 +159,56 @@ class ObjectModifier:
                     if ref_obj:
                         print(f"🔧 Found reference object: {ref_obj.name}")
                         
+                        # For assemblies, we need to handle spatial relationships differently
+                        if isinstance(scene_entity, SceneAssembly):
+                            print(f"🔧 Warning: Spatial relationships for assemblies not yet implemented")
+                            return
+                        
                         # Calculate the new position based on spatial relationship
                         new_x, new_y, new_z = self._calculate_spatial_position(
-                            scene_obj, ref_obj, preposition.preposition, preposition.vector
+                            scene_entity, ref_obj, preposition.preposition, preposition.vector
                         )
                         
                         # Update the object's position
-                        scene_obj.vector['locX'] = new_x
-                        scene_obj.vector['locY'] = new_y
-                        scene_obj.vector['locZ'] = new_z
+                        scene_entity.vector['locX'] = new_x
+                        scene_entity.vector['locY'] = new_y
+                        scene_entity.vector['locZ'] = new_z
                         
                         # Update transformation properties from vector (critical for renderer)
-                        scene_obj.update_transformations()
+                        scene_entity.update_transformations()
                         
-                        print(f"🔧 Moved {scene_obj.name} to [{new_x}, {new_y}, {new_z}]")
-                        print(f"🔧 Updated transformation properties: position={scene_obj.position}")
+                        print(f"🔧 Moved {scene_entity.name} to [{new_x}, {new_y}, {new_z}]")
+                        print(f"🔧 Updated transformation properties: position={scene_entity.position}")
                         return
                     else:
                         print(f"🔧 Reference object {ref_obj_id} not found in scene")
                 else:
-                    print(f"🔧 Reference object not found for spatial relationship")        # Handle direct coordinate movement (original logic)
+                    print(f"🔧 Reference object not found for spatial relationship")
+            return
+        
+        # Handle direct coordinate movement (fallback for coordinates like [5,5,5])
         if hasattr(preposition, 'noun_phrase') and hasattr(preposition.noun_phrase, 'vector'):
             vector = preposition.noun_phrase.vector
             print(f"🔧 Direct coordinate movement: [{vector['locX']}, {vector['locY']}, {vector['locZ']}]")
-            if vector['locX'] != 0.0:
-                scene_obj.vector['locX'] = vector['locX']
-            if vector['locY'] != 0.0:
-                scene_obj.vector['locY'] = vector['locY']
-            if vector['locZ'] != 0.0:
-                scene_obj.vector['locZ'] = vector['locZ']
             
-            # Update transformation properties from vector (critical for renderer)
-            scene_obj.update_transformations()
-            print(f"🔧 Updated transformation properties: position={scene_obj.position}")
+            # Check if this is an assembly
+            if isinstance(scene_entity, SceneAssembly):
+                # Use assembly's move_to method which updates all constituent objects
+                scene_entity.move_to(vector['locX'], vector['locY'], vector['locZ'])
+                print(f"🔧 Updated assembly transformation properties: position={scene_entity.position}")
+            else:
+                # Original SceneObject logic
+                if vector['locX'] != 0.0:
+                    scene_entity.vector['locX'] = vector['locX']
+                if vector['locY'] != 0.0:
+                    scene_entity.vector['locY'] = vector['locY']
+                if vector['locZ'] != 0.0:
+                    scene_entity.vector['locZ'] = vector['locZ']
+                
+                # Update transformation properties from vector (critical for renderer)
+                scene_entity.update_transformations()
+                print(f"🔧 Updated transformation properties: position={scene_entity.position}")
+            return
 
     def _calculate_spatial_position(self, moving_obj: SceneObject, ref_obj: SceneObject, preposition: str, preposition_vector):
         """Calculate the position for spatial relationships like 'above', 'below', 'beside', etc.

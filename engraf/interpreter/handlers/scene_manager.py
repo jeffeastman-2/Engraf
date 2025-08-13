@@ -47,8 +47,7 @@ class SceneManager:
     
     def clear_scene(self):
         """Clear the current scene."""
-        self.scene.objects = []
-        self.scene.recent = []
+        self.scene.clear()
         self.renderer.clear_scene()
         self.object_counter_ref[0] = 0
         self.execution_history_ref.clear()

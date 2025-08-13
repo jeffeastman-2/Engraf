@@ -29,20 +29,16 @@ class ObjectResolver:
         self.last_acted_object_ref = last_acted_object_ref
     
     def resolve_target_objects(self, vp: VerbPhrase) -> List[str]:
-        """Resolve target objects for modification verbs."""
+        """Resolve target entities for modification verbs."""
+        from engraf.visualizer.scene.scene_model import resolve_pronoun
+        
         target_objects = []
         
         # Check for pronouns (e.g., "move it")
         if vp.noun_phrase and vp.noun_phrase.pronoun:
-            # Get the most recently acted upon object for "it", all objects for "them"/"they"
-            if vp.noun_phrase.pronoun.lower() == "it":
-                if self.last_acted_object_ref[0]:
-                    target_objects.append(self.last_acted_object_ref[0])
-                elif self.scene.objects:
-                    # Fallback to most recently created object if no object has been acted upon
-                    target_objects.append(self.scene.objects[-1].object_id)
-            elif vp.noun_phrase.pronoun.lower() in ("them", "they"):
-                target_objects.extend([obj.object_id for obj in self.scene.objects])
+            # Use the proper pronoun resolution from scene_model
+            resolved_entities = resolve_pronoun(vp.noun_phrase.pronoun, self.scene)
+            target_objects.extend([entity.entity_id for entity in resolved_entities])
         
         # Check for specific noun phrases
         elif vp.noun_phrase:

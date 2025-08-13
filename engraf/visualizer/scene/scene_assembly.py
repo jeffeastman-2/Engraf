@@ -7,11 +7,12 @@ SceneObjects into a single unit that can be manipulated as one entity.
 
 from typing import List, Optional, Dict, Any
 from engraf.visualizer.scene.scene_object import SceneObject
+from engraf.visualizer.scene.scene_entity import SceneEntity
 from engraf.lexer.vector_space import VectorSpace
 import math
 
 
-class SceneAssembly:
+class SceneAssembly(SceneEntity):
     """
     A hierarchical container that groups multiple SceneObjects into a single unit.
     Contains the actual SceneObject instances rather than just references.
@@ -282,6 +283,24 @@ class SceneAssembly:
             obj.update_transformations()
         
         self._update_bounding_box()
+    
+    # SceneEntity interface implementation
+    @property
+    def entity_id(self) -> str:
+        """Unique identifier for this entity."""
+        return self.assembly_id
+    
+    def get_position(self) -> tuple[float, float, float]:
+        """Get the current position of the assembly center."""
+        return (self.vector['locX'], self.vector['locY'], self.vector['locZ'])
+    
+    def get_rotation(self) -> tuple[float, float, float]:
+        """Get the current rotation of the assembly (in degrees)."""
+        return (self.rotation['x'], self.rotation['y'], self.rotation['z'])
+    
+    def get_scale(self) -> tuple[float, float, float]:
+        """Get the current scale of the assembly."""
+        return (self.scale['x'], self.scale['y'], self.scale['z'])
     
     def __repr__(self) -> str:
         """String representation of the assembly."""

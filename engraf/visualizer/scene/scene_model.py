@@ -1,5 +1,6 @@
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.visualizer.scene.scene_assembly import SceneAssembly
+from engraf.visualizer.scene.scene_entity import SceneEntity
 from engraf.lexer.vector_space import VectorSpace
 from typing import List, Optional, Union
 import copy
@@ -7,29 +8,50 @@ import copy
 
 class SceneModel:
     def __init__(self):
-        self.objects = []        # Individual SceneObjects not in assemblies
-        self.assemblies = []     # SceneAssembly instances (contain their own objects)
-        self.recent = []         # Recent objects or assemblies
+        self.entities = []       # Unified list of SceneEntity objects (both objects and assemblies)
+        self.recent = []         # Recent entities
+        
+        # Deprecated - kept for backward compatibility during transition
+        self._objects = []       # Will be removed after refactoring
+        self._assemblies = []    # Will be removed after refactoring
+    
+    @property
+    def objects(self) -> List[SceneObject]:
+        """Get all SceneObject entities (backward compatibility)."""
+        return [entity for entity in self.entities if isinstance(entity, SceneObject)]
+    
+    @property
+    def assemblies(self) -> List[SceneAssembly]:
+        """Get all SceneAssembly entities (backward compatibility)."""
+        return [entity for entity in self.entities if isinstance(entity, SceneAssembly)]
 
-    def add_object(self, obj):
-        """Add a standalone SceneObject to the scene."""
-        self.objects.append(obj)
+    def add_object(self, obj: SceneObject):
+        """Add a SceneObject to the scene."""
+        self.entities.append(obj)
         self.recent = [obj]
 
     def add_assembly(self, assembly: SceneAssembly):
         """Add a SceneAssembly to the scene."""
-        self.assemblies.append(assembly)
+        self.entities.append(assembly)
         self.recent = [assembly]
+    
+    def add_entity(self, entity: SceneEntity):
+        """Add any SceneEntity to the scene."""
+        self.entities.append(entity)
+        self.recent = [entity]
 
     def __repr__(self):
-        """String representation showing both objects and assemblies."""
+        """String representation showing all entities."""
         lines = []
-        if self.objects:
+        objects = self.objects
+        assemblies = self.assemblies
+        
+        if objects:
             lines.append("Objects:")
-            lines.extend("  " + repr(obj) for obj in self.objects)
-        if self.assemblies:
+            lines.extend("  " + repr(obj) for obj in objects)
+        if assemblies:
             lines.append("Assemblies:")
-            lines.extend("  " + repr(assembly) for assembly in self.assemblies)
+            lines.extend("  " + repr(assembly) for assembly in assemblies)
         return "\n".join(lines) if lines else "Empty scene"
 
     def get_recent_objects(self, count=None):
@@ -42,58 +64,75 @@ class SceneModel:
         for assembly in self.assemblies:
             all_objects.extend(assembly.objects)
         return all_objects
+    
+    def find_entity_by_id(self, entity_id: str) -> Optional[SceneEntity]:
+        """Find any SceneEntity by ID."""
+        for entity in self.entities:
+            if entity.entity_id == entity_id:
+                return entity
+        return None
 
     def find_object_by_id(self, object_id: str) -> Optional[SceneObject]:
         """Find a SceneObject by ID, searching both standalone and assembly objects."""
         # Search standalone objects
-        for obj in self.objects:
-            if obj.object_id == object_id:
-                return obj
+        for entity in self.entities:
+            if isinstance(entity, SceneObject) and entity.object_id == object_id:
+                return entity
         
         # Search objects within assemblies
-        for assembly in self.assemblies:
-            for obj in assembly.objects:
-                if obj.object_id == object_id:
-                    return obj
+        for entity in self.entities:
+            if isinstance(entity, SceneAssembly):
+                for obj in entity.objects:
+                    if obj.object_id == object_id:
+                        return obj
         
         return None
 
     def find_assembly_by_id(self, assembly_id: str) -> Optional[SceneAssembly]:
         """Find a SceneAssembly by ID."""
-        for assembly in self.assemblies:
-            if assembly.assembly_id == assembly_id:
-                return assembly
+        for entity in self.entities:
+            if isinstance(entity, SceneAssembly) and entity.assembly_id == assembly_id:
+                return entity
         return None
 
     def find_assembly_by_name(self, name: str) -> Optional[SceneAssembly]:
         """Find a SceneAssembly by name."""
-        for assembly in self.assemblies:
-            if assembly.name == name:
-                return assembly
+        for entity in self.entities:
+            if isinstance(entity, SceneAssembly) and entity.name == name:
+                return entity
         return None
 
     def remove_object(self, object_id: str) -> bool:
         """Remove an object from the scene (handles both standalone and assembly objects)."""
         # Try to remove from standalone objects
-        for obj in self.objects:
-            if obj.object_id == object_id:
-                self.objects.remove(obj)
+        for entity in self.entities:
+            if isinstance(entity, SceneObject) and entity.object_id == object_id:
+                self.entities.remove(entity)
                 return True
         
         # Try to remove from assemblies
-        for assembly in self.assemblies:
-            for obj in assembly.objects:
-                if obj.object_id == object_id:
-                    assembly.remove_object(obj)
-                    return True
+        for entity in self.entities:
+            if isinstance(entity, SceneAssembly):
+                for obj in entity.objects:
+                    if obj.object_id == object_id:
+                        entity.remove_object(obj)
+                        return True
         
         return False
 
     def remove_assembly(self, assembly_id: str) -> bool:
         """Remove an entire assembly from the scene."""
-        for assembly in self.assemblies:
-            if assembly.assembly_id == assembly_id:
-                self.assemblies.remove(assembly)
+        for entity in self.entities:
+            if isinstance(entity, SceneAssembly) and entity.assembly_id == assembly_id:
+                self.entities.remove(entity)
+                return True
+        return False
+    
+    def remove_entity(self, entity_id: str) -> bool:
+        """Remove any entity from the scene by ID."""
+        for entity in self.entities:
+            if entity.entity_id == entity_id:
+                self.entities.remove(entity)
                 return True
         return False
 
@@ -102,8 +141,8 @@ class SceneModel:
         obj = self.find_object_by_id(object_id)
         assembly = self.find_assembly_by_id(assembly_id)
         
-        if obj and assembly and obj in self.objects:
-            self.objects.remove(obj)
+        if obj and assembly and obj in self.entities:
+            self.entities.remove(obj)
             assembly.add_object(obj)
             return True
         
@@ -115,10 +154,15 @@ class SceneModel:
             for obj in assembly.objects:
                 if obj.object_id == object_id:
                     assembly.remove_object(obj)
-                    self.objects.append(obj)
+                    self.entities.append(obj)
                     return True
         
         return False
+        
+    def clear(self):
+        """Clear all entities and recent items from the scene."""
+        self.entities.clear()
+        self.recent.clear()
         
     def find_noun_phrase(self, np):
         """
@@ -183,40 +227,32 @@ class SceneModel:
         """
         new_scene = SceneModel()
         
-        # Deep copy all standalone objects
-        new_scene.objects = [copy.deepcopy(obj) for obj in self.objects]
-        
-        # Deep copy all assemblies
-        new_scene.assemblies = [copy.deepcopy(assembly) for assembly in self.assemblies]
+        # Deep copy all entities directly to the unified list
+        new_scene.entities = [copy.deepcopy(entity) for entity in self.entities]
         
         # Deep copy recent objects/assemblies list
         if self.recent:
-            # Create mapping from old to new objects
-            obj_mapping = {id(old_obj): new_obj for old_obj, new_obj in zip(self.objects, new_scene.objects)}
-            assembly_mapping = {id(old_assembly): new_assembly for old_assembly, new_assembly in zip(self.assemblies, new_scene.assemblies)}
+            # Create mapping from old to new entities
+            entity_mapping = {id(old_entity): new_entity for old_entity, new_entity in zip(self.entities, new_scene.entities)}
             
             new_recent = []
             for item in self.recent:
-                if isinstance(item, SceneAssembly):
-                    new_recent.append(assembly_mapping.get(id(item), copy.deepcopy(item)))
-                else:
-                    new_recent.append(obj_mapping.get(id(item), copy.deepcopy(item)))
+                new_recent.append(entity_mapping.get(id(item), copy.deepcopy(item)))
             new_scene.recent = new_recent
         
         return new_scene
     
 
 def resolve_pronoun(word, scene: SceneModel):
-    """Resolve pronouns to objects or assemblies in the scene."""
+    """Resolve pronouns to entities in the scene."""
     word = word.lower()
     if word == "it":
         if scene.recent:
-            return [scene.recent[-1]]  # Return the most recently added object/assembly
+            return [scene.recent[-1]]  # Return the most recently added entity
         else:
-            return []  # Return empty list if no objects
+            return []  # Return empty list if no entities
     elif word in ("they", "them"):
-        # Return all known objects and assemblies in the scene
-        all_items = scene.objects + scene.assemblies
-        return all_items
+        # Return all known entities in the scene
+        return scene.entities.copy()
     else:
         raise ValueError(f"Unrecognized pronoun: {word}")

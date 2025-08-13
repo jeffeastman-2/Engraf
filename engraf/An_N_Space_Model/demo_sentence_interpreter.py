@@ -47,6 +47,11 @@ def demo_basic_commands():
     
     # Demo sentences with positioning to spread objects out
     demo_sentences = [
+        "draw a very tall box at [-1, 0, 0]",
+        "draw a very tall box at [1, 0, 0]",
+        "draw a very tall box at [0,1,0] and rotate it by 90 degrees",
+        "group them",
+        "move it to [5,5,5]",
         "draw a red cube at [0, 0, 0]",
         "move it to [2, 3, 4]",
         "make it bigger",
@@ -54,9 +59,7 @@ def demo_basic_commands():
         "draw a big blue sphere at [3, 0, 0]",
         "move it above the cube",
         "draw a green cylinder at [-3, 0, 0]",
-        "rotate it by 90 degrees",
-        "draw a small yellow pyramid at [0, 3, 0]",
-        "draw a purple box at [0, -3, 0]"
+        "rotate it by 90 degrees"
     ]
     
     print("🎯 Running basic drawing commands...")
