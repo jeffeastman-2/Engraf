@@ -119,14 +119,14 @@ class TestSceneObjectFromNP:
             def __init__(self, noun_phrase):
                 self.noun_phrase = noun_phrase
         
-        # Create structure: "cube over the sphere by the arch"
+        # Create structure: "cube over the sphere by the pyramid"
         sphere_vector = VectorSpace()
         sphere_np = MockNP("sphere", sphere_vector)
         pp1 = MockPP(sphere_np)
         
-        arch_vector = VectorSpace()
-        arch_np = MockNP("arch", arch_vector)
-        pp2 = MockPP(arch_np)
+        pyramid_vector = VectorSpace()
+        pyramid_np = MockNP("pyramid", pyramid_vector)
+        pp2 = MockPP(pyramid_np)
         
         cube_vector = VectorSpace()
         cube_np = MockNP("cube", cube_vector, preps=[pp1, pp2])
@@ -144,8 +144,8 @@ class TestSceneObjectFromNP:
         
         # Check second modifier
         modifier2 = obj.modifiers[1]
-        assert modifier2.name == "arch"
-        assert modifier2.vector == arch_vector
+        assert modifier2.name == "pyramid"
+        assert modifier2.vector == pyramid_vector
 
     def test_noun_phrase_with_nested_preps(self):
         """Test creating SceneObject from noun phrase with nested prepositional phrases."""
@@ -159,14 +159,14 @@ class TestSceneObjectFromNP:
             def __init__(self, noun_phrase):
                 self.noun_phrase = noun_phrase
         
-        # Create structure: "cube over the sphere by the arch"
-        # where "sphere by the arch" means sphere has its own prep
-        arch_vector = VectorSpace()
-        arch_np = MockNP("arch", arch_vector)
-        arch_pp = MockPP(arch_np)
+        # Create structure: "cube over the sphere by the pyramid"
+        # where "sphere by the pyramid" means sphere has its own prep
+        pyramid_vector = VectorSpace()
+        pyramid_np = MockNP("pyramid", pyramid_vector)
+        pyramid_pp = MockPP(pyramid_np)
         
         sphere_vector = VectorSpace()
-        sphere_np = MockNP("sphere", sphere_vector, preps=[arch_pp])
+        sphere_np = MockNP("sphere", sphere_vector, preps=[pyramid_pp])
         sphere_pp = MockPP(sphere_np)
         
         cube_vector = VectorSpace()
@@ -176,12 +176,12 @@ class TestSceneObjectFromNP:
         
         assert isinstance(obj, SceneObject)
         assert obj.name == "cube"
-        assert len(obj.modifiers) == 2  # Flattened: sphere and arch
+        assert len(obj.modifiers) == 2  # Flattened: sphere and pyramid
         
-        # Should have both sphere and arch as modifiers (flattened)
+        # Should have both sphere and pyramid as modifiers (flattened)
         modifier_names = [mod.name for mod in obj.modifiers]
         assert "sphere" in modifier_names
-        assert "arch" in modifier_names
+        assert "pyramid" in modifier_names
 
     def test_noun_phrase_with_none_noun_in_prep(self):
         """Test handling prepositional phrases with None noun."""

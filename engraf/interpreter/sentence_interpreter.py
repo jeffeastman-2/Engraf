@@ -8,7 +8,7 @@ for different aspects of sentence interpretation.
 Refactored for better maintainability and separation of concerns.
 """
 
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.pos.sentence_phrase import SentencePhrase
@@ -19,7 +19,7 @@ from engraf.visualizer.scene.temporal_scenes import TemporalScenes
 # VPython renderer will be imported conditionally to avoid hanging
 
 # Import specialized handlers
-from .handlers import ObjectCreator, ObjectModifier, ObjectResolver, SceneManager
+from .handlers import ObjectCreator, ObjectModifier, ObjectResolver, SceneManager, AssemblyCreator
 
 # Import semantic agreement validation
 from .semantic_validator import SemanticAgreementValidator
@@ -52,11 +52,13 @@ class SentenceInterpreter:
         self._object_counter = [0]  # Use list for mutable reference
         self._execution_history = []  # Use underscore for consistency
         self._last_acted_object = [None]  # Use list for mutable reference
+        self._assembly_counter = [0]  # Assembly counter for unique IDs
         
         # Initialize specialized handlers
         self.object_resolver = ObjectResolver(self.scene, self._last_acted_object)
         self.object_creator = ObjectCreator(self.scene, self._object_counter)
         self.object_modifier = ObjectModifier(self.scene, self.renderer, self.object_resolver)
+        self.assembly_creator = AssemblyCreator(self.scene, self._assembly_counter, self.object_resolver)
         self.scene_manager = SceneManager(
             self.scene, 
             self.renderer, 
@@ -119,6 +121,12 @@ class SentenceInterpreter:
             return result
             
         except Exception as e:
+            import traceback
+            print(f"🚨 Exception caught in interpret:")
+            print(f"🚨 Exception type: {type(e)}")
+            print(f"🚨 Exception message: {str(e)}")
+            print(f"🚨 Traceback:")
+            traceback.print_exc()
             return self.scene_manager.create_result(False, f"Error interpreting sentence: {str(e)}", sentence)
     
     def _execute_sentence(self, parsed_sentence: SentencePhrase, original_sentence: str) -> Dict[str, Any]:
@@ -147,6 +155,8 @@ class SentenceInterpreter:
             # Handle tobe sentences (e.g., "the cube is red")
             if hasattr(parsed_sentence, 'tobe') and parsed_sentence.tobe:
                 tobe_result = self.scene_manager.execute_tobe_sentence(parsed_sentence)
+                print(f"🔍 DEBUG: tobe_result type: {type(tobe_result)}")
+                print(f"🔍 DEBUG: tobe_result: {tobe_result}")
                 result.update(tobe_result)
             
             self._execution_history.append(result)
@@ -158,6 +168,7 @@ class SentenceInterpreter:
     def _execute_predicate(self, predicate: Union[VerbPhrase, ConjunctionPhrase]) -> Dict[str, Any]:
         """Execute a predicate (verb phrase or conjunction of verb phrases)."""
         result = {
+            'success': True,  # Default to success
             'objects_created': [],
             'objects_modified': [],
             'actions_performed': []
@@ -167,6 +178,9 @@ class SentenceInterpreter:
             # Handle conjunction of predicates (e.g., "draw a cube and move it")
             left_result = self._execute_predicate(predicate.left)
             right_result = self._execute_predicate(predicate.right)
+            
+            # If either side fails, the whole predicate fails
+            result['success'] = left_result.get('success', True) and right_result.get('success', True)
             
             # Merge results
             result['objects_created'].extend(left_result.get('objects_created', []))
@@ -185,6 +199,7 @@ class SentenceInterpreter:
     def _execute_verb_phrase(self, vp: VerbPhrase) -> Dict[str, Any]:
         """Execute a single verb phrase using specialized handlers."""
         result = {
+            'success': True,  # Default to success, handlers can override
             'objects_created': [],
             'objects_modified': [],
             'actions_performed': []
@@ -212,8 +227,19 @@ class SentenceInterpreter:
                 modified_objects = self._handle_modification_verb(vp)
                 result['objects_modified'].extend(modified_objects)
             
+            # Handle organize verbs (grouping, assembly creation)
+            elif vp.vector.isa('organize'):
+                assembly_id = self._handle_organize_verb(vp)
+                if assembly_id:
+                    result['assemblies_created'] = result.get('assemblies_created', [])
+                    result['assemblies_created'].append(assembly_id)
+                    result['success'] = True
+                else:
+                    result['success'] = False
+                    result['error'] = "Failed to create assembly"
+            
             # Handle other vector space intents
-            elif vp.vector.isa('organize') or vp.vector.isa('edit') or vp.vector.isa('select'):
+            elif vp.vector.isa('edit') or vp.vector.isa('select'):
                 print(f"⚠️  Unsupported verb intent for: {verb}")
             
             else:
@@ -239,6 +265,14 @@ class SentenceInterpreter:
                     self._last_acted_object[0] = obj_id
         
         return created_objects
+    
+    def _handle_organize_verb(self, vp: VerbPhrase) -> Optional[str]:
+        """Handle organize verbs like 'group' using the AssemblyCreator."""
+        if vp.verb == 'group':
+            return self.assembly_creator.create_assembly_from_verb_phrase(vp)
+        else:
+            print(f"⚠️  Unsupported organize verb: {vp.verb}")
+            return None
     
     def _handle_modification_verb(self, vp: VerbPhrase) -> list[str]:
         """Handle modification verbs using the ObjectModifier."""

@@ -49,7 +49,7 @@ class TestSceneIntegration:
 
     def test_scene_from_sentence_with_chained_pps(self):
         """Test creating scene object from sentence with chained prepositional phrases."""
-        tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere by the very tall arch"))
+        tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere by the very tall pyramid"))
         sentence = run_sentence(tokens)
         
         assert sentence is not None
@@ -77,7 +77,7 @@ class TestSceneIntegration:
         
         modifier2 = scene.modifiers[1]
         assert isinstance(modifier2, SceneObject)
-        assert modifier2.name == "arch"
+        assert modifier2.name == "pyramid"
         assert isinstance(modifier2.vector, VectorSpace)
         assert modifier2.vector["scaleY"] > 2.0
         

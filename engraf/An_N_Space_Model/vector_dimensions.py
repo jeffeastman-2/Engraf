@@ -10,6 +10,7 @@ VECTOR_DIMENSIONS = [
     "adj",       # adjectives (red, large, smooth)
     "noun",      # nouns (cube, sphere, object)
     "pronoun",   # pronouns (it, they, them)
+    "assembly",  # assembly/compound objects (house, car, table_setting)
     
     # Grammatical features
     "number",    # numeric quantity information

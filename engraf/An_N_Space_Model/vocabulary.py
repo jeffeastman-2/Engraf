@@ -7,7 +7,6 @@ SEMANTIC_VECTOR_SPACE = {
     'box': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'sphere': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'ellipsoid': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
-    'arch': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'table': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'object': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
     'square': vector_from_features("noun", loc=[0.0, 0.0, 0.0], scale=[0.0, 0.0, 0.0]),
@@ -149,6 +148,7 @@ SEMANTIC_VECTOR_SPACE = {
     
     # Relational dimensions
     'of': vector_from_features("prep", relational_possession=1.0), # belongs to, part of
+    'as': vector_from_features("prep", relational_comparison=1.0), # comparison, identification
     'than': vector_from_features("prep", relational_comparison=1.0), # comparison baseline
     
     # Additional verbs for time travel

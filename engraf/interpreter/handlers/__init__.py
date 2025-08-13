@@ -8,5 +8,6 @@ from .object_creator import ObjectCreator
 from .object_modifier import ObjectModifier
 from .object_resolver import ObjectResolver
 from .scene_manager import SceneManager
+from .assembly_creator import AssemblyCreator
 
-__all__ = ['ObjectCreator', 'ObjectModifier', 'ObjectResolver', 'SceneManager']
+__all__ = ['ObjectCreator', 'ObjectModifier', 'ObjectResolver', 'SceneManager', 'AssemblyCreator']

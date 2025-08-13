@@ -21,11 +21,11 @@ def test_np_with_adjectives():
     assert result.vector["blue"] > 0.5  # Check if the color is blue
 
 def test_np_with_adverbs():
-    result = run_np(TokenStream(tokenize("a very tall red arch")))
+    result = run_np(TokenStream(tokenize("a very tall red cylinder")))
    
     assert result is not None
     print("Final vector:", result.vector)
-    assert result.noun == "arch"
+    assert result.noun == "cylinder"
     assert isinstance(result.vector, VectorSpace)
     assert result.vector["scaleY"] == 2.25  # "very tall" = 1.5 * 1.5 = 2.25
     assert result.vector["red"] > 0.5  # Check if the color is red

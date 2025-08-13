@@ -37,15 +37,15 @@ def test_adverb_adjective_in_coordinated_np():
 
 
 def test_simple_adverb_adjective_sequence():
-    """Test parsing 'draw a very tall arch'"""
-    sentence = run_sentence(TokenStream(tokenize('draw a very tall arch')))
+    """Test parsing 'draw a very tall cylinder'"""
+    sentence = run_sentence(TokenStream(tokenize('draw a very tall cylinder')))
     
     assert sentence is not None, "Failed to parse sentence with simple adverb-adjective sequence"
     assert sentence.predicate.verb == "draw", "Verb should be 'draw'"
     
     np = sentence.predicate.noun_phrase
-    assert np.noun == "arch", "Object should be 'arch'"
-    assert np.vector["scaleY"] > 2.0, "Arch should be very tall (scaleY boosted by 'very')"
+    assert np.noun == "cylinder", "Object should be 'cylinder'"
+    assert np.vector["scaleY"] > 2.0, "Cylinder should be very tall (scaleY boosted by 'very')"
 
 
 def test_multiple_adverb_adjective_sequences():
