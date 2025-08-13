@@ -51,7 +51,7 @@ VECTOR_DIMENSIONS = [
     "select",    # selection verbs (select, choose)
     
     # Semantic preposition dimensions
-    "spatial_vertical",      # vertical relationships: above/over (+), below/under (-), on (contact)
+    "spatial_location",      # spatial relationships: prepositions affecting object positioning
     "spatial_proximity",     # proximity relationships: near (+), at (specific), in (containment)
     "directional_target",    # directional movement: to (+), from (-)
     "directional_agency",    # agency/means: by (+), with (accompaniment)

@@ -127,18 +127,18 @@ SEMANTIC_VECTOR_SPACE = {
     'undo': vector_from_features("verb action"),
 
     # Prepositions with semantic dimensions
-    # Spatial vertical relationships
-    'on': vector_from_features("prep", spatial_vertical=0.5),      # contact-high
-    'over': vector_from_features("prep", spatial_vertical=1.0),    # higher
-    'above': vector_from_features("prep", spatial_vertical=1.0),   # higher
-    'under': vector_from_features("prep", spatial_vertical=-1.0),  # lower
-    'below': vector_from_features("prep", spatial_vertical=-1.0),  # lower
-    
+    # Spatial location relationships
+    'on': vector_from_features("prep spatial_location", locY=0.5),      # contact-high
+    'over': vector_from_features("prep spatial_location", locY=1.0),    # higher
+    'above': vector_from_features("prep spatial_location", locY=1.0),   # higher
+    'under': vector_from_features("prep spatial_location", locY=-1.0),  # lower
+    'below': vector_from_features("prep spatial_location", locY=-1.0),  # lower
+
     # Spatial proximity relationships
-    'in': vector_from_features("prep", spatial_proximity=0.3),     # containment
-    'at': vector_from_features("prep", spatial_proximity=0.5),     # specific location
-    'near': vector_from_features("prep", spatial_proximity=1.0),   # close
-    
+    'in': vector_from_features("prep spatial_proximity"),     # containment
+    'at': vector_from_features("prep spatial_proximity") ,     # specific location
+    'near': vector_from_features("prep spatial_proximity"),   # close
+
     # Directional/movement relationships
     'to': vector_from_features("prep", directional_target=1.0),    # toward destination
     'from': vector_from_features("prep", directional_target=-1.0), # away from source
@@ -196,14 +196,14 @@ SEMANTIC_VECTOR_SPACE = {
     'been': vector_from_features("tobe"),
     
     # Directional adverbs and spatial prepositions for movement
-    'up': vector_from_features("adv prep", spatial_vertical=1.0, locY=1.0),       # upward direction
-    'down': vector_from_features("adv prep", spatial_vertical=-1.0, locY=-1.0),   # downward direction
-    'left': vector_from_features("adv prep", locX=-1.0),                          # leftward direction
-    'right': vector_from_features("adv prep", locX=1.0),                          # rightward direction
-    'forward': vector_from_features("adv prep", locZ=1.0),                        # forward direction
-    'backward': vector_from_features("adv prep", locZ=-1.0),                      # backward direction
-    'back': vector_from_features("adv prep", locZ=-1.0),                          # backward direction (synonym)
-    
+    'up': vector_from_features("adv prep spatial_location", locY=1.0),       # upward direction
+    'down': vector_from_features("adv prep spatial_location", locY=-1.0),    # downward direction
+    'left': vector_from_features("adv prep spatial_location", locX=-1.0),    # leftward direction
+    'right': vector_from_features("adv prep spatial_location", locX=1.0),    # rightward direction
+    'forward': vector_from_features("adv prep spatial_location", locZ=1.0),  # forward direction
+    'backward': vector_from_features("adv prep spatial_location", locZ=-1.0),# backward direction
+    'back': vector_from_features("adv prep spatial_location", locZ=-1.0),    # backward direction (synonym)
+
     # Rotational prepositions
     'around': vector_from_features("prep", directional_agency=0.8),               # rotational context
     'about': vector_from_features("prep", directional_agency=0.8),                # rotational context (synonym)
