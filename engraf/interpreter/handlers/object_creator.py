@@ -55,7 +55,8 @@ class ObjectCreator:
             'type': np.noun,
             'determiner': np.determiner,
             'adjectives': getattr(np, 'adjectives', []),
-            'vector_space': np.vector if hasattr(np, 'vector') else None
+            'vector_space': np.vector if hasattr(np, 'vector') else None,
+            'custom_name': getattr(np, 'custom_name', None)
         }
         
         # Handle prepositional phrases for positioning
@@ -108,40 +109,34 @@ class ObjectCreator:
             print(f"❌ Failed to create object: {e}")
             return None
     
+    def _check_name_conflict(self, name: str) -> bool:
+        """Check if an object ID already exists in the scene."""
+        # Check objects
+        for obj in self.scene.objects:
+            if obj.object_id == name:
+                return True
+        
+        # Check assemblies
+        for assembly in getattr(self.scene, 'assemblies', []):
+            if assembly.assembly_id == name:
+                return True
+        
+        return False
+    
     def _generate_descriptive_id(self, obj_info: Dict[str, Any]) -> str:
-        """Generate a descriptive ID that includes key adjectives."""
+        """Generate a simple descriptive ID for the object using only base noun and counter."""
         base_type = obj_info['type']
-        vector_space = obj_info.get('vector_space')
         
-        # Extract key descriptive terms
-        descriptors = []
+        # Check if user provided a custom name
+        custom_name = obj_info.get('custom_name')
+        if custom_name:
+            # Check for naming conflicts
+            if self._check_name_conflict(custom_name):
+                raise ValueError(f"Object named '{custom_name}' already exists. Please choose a different name.")
+            return custom_name
         
-        # Add color descriptor
-        if vector_space:
-            if vector_space['red'] > 0.5:
-                descriptors.append('red')
-            elif vector_space['green'] > 0.5:
-                descriptors.append('green')
-            elif vector_space['blue'] > 0.5:
-                descriptors.append('blue')
-            elif vector_space['red'] > 0.5 and vector_space['green'] > 0.5:
-                descriptors.append('yellow')
-            elif vector_space['red'] > 0.5 and vector_space['blue'] > 0.5:
-                descriptors.append('purple')
-            elif vector_space['green'] > 0.5 and vector_space['blue'] > 0.5:
-                descriptors.append('cyan')
-            
-            # Add size descriptor
-            if vector_space['scaleX'] > 1.5 or vector_space['scaleY'] > 1.5 or vector_space['scaleZ'] > 1.5:
-                descriptors.append('big')
-            elif vector_space['scaleX'] < 0.75 or vector_space['scaleY'] < 0.75 or vector_space['scaleZ'] < 0.75:
-                descriptors.append('small')
-        
-        # Create descriptive ID
-        if descriptors:
-            return f"{'_'.join(descriptors)}_{base_type}_{self.object_counter_ref[0]}"
-        else:
-            return f"{base_type}_{self.object_counter_ref[0]}"
+        # Use simple format: noun-counter (no adjectives as they can change)
+        return f"{base_type}-{self.object_counter_ref[0]}"
     
     def _extract_colors_from_vector(self, vector_space: VectorSpace) -> List[str]:
         """Extract color names from vector space."""

@@ -2,6 +2,7 @@ from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vocabulary_builder import vector_from_word
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 from engraf.utils.noun_inflector import singularize_noun
+from engraf.utils.verb_inflector import find_root_verb
 import re
 
 
@@ -124,9 +125,24 @@ def tokenize(sentence):
             vs["number"] = float(tok)
             result.append(vs)
         else:
-            vs = vector_from_word(tok.lower())
-            if vs is None:
-                raise ValueError(f"Unknown token: {tok}")
+            # First check if the word is directly in vocabulary
+            try:
+                vs = vector_from_word(tok.lower())
+            except ValueError:
+                # Try verb inflection detection
+                root_verb, inflection_type, found_root = find_root_verb(tok)
+                if found_root:
+                    vs = vector_from_word(root_verb)
+                    # Keep the inflected form as the word but use root verb's vector
+                    vs.word = tok.lower()
+                    # Set the appropriate inflection dimension
+                    if inflection_type:
+                        vs[inflection_type] = 1.0
+                    result.append(vs)
+                    i += 1
+                    continue
+                else:
+                    raise ValueError(f"Unknown token: {tok}")
             
             # For nouns, store the singular form in vs.word for consistent object matching
             if vs["noun"] > 0:  # This is a noun

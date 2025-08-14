@@ -73,7 +73,12 @@ class TestObjectMovement(unittest.TestCase):
         
         # Should find the sphere as the target object
         self.assertEqual(len(target_objects), 1)
-        self.assertIn('sphere', target_objects[0])
+        
+        # Verify the found object is actually a sphere
+        found_object_id = target_objects[0]
+        found_object = self.interpreter.scene.find_object_by_id(found_object_id)
+        self.assertIsNotNone(found_object)
+        self.assertEqual(found_object.name, 'sphere')
     
     def test_sphere_movement_above_cube(self):
         """Test the specific issue: moving sphere above cube."""
@@ -214,7 +219,12 @@ class TestObjectResolver(unittest.TestCase):
         
         # Should find exactly one sphere
         self.assertEqual(len(objects), 1)
-        self.assertIn('sphere', objects[0])
+        
+        # Get the found object and verify it's a sphere
+        found_object_id = objects[0]
+        found_object = self.interpreter.scene.find_object_by_id(found_object_id)
+        self.assertIsNotNone(found_object)
+        self.assertEqual(found_object.name, 'sphere')
     
     def test_resolve_by_color(self):
         """Test resolving objects by color."""
@@ -233,8 +243,13 @@ class TestObjectResolver(unittest.TestCase):
         
         # Should find the red cube
         self.assertEqual(len(objects), 1)
-        self.assertIn('cube', objects[0])
-        self.assertIn('red', objects[0])
+        
+        # Get the found object and verify it's a red cube
+        found_object_id = objects[0]
+        found_object = self.interpreter.scene.find_object_by_id(found_object_id)
+        self.assertIsNotNone(found_object)
+        self.assertEqual(found_object.name, 'cube')
+        self.assertEqual(found_object.vector['red'], 1.0)
     
     def test_resolve_multiple_objects(self):
         """Test resolving when multiple objects match."""
@@ -255,7 +270,12 @@ class TestObjectResolver(unittest.TestCase):
         
         # Should find both cubes
         self.assertEqual(len(objects), 2)
-        self.assertTrue(all('cube' in obj for obj in objects))
+        
+        # Verify both found objects are cubes
+        for obj_id in objects:
+            found_object = self.interpreter.scene.find_object_by_id(obj_id)
+            self.assertIsNotNone(found_object)
+            self.assertEqual(found_object.name, 'cube')
 
 
 if __name__ == '__main__':

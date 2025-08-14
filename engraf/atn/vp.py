@@ -23,6 +23,8 @@ def build_vp_atn(vp: VerbPhrase, ts: TokenStream):
     start.add_arc(is_verb, lambda _, tok: vp.apply_verb(tok), after_verb)
     # NP (subnetwork) - supports coordinated noun phrases for objects like "a cube and a sphere"
     after_verb.add_arc(is_np_head, make_run_coordinated_np_into_atn(ts, fieldname="noun_phrase"), after_np)    
+    # For "to be" verbs, allow direct adjectives (for declarative sentences like "the cube is blue")
+    after_verb.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
     # Allow final transition if stream is exhausted
     after_verb.add_arc(is_none, noop, end)
 

@@ -113,6 +113,10 @@ SEMANTIC_VECTOR_SPACE = {
     'color': vector_from_features("verb action transform style"),
     'texture': vector_from_features("verb action transform texture"),
 
+    # naming
+    'call': vector_from_features("verb action naming"),
+    'name': vector_from_features("verb action naming"),
+
     # modify
     'move': vector_from_features("verb action transform move"),
     'rotate': vector_from_features("verb action transform rotate"),
@@ -188,12 +192,14 @@ SEMANTIC_VECTOR_SPACE = {
     'which': vector_from_features("question"),
     
     # To be verbs
-    'is': vector_from_features("tobe"),
-    'are': vector_from_features("tobe"),
-    'was': vector_from_features("tobe"),
-    'were': vector_from_features("tobe"),
-    'be': vector_from_features("tobe"),
-    'been': vector_from_features("tobe"),
+    'is': vector_from_features("verb tobe"),
+    'are': vector_from_features("verb tobe"),
+    'was': vector_from_features("verb tobe"),
+    'were': vector_from_features("verb tobe"),
+    'am': vector_from_features("verb tobe"),
+    'be': vector_from_features("verb tobe"),
+    'been': vector_from_features("verb tobe"),
+    'being': vector_from_features("verb tobe"),
     
     # Directional adverbs and spatial prepositions for movement
     'up': vector_from_features("adv prep spatial_location", locY=1.0),       # upward direction

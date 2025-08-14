@@ -30,8 +30,8 @@ def build_sentence_atn(sent: SentencePhrase, ts: TokenStream):
     # NEW: After subject conjunction, expect another noun phrase
     subject_conj.add_arc(is_np_head, make_run_np_into_atn(ts, fieldname="subject"), after_np)
 
-    predicate.add_arc(is_verb, make_run_vp_into_atn(ts, fieldname="predicate"), after_predicate)
     predicate.add_arc(is_tobe, lambda _, tok: sent.apply_tobe(tok), adjective_phrase)
+    predicate.add_arc(is_verb, make_run_vp_into_atn(ts, fieldname="predicate"), after_predicate)
 
     # NEW: Handle predicate conjunctions
     after_predicate.add_arc(is_conjunction, lambda _, tok: sent.apply_predicate_conjunction(tok), predicate_conj)

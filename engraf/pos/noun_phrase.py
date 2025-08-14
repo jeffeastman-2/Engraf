@@ -9,6 +9,7 @@ class NounPhrase():
         self.determiner = None
         self.preps = []
         self.scale_factor = 1.0
+        self.proper_noun = None  # For proper noun names like "called 'Charlie'"
 
     def apply_determiner(self, tok):
         self.determiner = tok.word
@@ -84,6 +85,23 @@ class NounPhrase():
         print(f"✅ NP applying pronoun {tok.word} with vector {tok}")
         self.pronoun = tok.word
         self.vector += tok
+
+    def apply_proper_noun(self, name_token, has_determiner=False):
+        """Apply a proper noun from 'called' or 'named' syntax.
+        
+        Args:
+            name_token: The quoted name token
+            has_determiner: True if preceded by 'a/an', making it a type designation
+        """
+        if has_determiner:
+            # "called a 'sun'" - type designation, not proper noun
+            print(f"✅ NP applying type designation: {name_token.word}")
+            # This will be handled as a regular noun with determiner
+        else:
+            # "called 'Charlie'" - proper noun
+            print(f"✅ NP applying proper noun: {name_token.word}")
+            self.proper_noun = name_token.word
+        # Don't add to vector as this is a naming directive, not semantic content
 
     def apply_pp(self, pp_obj):
         print(f"✅ Np applying PP: {pp_obj}")

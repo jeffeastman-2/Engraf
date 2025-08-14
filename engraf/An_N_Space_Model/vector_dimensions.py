@@ -9,6 +9,7 @@ VECTOR_DIMENSIONS = [
     "adv",       # adverbs and adverbial modifiers (very, extremely)
     "adj",       # adjectives (red, large, smooth)
     "noun",      # nouns (cube, sphere, object)
+    "proper_noun", # proper nouns (user-assigned names like 'sun', 'fred')
     "pronoun",   # pronouns (it, they, them)
     "assembly",  # assembly/compound objects (house, car, table_setting)
     
@@ -24,6 +25,11 @@ VECTOR_DIMENSIONS = [
     "question",  # question markers (who, what, where, when, why,
     "tobe",      # to-be verb marker (duplicate - consider removing)
     "unit",      # measurement units (degree, meter, pixel)
+    
+    # Verb inflection forms
+    "verb_past",        # past tense verb form (called, named, created)
+    "verb_past_part",   # past participle form (called, named, created)
+    "verb_present_part", # present participle/gerund form (calling, naming, creating)
     
     # Comparative/superlative forms
     "comp",      # comparative forms (bigger, redder, taller)
@@ -50,6 +56,7 @@ VECTOR_DIMENSIONS = [
     "organize",  # organization verbs (group, ungroup, align, position)
     "edit",      # editing verbs (delete, undo, redo, copy, paste)
     "select",    # selection verbs (select, choose)
+    "naming",    # naming verbs (call, name)
     
     # Semantic preposition dimensions
     "spatial_location",      # spatial relationships: prepositions affecting object positioning
