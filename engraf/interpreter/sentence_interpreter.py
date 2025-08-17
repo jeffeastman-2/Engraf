@@ -24,6 +24,9 @@ from .handlers import ObjectCreator, ObjectModifier, ObjectResolver, SceneManage
 # Import semantic agreement validation
 from .semantic_validator import SemanticAgreementValidator
 
+# Import vocabulary learning functions
+from engraf.lexer.vocabulary_builder import add_to_vocabulary
+
 
 class SentenceInterpreter:
     """
@@ -70,6 +73,13 @@ class SentenceInterpreter:
         # Initialize semantic agreement validator
         self.semantic_validator = SemanticAgreementValidator(self.scene)
         
+        # Registry for user-defined object names
+        # Maps user-defined names to object IDs (e.g., 'arch' -> 'assembly-1')
+        self.object_name_registry = {}
+        
+        # Pass the name registry to semantic validator for object resolution
+        self.semantic_validator.object_name_registry = self.object_name_registry
+        
     def interpret(self, sentence: str) -> Dict[str, Any]:
         """
         Interpret a natural language sentence and execute the corresponding actions.
@@ -102,6 +112,16 @@ class SentenceInterpreter:
             
             # Store the parsed sentence for access in transform methods
             self._current_sentence_parsed = parsed_sentence
+            
+            # Step 2.5: Handle vocabulary learning from quoted definitions
+            if hasattr(parsed_sentence, 'definition_word') and parsed_sentence.definition_word:
+                print(f"🔍 Found definition word: '{parsed_sentence.definition_word}'")
+                print(f"🔍 Definition vector: {parsed_sentence.vector}")
+                
+                # Extract the meaning from the sentence vector and add to vocabulary
+                if parsed_sentence.vector:
+                    add_to_vocabulary(parsed_sentence.definition_word, parsed_sentence.vector)
+                    print(f"✅ Added '{parsed_sentence.definition_word}' to vocabulary")
             
             # Step 3: Validate semantic agreement with scene state
             is_valid, error_msg = self.semantic_validator.validate_command(parsed_sentence, sentence)
@@ -238,6 +258,16 @@ class SentenceInterpreter:
                     result['success'] = False
                     result['error'] = "Failed to create assembly"
             
+            # Handle naming verbs (call, name)
+            elif vp.vector.isa('naming'):
+                success = self._handle_naming_verb(vp)
+                if success:
+                    result['success'] = True
+                    result['naming_applied'] = True
+                else:
+                    result['success'] = False
+                    result['error'] = "Failed to apply naming"
+            
             # Handle other vector space intents
             elif vp.vector.isa('edit') or vp.vector.isa('select'):
                 print(f"⚠️  Unsupported verb intent for: {verb}")
@@ -295,7 +325,90 @@ class SentenceInterpreter:
                 self._last_acted_object[0] = obj_id
         
         return modified_objects
+
+    def _handle_naming_verb(self, vp: VerbPhrase) -> bool:
+        """Handle naming verbs like 'call' and 'name'."""
+        try:
+            # Extract the target entity and the new name
+            if not vp.noun_phrase:
+                print("⚠️  No noun phrase found for naming command")
+                return False
+            
+            # Check if the noun phrase contains a quoted name
+            if not hasattr(vp.noun_phrase, 'noun') or not vp.noun_phrase.noun:
+                print("⚠️  No noun found in naming command")
+                return False
+            
+            # Get the quoted name
+            user_defined_name = vp.noun_phrase.noun
+            print(f"✅ Extracted user-defined name: '{user_defined_name}'")
+            
+            # Find the target object to name (most recently created/acted upon)
+            target_object_id = self._find_target_object_for_naming()
+            if not target_object_id:
+                print("⚠️  No target object found for naming")
+                return False
+            
+            # Register the name-to-object mapping
+            self.object_name_registry[user_defined_name.lower()] = target_object_id
+            print(f"🏷️  Mapped '{user_defined_name}' → '{target_object_id}'")
+            
+            # Register the name in the vocabulary for this session
+            self._register_user_defined_name(user_defined_name)
+            
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error in naming verb handler: {e}")
+            return False
     
+    def _find_target_object_for_naming(self) -> str:
+        """Find the target object for a naming command."""
+        # First try the most recently acted upon object
+        if self._last_acted_object[0]:
+            return self._last_acted_object[0]
+        
+        # If no specific last acted object, try to find the most recent assembly
+        # Look for the highest-numbered assembly in the scene
+        max_assembly_id = None
+        max_assembly_num = -1
+        
+        for obj in self.scene.objects:
+            if hasattr(obj, 'name') and obj.name and obj.name.startswith('assembly-'):
+                try:
+                    assembly_num = int(obj.name.split('-')[1])
+                    if assembly_num > max_assembly_num:
+                        max_assembly_num = assembly_num
+                        max_assembly_id = obj.name
+                except (ValueError, IndexError):
+                    continue
+        
+        if max_assembly_id:
+            return max_assembly_id
+        
+        # If no assemblies, look for the most recent regular object
+        if self.scene.objects:
+            last_obj = self.scene.objects[-1]  # Most recently added
+            if hasattr(last_obj, 'name') and last_obj.name:
+                return last_obj.name
+        
+        return None
+    
+    def _register_user_defined_name(self, name: str):
+        """Register a user-defined name in the session vocabulary."""
+        from engraf.lexer.vocabulary_builder import add_to_vocabulary
+        from engraf.lexer.vector_space import vector_from_features
+        
+        # Create a vector for the user-defined name
+        # It should be recognizable as a noun that can refer to objects/assemblies
+        # Use the existing 'quoted' dimension to mark it as a user-defined name
+        name_vector = vector_from_features("noun quoted")
+        name_vector.word = name.lower()
+        
+        # Add to the dynamic vocabulary
+        add_to_vocabulary(name, name_vector)
+        print(f"📚 Registered '{name}' in session vocabulary")
+
     # Temporal navigation methods
     def go_back_in_time(self) -> Dict[str, Any]:
         """Go back to previous scene state."""

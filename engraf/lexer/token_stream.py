@@ -107,10 +107,9 @@ def tokenize(sentence):
                         continue
         
         # Process single token
-        # Process single token
         if tok.startswith("'") and tok.endswith("'"):
             tok = tok[1:-1]
-            vs = vector_from_features(pos="quoted")  # empty vector with unknown POS
+            vs = vector_from_features(pos="quoted")  # empty vector with quoted feature
             vs.word = tok
             result.append(vs)
         elif tok.startswith("[") and tok.endswith("]"):
@@ -142,7 +141,16 @@ def tokenize(sentence):
                     i += 1
                     continue
                 else:
-                    raise ValueError(f"Unknown token: {tok}")
+                    # Check if it's a user-defined name in the dynamic vocabulary
+                    from engraf.lexer.vocabulary_builder import has_word, get_from_vocabulary
+                    if has_word(tok):
+                        vs = get_from_vocabulary(tok)
+                        vs.word = tok.lower()
+                        result.append(vs)
+                        i += 1
+                        continue
+                    else:
+                        raise ValueError(f"Unknown token: {tok}")
             
             # For nouns, store the singular form in vs.word for consistent object matching
             if vs["noun"] > 0:  # This is a noun

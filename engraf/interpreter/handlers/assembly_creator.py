@@ -106,7 +106,7 @@ class AssemblyCreator:
     def _create_assembly(self, name: str, objects: List[SceneObject]) -> str:
         """Create a new SceneAssembly with the given objects."""
         self.assembly_counter_ref[0] += 1
-        assembly_id = f"{name}_{self.assembly_counter_ref[0]}"
+        assembly_id = f"{name}-{self.assembly_counter_ref[0]}"
         
         # Create the assembly (SceneAssembly doesn't accept vector parameter)
         assembly = SceneAssembly(

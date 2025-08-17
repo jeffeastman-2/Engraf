@@ -21,7 +21,9 @@ class VectorSpace:
 
     # Add optional __str__ override for easier debugging
     def __repr__(self):
-        vec_str = ', '.join(f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS)
+        # Only show dimensions with non-zero values for cleaner output
+        non_zero_dims = [f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS if abs(self[k]) > 1e-10]
+        vec_str = ', '.join(non_zero_dims)
         return f"VectorSpace(word={self.word!r}, {{ {vec_str} }})"
 
     def to_array(self):

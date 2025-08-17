@@ -103,6 +103,16 @@ class NounPhrase():
             self.proper_noun = name_token.word
         # Don't add to vector as this is a naming directive, not semantic content
 
+    def apply_quoted_noun(self, tok):
+        """Apply a quoted token as a noun in naming contexts (e.g., 'name it arch')."""
+        print(f"✅ NP applying quoted noun {tok.word} with vector {tok}")
+        self.noun = tok.word
+        # Create a noun-like vector for the quoted word
+        from engraf.lexer.vector_space import vector_from_features
+        noun_vector = vector_from_features("noun quoted")
+        noun_vector.word = tok.word
+        self.vector += noun_vector
+
     def apply_pp(self, pp_obj):
         print(f"✅ Np applying PP: {pp_obj}")
         self.preps.append(pp_obj)

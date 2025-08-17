@@ -164,7 +164,19 @@ class SemanticAgreementValidator:
     
     def _object_matches_noun_phrase(self, obj, noun_phrase):
         """Check if an object matches all attributes specified in the noun phrase."""
-        # Must match the base noun
+        # Check for user-defined name match first
+        if hasattr(self, 'object_name_registry') and self.object_name_registry:
+            # If this is a quoted noun (user-defined name), check the registry
+            if (noun_phrase.vector and noun_phrase.vector['quoted'] > 0):
+                user_name = noun_phrase.noun.lower()
+                if user_name in self.object_name_registry:
+                    mapped_object_id = self.object_name_registry[user_name]
+                    # Check if this object matches the mapped ID
+                    if hasattr(obj, 'name') and obj.name == mapped_object_id:
+                        return True
+                    # If no exact match, fall through to regular matching
+        
+        # Must match the base noun (original logic)
         if obj.name != noun_phrase.noun:
             return False
             

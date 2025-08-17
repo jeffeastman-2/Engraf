@@ -2,7 +2,7 @@ import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
-    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_anything, is_vector, is_conjunction, is_number
+    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_anything, is_vector, is_conjunction, is_number, is_quoted
 from engraf.atn.core import ATNState, noop
 from engraf.utils.actions import make_run_pp_into_atn, apply_from_subnet
 from engraf.pos.noun_phrase import NounPhrase
@@ -45,6 +45,10 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)
     # Allow adjectives after pronouns, but NOT comparative adjectives (let VP handle those)
     adj_after_pronoun.add_arc(is_non_comparative_adjective, lambda _, tok: np.apply_adjective(tok), adj_after_pronoun)
+    # Handle determiners after pronouns (e.g., "call that an 'arch'")
+    adj_after_pronoun.add_arc(is_determiner, lambda _, tok: np.apply_determiner(tok), det)
+    # Handle quoted tokens as nouns in naming contexts (e.g., "name it 'arch'")
+    adj_after_pronoun.add_arc(is_quoted, lambda _, tok: np.apply_quoted_noun(tok), end)
     # Handle conjunctions between adjectives after pronouns - but only if followed by adjective
     def is_conjunction_followed_by_adjective(tok):
         if not is_conjunction(tok):
@@ -66,6 +70,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # ADJ or DET → NOUN
     for state in [det, adj, adj_conj]:
         state.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)
+        # Handle quoted tokens as nouns in naming contexts (e.g., "an 'arch'")
+        state.add_arc(is_quoted, lambda _, tok: np.apply_quoted_noun(tok), end)
 
     # Allow ADJ state to end on various conditions
     adj.add_arc(is_none, noop, end)

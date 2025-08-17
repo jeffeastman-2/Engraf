@@ -36,6 +36,7 @@ SEMANTIC_VECTOR_SPACE = {
     'it': vector_from_features("pronoun singular"),
     'they': vector_from_features("pronoun plural"),
     'them': vector_from_features("pronoun plural"),
+    'that': vector_from_features("pronoun singular"),
 
      # Adjectives
     'red': vector_from_features("adj", color=[1.0, 0.0, 0.0]),
