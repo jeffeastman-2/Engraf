@@ -149,28 +149,29 @@ class LATNLayerExecutor:
             # Execute Layer 2 NP tokenization
             layer2_hypotheses = latn_tokenize_layer2(layer1_result.hypotheses)
             
-            # Extract NounPhrase objects
-            noun_phrases = self._extract_noun_phrases(layer2_hypotheses)
-            
-            # Semantic grounding (if enabled)
-            grounding_results = []
+            # Semantic grounding with hypothesis multiplication (if enabled)
             if enable_semantic_grounding and self.layer2_grounder:
-                grounding_results = self.layer2_grounder.ground_multiple(
-                    noun_phrases, return_all_matches=return_all_matches
+                grounded_hypotheses, all_noun_phrases, all_grounding_results = self._multiply_hypotheses_with_grounding(
+                    layer2_hypotheses, return_all_matches
                 )
+            else:
+                # No grounding - extract NPs without modification
+                grounded_hypotheses = layer2_hypotheses
+                all_noun_phrases = self._extract_noun_phrases(layer2_hypotheses)
+                all_grounding_results = []
             
-            # Calculate confidence
-            layer2_confidence = layer2_hypotheses[0].confidence if layer2_hypotheses else layer1_result.confidence
+            # Calculate confidence based on best hypothesis
+            layer2_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer1_result.confidence
             overall_confidence = (layer1_result.confidence + layer2_confidence) / 2
             
             return Layer2Result(
                 layer1_result=layer1_result,
-                hypotheses=layer2_hypotheses,
-                noun_phrases=noun_phrases,
-                grounding_results=grounding_results,
+                hypotheses=grounded_hypotheses,
+                noun_phrases=all_noun_phrases,
+                grounding_results=all_grounding_results,
                 success=True,
                 confidence=overall_confidence,
-                description=f"Layer 2 processed {len(noun_phrases)} noun phrases"
+                description=f"Layer 2 processed {len(all_noun_phrases)} noun phrases in {len(grounded_hypotheses)} hypotheses"
             )
             
         except Exception as e:
@@ -402,22 +403,98 @@ class LATNLayerExecutor:
         print(f"🗑️ Delete action requested for {vp.noun_phrase}")
     
     def _extract_noun_phrases(self, layer2_hypotheses: List[NPTokenizationHypothesis]) -> List[NounPhrase]:
-        """Extract NounPhrase objects from Layer 2 processing."""
+        """Extract NounPhrase objects from Layer 2 processing.
+        
+        The token stream is the single source of truth - NP tokens are already
+        properly placed in the tokens list by replace_np_sequences().
+        """
         noun_phrases = []
         
         for hypothesis in layer2_hypotheses:
-            # Look for NP tokens in the hypothesis
+            # Look for NP tokens in the hypothesis token stream
             for token in hypothesis.tokens:
                 if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
                     noun_phrases.append(token._original_np)
-            
-            # Also check NP replacements
-            if hasattr(hypothesis, 'np_replacements'):
-                for start_idx, end_idx, np_token in hypothesis.np_replacements:
-                    if hasattr(np_token, '_original_np') and isinstance(np_token._original_np, NounPhrase):
-                        noun_phrases.append(np_token._original_np)
         
         return noun_phrases
+    
+    def _multiply_hypotheses_with_grounding(self, layer2_hypotheses, return_all_matches):
+        """Multiply hypotheses based on grounding results using two-pass algorithm.
+        
+        Pass 1: Collect all scene object matches for each NP in each hypothesis
+        Pass 2: Generate combinatorial hypotheses with one object per NP
+        
+        Returns:
+            tuple: (grounded_hypotheses, all_noun_phrases, all_grounding_results)
+        """
+        import copy
+        from itertools import product
+        
+        all_grounded_hypotheses = []
+        all_noun_phrases = []
+        all_grounding_results = []
+        
+        for base_hypothesis in layer2_hypotheses:
+            # Pass 1: Collect all matches for each NP in this hypothesis
+            np_matches = []  # List of (np_object, [matching_scene_objects])
+            
+            for token in base_hypothesis.tokens:
+                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
+                    np_obj = token._original_np
+                    
+                    # Ground this NP to get all possible matches
+                    grounding_result = self.layer2_grounder.ground(np_obj, return_all_matches=True)
+                    
+                    if grounding_result.success:
+                        # Collect best match + alternatives
+                        matches = [grounding_result.resolved_object]
+                        if grounding_result.alternative_matches:
+                            matches.extend([obj for confidence, obj in grounding_result.alternative_matches])
+                        np_matches.append((np_obj, matches))
+                        all_grounding_results.append(grounding_result)
+                    else:
+                        # No matches - this NP grounds to nothing
+                        np_matches.append((np_obj, []))
+                        all_grounding_results.append(grounding_result)
+            
+            # Pass 2: Generate combinatorial hypotheses
+            if np_matches and all(matches for np_obj, matches in np_matches):
+                # Extract just the match lists for Cartesian product
+                match_lists = [matches for np_obj, matches in np_matches]
+                
+                # Generate all combinations using Cartesian product
+                for combination in product(*match_lists):
+                    # Create new hypothesis with this specific grounding combination
+                    new_hypothesis = copy.deepcopy(base_hypothesis)
+                    
+                    # Update each NP in the hypothesis with its specific grounding
+                    np_index = 0
+                    for token in new_hypothesis.tokens:
+                        if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
+                            specific_object = combination[np_index]
+                            token._original_np.resolve_to_scene_object(specific_object)
+                            all_noun_phrases.append(token._original_np)
+                            np_index += 1
+                    
+                    # Update hypothesis description
+                    object_ids = [obj.object_id for obj in combination]
+                    new_hypothesis.description = f"{base_hypothesis.description} → grounded to {object_ids}"
+                    
+                    all_grounded_hypotheses.append(new_hypothesis)
+            else:
+                # No valid groundings - keep original hypothesis but mark NPs as ungrounded
+                ungrounded_hypothesis = copy.deepcopy(base_hypothesis)
+                for token in ungrounded_hypothesis.tokens:
+                    if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
+                        all_noun_phrases.append(token._original_np)
+                
+                ungrounded_hypothesis.description = f"{base_hypothesis.description} → no valid grounding"
+                all_grounded_hypotheses.append(ungrounded_hypothesis)
+        
+        # Sort hypotheses by confidence
+        all_grounded_hypotheses.sort(key=lambda h: h.confidence, reverse=True)
+        
+        return all_grounded_hypotheses, all_noun_phrases, all_grounding_results
     
     def _extract_prepositional_phrases(self, layer3_hypotheses: List[PPTokenizationHypothesis]) -> List[PrepositionalPhrase]:
         """Extract PrepositionalPhrase objects from Layer 3 processing."""

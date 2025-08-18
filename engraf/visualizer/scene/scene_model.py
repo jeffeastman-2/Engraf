@@ -201,7 +201,8 @@ class SceneModel:
 
         # Search individual objects
         for obj in self.objects:
-            if noun and obj.name != noun:
+            # Handle "object" as universal shape matcher - matches any object
+            if noun and noun != "object" and obj.name != noun:
                 continue  # Filter by object name
 
             # If a vector is provided, compute semantic similarity
@@ -214,7 +215,8 @@ class SceneModel:
         # Also search objects within assemblies
         for assembly in self.assemblies:
             for obj in assembly.objects:
-                if noun and obj.name != noun:
+                # Handle "object" as universal shape matcher - matches any object
+                if noun and noun != "object" and obj.name != noun:
                     continue  # Filter by object name
 
                 # If a vector is provided, compute semantic similarity
