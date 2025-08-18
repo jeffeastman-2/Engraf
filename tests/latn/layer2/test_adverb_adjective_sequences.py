@@ -1,5 +1,6 @@
 import pytest
-from engraf.lexer.token_stream import TokenStream, tokenize
+from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 

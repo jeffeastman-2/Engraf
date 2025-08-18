@@ -1,5 +1,6 @@
 import numpy as np
-from engraf.lexer.token_stream import TokenStream, tokenize
+from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.atn.subnet_pp import run_pp
 from engraf.lexer.vector_space import VectorSpace
 

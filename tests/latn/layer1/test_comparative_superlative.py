@@ -7,7 +7,8 @@ forms (biggest, reddest) in the semantic vector space.
 """
 
 import pytest
-from engraf.lexer.vocabulary_builder import vector_from_word, base_adjective_from_comparative
+from engraf.lexer.vocabulary_builder import vector_from_word
+from engraf.utils.adjective_inflector import base_adjective_from_comparative
 from engraf.lexer.vector_space import VectorSpace, VECTOR_DIMENSIONS
 
 
@@ -206,13 +207,33 @@ class TestEdgeCases:
     
     def test_irregular_comparatives_superlatives(self):
         """Test handling of irregular comparative/superlative forms."""
-        # These should be handled as base forms since they're irregular
-        irregular_forms = ["better", "best", "worse", "worst", "more", "most"]
+        # Test irregular comparative forms
+        irregular_comparatives = {
+            "better": "good",
+            "worse": "bad", 
+            "more": "much",
+            "further": "far",
+            "farther": "far"
+        }
         
-        for word in irregular_forms:
+        for word, expected_base in irregular_comparatives.items():
             base, form_type = base_adjective_from_comparative(word)
-            # These should return as base forms since they don't follow -er/-est patterns
-            assert form_type == "base", f"{word} should be treated as base form"
+            assert base == expected_base, f"{word} should map to {expected_base}"
+            assert form_type == "comparative", f"{word} should be identified as comparative"
+        
+        # Test irregular superlative forms
+        irregular_superlatives = {
+            "best": "good",
+            "worst": "bad",
+            "most": "much", 
+            "furthest": "far",
+            "farthest": "far"
+        }
+        
+        for word, expected_base in irregular_superlatives.items():
+            base, form_type = base_adjective_from_comparative(word)
+            assert base == expected_base, f"{word} should map to {expected_base}"
+            assert form_type == "superlative", f"{word} should be identified as superlative"
     
     def test_unknown_comparative_adjectives(self):
         """Test that unknown comparative adjectives raise appropriate errors."""

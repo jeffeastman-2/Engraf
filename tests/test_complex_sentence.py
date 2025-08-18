@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import pytest
-from engraf.lexer.token_stream import tokenize, TokenStream
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.token_stream import TokenStream
 from engraf.atn.sentence import build_sentence_atn
 from engraf.atn.core import run_atn
 from engraf.pos.sentence_phrase import SentencePhrase

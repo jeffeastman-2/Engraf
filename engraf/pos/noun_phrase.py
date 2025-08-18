@@ -10,14 +10,18 @@ class NounPhrase():
         self.preps = []
         self.scale_factor = 1.0
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
+        self.consumed_tokens = []  # All original tokens that were consumed to build this NP
+        self.resolved_object = None  # Resolved SceneObject after semantic grounding (LATN Layer 2)
 
     def apply_determiner(self, tok):
         self.determiner = tok.word
         self.vector += tok
+        self.consumed_tokens.append(tok)
 
     def apply_vector(self, tok):
         self.noun = "vector"
         self.vector += tok
+        self.consumed_tokens.append(tok)
 
     def apply_adverb(self, tok):
         """Store the adverb vector for use in scaling the next adjective."""
@@ -25,6 +29,7 @@ class NounPhrase():
             self.scale_vector = VectorSpace()
         print(f"✅ Scale_vector is {self.scale_vector} for token {tok}")
         self.scale_vector += tok  # Combine adverbs if needed (e.g., "very extremely")
+        self.consumed_tokens.append(tok)
 
     def apply_adjective(self, tok):
         """Apply the adverb-scaled adjective to the NP vector."""
@@ -38,6 +43,7 @@ class NounPhrase():
         else:
             print(f"✅ Setting adjective vector without scale: {tok}")
             self.vector += tok
+        self.consumed_tokens.append(tok)
 
 
     def apply_noun(self, tok):
@@ -64,6 +70,7 @@ class NounPhrase():
         
         self.noun = tok.word
         self.vector += tok
+        self.consumed_tokens.append(tok)
     
     def _has_number_agreement_error(self, determiner_is_singular, determiner_number, noun_is_plural, noun_is_singular):
         """Check if there's a number agreement error using vector dimensions."""
@@ -85,6 +92,7 @@ class NounPhrase():
         print(f"✅ NP applying pronoun {tok.word} with vector {tok}")
         self.pronoun = tok.word
         self.vector += tok
+        self.consumed_tokens.append(tok)
 
     def apply_proper_noun(self, name_token, has_determiner=False):
         """Apply a proper noun from 'called' or 'named' syntax.
@@ -119,4 +127,39 @@ class NounPhrase():
         return v
 
     def __repr__(self):
-        return f"NP(noun={self.noun}, determiner= {self.determiner}, vector={self.vector}, PPs={self.preps})"          
+        consumed_words = [tok.word for tok in self.consumed_tokens]
+        parts = [f"noun={self.noun}", f"determiner={self.determiner}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
+        if self.resolved_object:
+            parts.append(f"resolved_to={self.resolved_object.object_id}")
+        return f"NP({', '.join(parts)})"
+    
+    def get_consumed_words(self):
+        """Return list of words from consumed tokens."""
+        return [tok.word for tok in self.consumed_tokens]
+    
+    def get_original_text(self):
+        """Reconstruct the original text from consumed tokens."""
+        return " ".join(self.get_consumed_words())
+    
+    def token_span(self):
+        """Return the span (start, end) of consumed tokens for error reporting."""
+        if not self.consumed_tokens:
+            return (0, 0)
+        # Assuming tokens have position information (would need to be added to token structure)
+        return (0, len(self.consumed_tokens))  # Placeholder - would use actual positions
+    
+    def resolve_to_scene_object(self, scene_object):
+        """Resolve this NP to a specific SceneObject (LATN Layer 2 semantic grounding).
+        
+        Args:
+            scene_object: The SceneObject this NP refers to
+        """
+        self.resolved_object = scene_object
+        
+    def is_resolved(self):
+        """Check if this NP has been resolved to a scene object."""
+        return self.resolved_object is not None
+        
+    def get_resolved_object(self):
+        """Get the resolved SceneObject, or None if not resolved."""
+        return self.resolved_object

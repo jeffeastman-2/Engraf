@@ -72,7 +72,7 @@ SEMANTIC_VECTOR_SPACE = {
     'extremely': vector_from_features("adv", adverb=2.0),
     'slightly': vector_from_features("adv", adverb=0.75),
     # Determiners
-    'the': vector_from_features("det def singular", number=1.0),
+    'the': vector_from_features("det def"),  # Number-neutral definite article
     'one': vector_from_features("det def singular", number=1.0),
     'two': vector_from_features("det def plural", number=2.0),
     'three': vector_from_features("det def plural", number=3.0),

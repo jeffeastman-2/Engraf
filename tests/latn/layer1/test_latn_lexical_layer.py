@@ -1,5 +1,5 @@
 import unittest
-from engraf.lexer.token_stream import tokenize
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.lexer.latn_tokenizer import latn_tokenize, TokenizationHypothesis
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import vector_from_features
@@ -178,20 +178,22 @@ class TestLATNLexicalLayer(unittest.TestCase):
     
     def test_latn_no_ambiguity_single_hypothesis(self):
         """
-        Test LATN tokenizer returns single hypothesis when no ambiguity exists.
+        Test LATN tokenizer behavior for sentences with no genuine ambiguity.
+        Optimized LATN now produces single hypothesis for truly unambiguous sentences.
         """
         sentence = "draw a box at [1,2,3]"
         hypotheses = latn_tokenize(sentence)
         
-        # Should return only one hypothesis since no ambiguity
-        self.assertEqual(len(hypotheses), 1, "Should return single hypothesis for unambiguous case")
+        # Optimized LATN produces single hypothesis for unambiguous sentences
+        self.assertEqual(len(hypotheses), 1, "Optimized LATN should produce single hypothesis for unambiguous sentences")
         
+        # The hypothesis should be the natural tokenization
         tokens = [token.word for token in hypotheses[0].tokens]
         expected = ["draw", "a", "box", "at", "[1,2,3]"]
-        self.assertEqual(tokens, expected)
+        self.assertEqual(tokens, expected, "Hypothesis should be natural word-by-word tokenization")
         
-        print(f"LATN single hypothesis for '{sentence}': {tokens}")
-    
+        print(f"Optimized LATN generated {len(hypotheses)} hypothesis for unambiguous '{sentence}'")
+
     def test_latn_three_way_ambiguity(self):
         """
         Test LATN tokenizer with three-way ambiguity (single words, two-word, three-word compounds).
@@ -252,11 +254,105 @@ class TestLATNLexicalLayer(unittest.TestCase):
         
         self.assertGreater(compound_hyp.confidence, separate_hyp.confidence,
                           "Compound interpretation should have higher confidence than separate words")
-        
-        print(f"Confidence ranking:")
-        print(f"  Compound: {compound_hyp.confidence:.2f}")
-        print(f"  Separate: {separate_hyp.confidence:.2f}")
 
+    def test_unambiguous_sentence_single_hypothesis(self):
+        """Test that unambiguous sentences produce a single hypothesis"""
+        sentence = "draw a box at [1,2,3]"
+        hypotheses = latn_tokenize(sentence)
+        
+        # Should produce exactly one hypothesis since there's no ambiguity
+        self.assertEqual(len(hypotheses), 1,
+                        f"Unambiguous sentence '{sentence}' should produce 1 hypothesis, got {len(hypotheses)}")
+        
+        # Verify the tokens
+        expected_tokens = ['draw', 'a', 'box', 'at', '[1,2,3]']
+        actual_tokens = [token.word for token in hypotheses[0].tokens]
+        self.assertEqual(actual_tokens, expected_tokens)
+
+    def test_unknown_single_word_handling(self):
+        """Test that unknown single words get proper <unknown> tokens"""
+        sentence = "draw foozle at [1,2,3]"
+        hypotheses = latn_tokenize(sentence)
+        
+        # Should produce exactly one hypothesis with foozle marked as unknown
+        self.assertEqual(len(hypotheses), 1,
+                        f"Sentence with unknown word '{sentence}' should produce 1 hypothesis, got {len(hypotheses)}")
+        
+        # Verify foozle is marked as unknown by checking the unknown dimension
+        foozle_token = None
+        for token in hypotheses[0].tokens:
+            if token.word == 'foozle':
+                foozle_token = token
+                break
+        
+        self.assertIsNotNone(foozle_token, "Expected to find 'foozle' token")
+        
+        # Check if token is marked as unknown
+        self.assertTrue(foozle_token.isa('unknown'), 
+                       f"Expected 'foozle' to be marked as unknown")
+
+    def test_real_compound_ambiguity(self):
+        """Test legitimate compound word ambiguity when compound exists in vocabulary"""
+        # Temporarily add 'light house' to create real ambiguity
+        original_vocab = SEMANTIC_VECTOR_SPACE.copy()
+        try:
+            SEMANTIC_VECTOR_SPACE['light house'] = vector_from_features('noun')
+            
+            sentence = "draw a light house"
+            hypotheses = latn_tokenize(sentence)
+            
+            # Should produce 2 hypotheses: compound vs separate words
+            self.assertEqual(len(hypotheses), 2,
+                            f"Sentence with real compound ambiguity '{sentence}' should produce 2 hypotheses, got {len(hypotheses)}")
+            
+            # Verify both interpretations exist
+            tokens_sets = [tuple(token.word for token in hyp.tokens) for hyp in hypotheses]
+            
+            compound_interpretation = ('draw', 'a', 'light house')
+            separate_interpretation = ('draw', 'a', 'light', 'house')
+            
+            self.assertIn(compound_interpretation, tokens_sets,
+                         "Expected compound interpretation 'light house'")
+            self.assertIn(separate_interpretation, tokens_sets,
+                         "Expected separate words interpretation 'light' + 'house'")
+            
+            # Compound should have higher confidence
+            compound_hyp = next(hyp for hyp in hypotheses 
+                               if tuple(token.word for token in hyp.tokens) == compound_interpretation)
+            separate_hyp = next(hyp for hyp in hypotheses 
+                               if tuple(token.word for token in hyp.tokens) == separate_interpretation)
+            
+            self.assertGreater(compound_hyp.confidence, separate_hyp.confidence,
+                              "Compound interpretation should have higher confidence")
+            
+        finally:
+            # Restore original vocabulary
+            SEMANTIC_VECTOR_SPACE.clear()
+            SEMANTIC_VECTOR_SPACE.update(original_vocab)
+
+    def test_no_pollution_from_invalid_compounds(self):
+        """Test that invalid multi-word compounds don't create unknown tokens (pollution prevention)"""
+        sentence = "draw a blurble flangle"  # Neither word exists, but this shouldn't create compounds
+        hypotheses = latn_tokenize(sentence)
+        
+        # Should produce exactly one hypothesis with each unknown word marked separately
+        self.assertEqual(len(hypotheses), 1,
+                        f"Sentence with unknown words '{sentence}' should produce 1 hypothesis, got {len(hypotheses)}")
+        
+        # Verify both words are marked as unknown separately
+        tokens = hypotheses[0].tokens
+        token_words = [token.word for token in tokens]
+        
+        self.assertIn('blurble', token_words, "Expected 'blurble' as separate token")
+        self.assertIn('flangle', token_words, "Expected 'flangle' as separate token")
+        self.assertNotIn('blurble flangle', token_words, "Should NOT create compound from unknown words")
+        
+        # Verify both are marked as unknown
+        blurble_token = next(token for token in tokens if token.word == 'blurble')
+        flangle_token = next(token for token in tokens if token.word == 'flangle')
+        
+        self.assertTrue(blurble_token.isa('unknown'), "Expected 'blurble' to be marked as unknown")
+        self.assertTrue(flangle_token.isa('unknown'), "Expected 'flangle' to be marked as unknown")
 
 if __name__ == '__main__':
     unittest.main()

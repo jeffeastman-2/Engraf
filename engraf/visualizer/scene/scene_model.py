@@ -164,10 +164,23 @@ class SceneModel:
         self.entities.clear()
         self.recent.clear()
         
-    def find_noun_phrase(self, np):
+    def find_noun_phrase(self, np, return_all_matches=False):
         """
         Given a noun phrase context, try to find the most relevant SceneObject or SceneAssembly.
         First searches assemblies, then individual objects.
+        
+        IMPORTANT: Requires EXACT noun name match first (e.g., "sphere" only matches spheres),
+        then uses semantic similarity on attributes within objects of the same type.
+        This prevents cross-type matching like "red sphere" matching "red box".
+        
+        Args:
+            np: The NounPhrase to resolve
+            return_all_matches: If True, returns all matching objects for LATN hypothesis generation.
+                               If False, returns only the best match (legacy behavior).
+        
+        Returns:
+            If return_all_matches=False: Single best SceneObject/Assembly or None
+            If return_all_matches=True: List of (similarity, object) tuples sorted by similarity
         """
         noun = np.noun
         vector = np.vector
@@ -179,9 +192,9 @@ class SceneModel:
             if noun and assembly.name != noun:
                 continue  # Filter by assembly name
 
-            # If a vector is provided, compute similarity
+            # If a vector is provided, compute semantic similarity
             if vector:
-                similarity = assembly.vector.cosine_similarity(vector)
+                similarity = vector.semantic_similarity(assembly.vector)
                 candidates.append((similarity, assembly))
             else:
                 candidates.append((1.0, assembly))  # perfect match by name
@@ -191,9 +204,9 @@ class SceneModel:
             if noun and obj.name != noun:
                 continue  # Filter by object name
 
-            # If a vector is provided, compute similarity
+            # If a vector is provided, compute semantic similarity
             if vector:
-                similarity = obj.vector.cosine_similarity(vector)
+                similarity = vector.semantic_similarity(obj.vector)
                 candidates.append((similarity, obj))
             else:
                 candidates.append((1.0, obj))  # perfect match by name
@@ -204,19 +217,31 @@ class SceneModel:
                 if noun and obj.name != noun:
                     continue  # Filter by object name
 
-                # If a vector is provided, compute similarity
+                # If a vector is provided, compute semantic similarity
                 if vector:
-                    similarity = obj.vector.cosine_similarity(vector)
+                    similarity = vector.semantic_similarity(obj.vector)
                     candidates.append((similarity, obj))
                 else:
                     candidates.append((1.0, obj))  # perfect match by name
 
         if not candidates:
-            return None
+            return [] if return_all_matches else None
 
-        # Return the best match by similarity
+        # Sort by similarity (highest first)
         candidates.sort(key=lambda pair: pair[0], reverse=True)
-        return candidates[0][1]
+        
+        if return_all_matches:
+            # For LATN: return all candidates that have meaningful similarity (> 0)
+            # or if no semantic constraints, return all name matches
+            if vector:
+                # Only return matches with positive semantic similarity
+                return [(sim, obj) for sim, obj in candidates if sim > 0]
+            else:
+                # No semantic constraints - return all name matches
+                return candidates
+        else:
+            # Legacy behavior: return single best match
+            return candidates[0][1]
     
     def copy(self):
         """

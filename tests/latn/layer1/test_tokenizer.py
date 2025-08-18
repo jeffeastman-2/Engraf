@@ -1,5 +1,5 @@
 import pytest
-from engraf.lexer.token_stream import tokenize
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.lexer.vector_space import VectorSpace
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vocabulary_builder import add_to_vocabulary, get_from_vocabulary, has_word
@@ -45,8 +45,12 @@ def test_tokenize_with_float_number():
     assert tokens[1]["number"] == 3.5
 
 def test_tokenize_unknown_token_raises():
-    with pytest.raises(ValueError, match="Unknown token: foozle"):
-        tokenize("draw foozle")
+    # Unknown tokens now get marked with unknown=1.0 instead of raising errors
+    tokens = list(tokenize("draw foozle"))
+    assert len(tokens) == 2, "Should tokenize both known and unknown tokens"
+    assert tokens[0].word == "draw", "First token should be 'draw'"
+    assert tokens[1].word == "foozle", "Second token should be 'foozle'"
+    assert tokens[1]["unknown"] == 1.0, "Unknown token should have unknown=1.0"
 
 def test_tokenize_quoted_word():
     tokens = tokenize("'sky blue' is blue and green")

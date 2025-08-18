@@ -7,7 +7,8 @@ This tests the specific examples mentioned in the specification:
 2. "Draw a blue box and a green sphere" - Imperative with coordinated objects
 """
 
-from engraf.lexer.token_stream import TokenStream, tokenize
+from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.noun_phrase import NounPhrase

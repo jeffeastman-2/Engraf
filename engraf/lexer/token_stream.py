@@ -1,29 +1,23 @@
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-from engraf.lexer.vocabulary_builder import vector_from_word
-from engraf.lexer.vector_space import VectorSpace, vector_from_features
-from engraf.utils.noun_inflector import singularize_noun
-from engraf.utils.verb_inflector import find_root_verb
+# LATN Branch: Using multi-hypothesis tokenization
+# Original single-hypothesis tokenizer preserved on main branch
+
 import re
+import warnings
+from engraf.lexer.latn_tokenizer import latn_tokenize_best, latn_tokenize, TokenizationHypothesis
+from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vector_space import VectorSpace
 
 
 class TokenStream:
     def __init__(self, tokens: list[VectorSpace]):
         self.tokens = tokens
         self.position = 0
-        #print("TokenStream initialized with VectorSpace tokens:", self.tokens.__repr__())
 
     def __len__(self):
         return len(self.tokens)
 
     def __getitem__(self, index):
         return self.tokens[index]
-
-    def _to_vector(self, token: str) -> VectorSpace:
-        if token in SEMANTIC_VECTOR_SPACE:
-            return SEMANTIC_VECTOR_SPACE[token]
-        else:
-            # Default: return empty vector with no POS dimensions set
-            return VectorSpace(pos="")  # neutral/no POS
 
     def __repr__(self):
         return f"TokenStream(pos={self.position}, total={len(self.tokens)})"
@@ -51,108 +45,22 @@ class TokenStream:
 
 
 def tokenize(sentence):
-    pattern = re.compile(
-        r"""\s*(
-            \[             # opening bracket
-            \s*-?\d+(\.\d+)?\s*,     # x
-            \s*-?\d+(\.\d+)?\s*,     # y
-            \s*-?\d+(\.\d+)?\s*      # z
-            \]             # closing bracket
-            | -?\d+(?:\.\d+)?         # standalone number (int or float)
-            | '[\w\s]+'     # quoted words (single quotes)
-            | \w+           # normal word
-            | [^\w\s]       # punctuation
-        )""",
-        re.VERBOSE,
-    )
-    tokens = pattern.findall(sentence)
-    flat_tokens = [t[0] for t in tokens]
-
-    result = []
-    i = 0
-    while i < len(flat_tokens):
-        tok = flat_tokens[i]
-        
-        # Check for compound words (look ahead for multi-word tokens in vocabulary)
-        if i + 1 < len(flat_tokens) and not tok.startswith("'") and not tok.startswith("[") and not re.fullmatch(r"-?\d+(?:\.\d+)?", tok):
-            # Try two-word compound
-            two_word = f"{tok} {flat_tokens[i+1]}"
-            if two_word.lower() in SEMANTIC_VECTOR_SPACE:
-                vs = vector_from_word(two_word.lower())
-                if vs is not None:
-                    # For compound nouns, store singular form
-                    if vs["noun"] > 0:
-                        singular_form, was_plural = singularize_noun(two_word)
-                        vs.word = singular_form
-                    else:
-                        vs.word = two_word.lower()
-                    result.append(vs)
-                    i += 2  # Skip both tokens
-                    continue
-            
-            # Try three-word compound if we have enough tokens
-            if i + 2 < len(flat_tokens):
-                three_word = f"{tok} {flat_tokens[i+1]} {flat_tokens[i+2]}"
-                if three_word.lower() in SEMANTIC_VECTOR_SPACE:
-                    vs = vector_from_word(three_word.lower())
-                    if vs is not None:
-                        # For compound nouns, store singular form
-                        if vs["noun"] > 0:
-                            singular_form, was_plural = singularize_noun(three_word)
-                            vs.word = singular_form
-                        else:
-                            vs.word = three_word.lower()
-                        result.append(vs)
-                        i += 3  # Skip all three tokens
-                        continue
-        
-        # Process single token
-        # Process single token
-        if tok.startswith("'") and tok.endswith("'"):
-            tok = tok[1:-1]
-            vs = vector_from_features(pos="quoted")  # empty vector with unknown POS
-            vs.word = tok
-            result.append(vs)
-        elif tok.startswith("[") and tok.endswith("]"):
-            nums = re.findall(r"-?\d+(?:\.\d+)?", tok)
-            x, y, z = map(float, nums)
-            vs = vector_from_features(loc=[x, y, z], pos="vector")
-            vs.word = tok  # Preserve the original vector word
-            result.append(vs)  
-        elif re.fullmatch(r"-?\d+(?:\.\d+)?", tok):  # match integers and floats
-            vs = vector_from_features(pos="det def number")
-            vs.word = tok  # Preserve the original number word
-            vs["number"] = float(tok)
-            result.append(vs)
-        else:
-            # First check if the word is directly in vocabulary
-            try:
-                vs = vector_from_word(tok.lower())
-            except ValueError:
-                # Try verb inflection detection
-                root_verb, inflection_type, found_root = find_root_verb(tok)
-                if found_root:
-                    vs = vector_from_word(root_verb)
-                    # Keep the inflected form as the word but use root verb's vector
-                    vs.word = tok.lower()
-                    # Set the appropriate inflection dimension
-                    if inflection_type:
-                        vs[inflection_type] = 1.0
-                    result.append(vs)
-                    i += 1
-                    continue
-                else:
-                    raise ValueError(f"Unknown token: {tok}")
-            
-            # For nouns, store the singular form in vs.word for consistent object matching
-            if vs["noun"] > 0:  # This is a noun
-                singular_form, was_plural = singularize_noun(tok)
-                vs.word = singular_form
-            else:
-                vs.word = tok.lower()  # Preserve original for non-nouns
-            
-            result.append(vs)
-        
-        i += 1
+    """
+    DEPRECATED: Use latn_tokenize() or latn_tokenize_best() instead.
     
-    return result
+    LATN Branch: Multi-hypothesis tokenization with best hypothesis fallback.
+    
+    For backward compatibility, this returns the best single hypothesis.
+    Use latn_tokenize() directly for full multi-hypothesis analysis.
+    """
+    warnings.warn(
+        "tokenize() is deprecated. Use latn_tokenize() for multi-hypothesis analysis "
+        "or latn_tokenize_best() for single best hypothesis.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return latn_tokenize_best(sentence)
+
+
+# Export multi-hypothesis functionality
+__all__ = ['TokenStream', 'tokenize', 'latn_tokenize', 'TokenizationHypothesis']

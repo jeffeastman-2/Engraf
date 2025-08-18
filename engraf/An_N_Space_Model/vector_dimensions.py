@@ -12,6 +12,7 @@ VECTOR_DIMENSIONS = [
     "proper_noun", # proper nouns (user-assigned names like 'sun', 'fred')
     "pronoun",   # pronouns (it, they, them)
     "assembly",  # assembly/compound objects (house, car, table_setting)
+    "unknown",   # unrecognized tokens that don't match vocabulary
     
     # Grammatical features
     "number",    # numeric quantity information

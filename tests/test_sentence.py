@@ -1,4 +1,5 @@
-from engraf.lexer.token_stream import TokenStream, tokenize
+from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.visualizer.scene.scene_model import SceneModel, resolve_pronoun
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.vector_space import VectorSpace

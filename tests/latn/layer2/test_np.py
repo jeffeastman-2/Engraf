@@ -423,7 +423,7 @@ def test_latn_semantic_grounding_resolution():
         scene = SceneModel()
         
         big_blue_sphere_vector = vector_from_features("noun", blue=1.0, scaleX=2.0, scaleY=2.0, scaleZ=2.0)
-        small_sphere_vector = vector_from_features("noun", scaleX=0.5, scaleY=0.5, scaleZ=0.5)
+        small_sphere_vector = vector_from_features("noun", scaleX=-0.5, scaleY=-0.5, scaleZ=-0.5)  # Match NP parser output
         normal_sphere_vector = vector_from_features("noun")
         
         scene_objects = [

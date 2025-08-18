@@ -9,7 +9,7 @@ from engraf.visualizer.scene.scene_model import SceneModel, resolve_pronoun
 from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_sentence import run_sentence
-from engraf.lexer.token_stream import tokenize
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 
 
 class TestSceneIntegration:

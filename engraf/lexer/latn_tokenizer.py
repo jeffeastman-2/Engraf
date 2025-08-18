@@ -151,16 +151,19 @@ def process_token_group(tok: str, group_size: int) -> Tuple[VectorSpace, float, 
     
     # Handle word tokens
     else:
-        # First check direct vocabulary lookup
-        if tok.lower() in SEMANTIC_VECTOR_SPACE:
-            vs = vector_from_word(tok.lower())
+        # Check for morphological inflections BEFORE vocabulary lookup
+        singular_form, was_plural = singularize_noun(tok)
+        lookup_word = singular_form.lower()
+        
+        # Try vocabulary lookup with singular form
+        if lookup_word in SEMANTIC_VECTOR_SPACE:
+            vs = vector_from_word(lookup_word)
+            vs.word = singular_form
             
-            # Handle noun singularization
-            if vs["noun"] > 0:
-                singular_form, was_plural = singularize_noun(tok)
-                vs.word = singular_form
-            else:
-                vs.word = tok.lower()
+            # Add plural marking if this was a plural form
+            if was_plural and vs["noun"] > 0:
+                vs = vs.copy()  # Don't modify the original vocabulary vector
+                vs["plural"] = 1.0
             
             # Calculate confidence based on compound length
             # Longer compounds get higher confidence when they exist
@@ -188,36 +191,49 @@ def process_token_group(tok: str, group_size: int) -> Tuple[VectorSpace, float, 
                 if inflection_type:
                     vs[inflection_type] = 1.0
                 return vs, 0.6, f"inflected-verb({tok}→{root_verb})"
+            
+            # Try adjective inflection (comparative/superlative)
+            from engraf.utils.adjective_inflector import find_root_adjective
+            base_adj, inflection_type, found_adjective = find_root_adjective(tok)
+            if found_adjective:
+                try:
+                    vs = vector_from_word(base_adj)
+                    if vs and vs["adj"] > 0:  # Only if base is actually an adjective
+                        vs.word = tok.lower()
+                        if inflection_type:
+                            vs[inflection_type] = 1.0
+                            # Boost semantic features for comparative/superlative
+                            multiplier = 1.2 if inflection_type == 'comp' else 1.5
+                            semantic_features = ["scaleX", "scaleY", "scaleZ", "red", "green", "blue", "texture", "transparency"]
+                            for key in semantic_features:
+                                if vs[key] != 0:
+                                    vs[key] = vs[key] * multiplier
+                        return vs, 0.7, f"inflected-adjective({tok}→{base_adj})"
+                except ValueError:
+                    # Base adjective not in vocabulary - fall through to unknown token
+                    pass
+            
+            # Single word not found in vocabulary - create <unknown> token
+            vs = vector_from_features("unknown")
+            vs.word = tok.lower()
+            return vs, 0.1, f"unknown({tok})"
         
-        # Token not found in vocabulary
+        # Multi-word compound not found in vocabulary - don't create unknown token
         return None, 0, ""
 
 
-def latn_tokenize_best(sentence: str) -> List[VectorSpace]:
+def latn_tokenize_best(sentence):
     """
-    Convenience function that returns just the best hypothesis tokens.
-    For compatibility with existing code.
+    LATN Tokenizer: Returns the best hypothesis as a list of VectorSpace tokens.
+    
+    This provides backward compatibility with the original tokenize() function
+    while using multi-hypothesis tokenization internally.
     """
     hypotheses = latn_tokenize(sentence)
     if hypotheses:
         return hypotheses[0].tokens
     else:
-        # Fallback to original tokenize if no hypotheses generated
-        from engraf.lexer.token_stream import tokenize
-        return tokenize(sentence)
+        # If no hypotheses, return empty list (shouldn't happen with proper vocabulary)
+        return []
 
 
-if __name__ == "__main__":
-    # Test the LATN tokenizer
-    test_sentences = [
-        "draw a light house at [0,0,0]",
-        "draw a box at [1,2,3]",
-        "draw a very light house"
-    ]
-    
-    for sentence in test_sentences:
-        print(f"\nInput: '{sentence}'")
-        hypotheses = latn_tokenize(sentence)
-        print(f"Generated {len(hypotheses)} hypotheses:")
-        for i, hyp in enumerate(hypotheses[:3], 1):  # Show top 3
-            print(f"  {i}. {hyp}")

@@ -53,7 +53,8 @@ class TestObjectMovement(unittest.TestCase):
         # Test parsing of movement command
         from engraf.atn.sentence import build_sentence_atn
         from engraf.atn.core import run_atn
-        from engraf.lexer.token_stream import tokenize, TokenStream
+        from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+        from engraf.lexer.token_stream import TokenStream
         from engraf.pos.sentence_phrase import SentencePhrase
         
         sentence = 'move the sphere above the cube'
@@ -151,7 +152,8 @@ class TestObjectMovement(unittest.TestCase):
         """Test that spatial relationships are parsed correctly."""
         from engraf.atn.sentence import build_sentence_atn
         from engraf.atn.core import run_atn
-        from engraf.lexer.token_stream import tokenize, TokenStream
+        from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+        from engraf.lexer.token_stream import TokenStream
         from engraf.pos.sentence_phrase import SentencePhrase
         
         # Test different spatial prepositions

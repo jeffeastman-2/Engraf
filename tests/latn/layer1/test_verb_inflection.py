@@ -1,6 +1,6 @@
 import pytest
 from engraf.utils.verb_inflector import find_root_verb, is_verb_inflection
-from engraf.lexer.token_stream import tokenize
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
 
 
@@ -207,3 +207,6 @@ class TestGrammaticalErrorDetection:
         assert called_tok.word == "called"
         assert called_tok["verb_past_part"] > 0.0
 
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

@@ -1,6 +1,7 @@
 import numpy as np
 from engraf.atn.np import build_np_atn
-from engraf.lexer.token_stream import TokenStream, tokenize
+from engraf.lexer.token_stream import TokenStream
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.atn.subnet_np import run_np
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 

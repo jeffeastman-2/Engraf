@@ -21,7 +21,9 @@ class VectorSpace:
 
     # Add optional __str__ override for easier debugging
     def __repr__(self):
-        vec_str = ', '.join(f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS)
+        # Only show non-zero dimensions for cleaner output
+        non_zero_dims = [f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS if self[k] != 0.0]
+        vec_str = ', '.join(non_zero_dims)
         return f"VectorSpace(word={self.word!r}, {{ {vec_str} }})"
 
     def to_array(self):
@@ -83,17 +85,67 @@ class VectorSpace:
                 return False
 
     def cosine_similarity(self, other):
-        # Calculate dot product
-        dot = sum(self[k] * other[k] for k in self.data if k in other.data)
-
-        # Calculate norms
-        norm_self = math.sqrt(sum(v * v for v in self.data.values()))
-        norm_other = math.sqrt(sum(v * v for v in other.data.values()))
-
+        """Calculate cosine similarity between this vector and another vector."""
+        # Use numpy arrays for proper cosine similarity calculation
+        dot = np.dot(self.vector, other.vector)
+        norm_self = np.linalg.norm(self.vector) 
+        norm_other = np.linalg.norm(other.vector)
+        
         if norm_self == 0 or norm_other == 0:
             return 0.0
-
+            
         return dot / (norm_self * norm_other)
+    
+    def semantic_similarity(self, other):
+        """Calculate semantic similarity focusing only on pure semantic attributes.
+        
+        This is asymmetric - it only tests features that are present in this vector (the query).
+        If the query is just "sphere", it matches any sphere regardless of additional attributes.
+        If the query is "blue sphere", it only matches blue spheres.
+        """
+        # Define pure semantic dimensions (exclude POS tags like noun, adj, verb, etc.)
+        semantic_dims = [
+            # Color attributes
+            'red', 'green', 'blue',
+            # Size/scale attributes  
+            'scaleX', 'scaleY', 'scaleZ',
+            # Position attributes
+            'locX', 'locY', 'locZ',
+            # Rotation attributes
+            'rotX', 'rotY', 'rotZ',
+            # Other semantic properties
+            'texture', 'transparency'
+        ]
+        
+        # Only consider dimensions that are specified (non-zero) in the query vector
+        active_dims = []
+        query_values = []
+        target_values = []
+        
+        for dim in semantic_dims:
+            if dim in VECTOR_DIMENSIONS and self[dim] != 0.0:
+                active_dims.append(dim)
+                query_values.append(self[dim])
+                target_values.append(other[dim])
+        
+        # If no semantic features are specified in query, return high similarity (matches anything)
+        if not active_dims:
+            return 1.0
+        
+        # Calculate cosine similarity only on the dimensions specified in the query
+        query_array = np.array(query_values)
+        target_array = np.array(target_values)
+        
+        dot = np.dot(query_array, target_array)
+        norm_query = np.linalg.norm(query_array)
+        norm_target = np.linalg.norm(target_array)
+        
+        if norm_query == 0:
+            return 1.0  # No semantic constraints
+        if norm_target == 0:
+            return 0.0  # Target has no matching features
+            
+        return dot / (norm_query * norm_target)
 
     @property
     def shape(self):

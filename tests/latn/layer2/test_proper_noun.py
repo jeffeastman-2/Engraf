@@ -1,6 +1,6 @@
 import pytest
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.lexer.token_stream import tokenize
+from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.lexer.vector_space import vector_from_features
 
 
@@ -222,3 +222,6 @@ class TestGrammaticalConstraints:
         # And should be able to pluralize: "suns"
         # (This would be handled by the noun inflection system)
 
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
