@@ -15,6 +15,7 @@ VECTOR_DIMENSIONS = [
     "unknown",   # unrecognized tokens that don't match vocabulary
     "NP",        # noun phrase tokens (Layer 2 composite tokens)
     "PP",        # prepositional phrase tokens (Layer 3 composite tokens)
+    "VP",        # verb phrase tokens (Layer 4 composite tokens)
     
     # Grammatical features
     "number",    # numeric quantity information

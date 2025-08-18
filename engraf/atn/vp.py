@@ -1,66 +1,88 @@
 from engraf.atn.core import ATNState
 from engraf.lexer.token_stream import TokenStream
-from engraf.utils.predicates import is_verb, is_none, is_np_head, is_conjunction_no_consume, is_preposition, any_of, is_tobe, is_adjective, is_number, is_conjunction, is_adjective_conjunction, is_predicate_conjunction
+from engraf.utils.predicates import is_verb, is_none, is_np_token, is_pp_token, is_conjunction_no_consume, any_of, is_tobe, is_adjective, is_number, is_conjunction, is_adjective_conjunction, is_predicate_conjunction
 from engraf.atn.core import noop
-from engraf.utils.actions import make_run_np_into_atn, make_run_pp_into_atn, make_run_coordinated_np_into_atn
 from engraf.pos.verb_phrase import VerbPhrase
-from engraf.utils.actions import make_run_np_into_atn, make_run_pp_into_atn, apply_from_subnet, apply_from_subnet_multi, make_run_coordinated_np_into_atn
 
 
 # --- Build the Verb Phrase ATN ---
 def build_vp_atn(vp: VerbPhrase, ts: TokenStream):
     start = ATNState("VP-START")
-    after_verb = ATNState("VP-NP")
+    after_verb = ATNState("VP-AFTER-VERB")
     after_np = ATNState("VP-AFTER-NP")
     after_adj = ATNState("VP-AFTER-ADJ")
-    adj_conj = ATNState("VP-ADJ-CONJ")  # New state for adjective conjunctions
-    amount = ATNState("VP-AMOUNT")
     after_amount = ATNState("VP-AFTER-AMOUNT")
-    pp = ATNState("VP-PP")
+    after_pp = ATNState("VP-AFTER-PP")
     end = ATNState("VP-END")
 
     # VERB
     start.add_arc(is_verb, lambda _, tok: vp.apply_verb(tok), after_verb)
-    # NP (subnetwork) - supports coordinated noun phrases for objects like "a cube and a sphere"
-    after_verb.add_arc(is_np_head, make_run_coordinated_np_into_atn(ts, fieldname="noun_phrase"), after_np)    
-    # For "to be" verbs, allow direct adjectives (for declarative sentences like "the cube is blue")
+    
+    # After VERB: look for NP tokens (created by Layer 2)
+    after_verb.add_arc(is_np_token, lambda _, tok: vp.apply_np(_extract_np_from_token(tok)), after_np)
+    # For "to be" verbs, allow direct adjectives
     after_verb.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
     # Allow final transition if stream is exhausted
     after_verb.add_arc(is_none, noop, end)
 
-    # After NP, can have amount (like "45 degrees"), PP, adjective complement, or end
-    after_np.add_arc(is_number, make_run_coordinated_np_into_atn(ts, fieldname="amount"), after_amount)
-    after_np.add_arc(is_preposition, make_run_pp_into_atn(ts), pp)
+    # After NP: can have PP tokens (created by Layer 3), adjective complement, or end
+    after_np.add_arc(is_pp_token, lambda _, tok: vp.apply_pp(_extract_pp_from_token(tok)), after_pp)
     after_np.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
-    after_np.add_arc(is_none, apply_from_subnet("noun_phrase", vp.apply_np), end)
+    after_np.add_arc(is_none, noop, end)
     # Allow VP to end when conjunction is encountered (don't consume it)
-    after_np.add_arc(is_conjunction_no_consume, apply_from_subnet("noun_phrase", vp.apply_np), end)
+    after_np.add_arc(is_conjunction_no_consume, noop, end)
     # Allow VP to end when other verbs/tobe are encountered
-    after_np.add_arc(any_of(is_verb, is_tobe), apply_from_subnet("noun_phrase", vp.apply_np), end)
+    after_np.add_arc(any_of(is_verb, is_tobe), noop, end)
     
-    # After amount, can have PP or end
-    after_amount.add_arc(is_preposition, make_run_pp_into_atn(ts), pp)
-    after_amount.add_arc(is_none, apply_from_subnet_multi("noun_phrase", vp.apply_np, "amount", vp.apply_amount), end)
-    after_amount.add_arc(is_conjunction_no_consume, apply_from_subnet_multi("noun_phrase", vp.apply_np, "amount", vp.apply_amount), end)
-    after_amount.add_arc(any_of(is_verb, is_tobe), apply_from_subnet_multi("noun_phrase", vp.apply_np, "amount", vp.apply_amount), end)
+    # After PP: can have more PPs, adjectives, or end
+    after_pp.add_arc(is_pp_token, lambda _, tok: vp.apply_pp(_extract_pp_from_token(tok)), after_pp)
+    after_pp.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
+    after_pp.add_arc(is_none, noop, end)
+    after_pp.add_arc(is_conjunction_no_consume, noop, end)
+    after_pp.add_arc(any_of(is_verb, is_tobe), noop, end)
     
-    # After adjective complement, can have conjunction for coordinated adjectives or end
-    after_adj.add_arc(is_adjective_conjunction(ts), lambda _, tok: None, adj_conj)  # Handle "and" between adjectives
-    after_adj.add_arc(is_predicate_conjunction(ts), apply_from_subnet("noun_phrase", vp.apply_np), end)  # Handle predicate conjunction
-    after_adj.add_arc(is_none, apply_from_subnet("noun_phrase", vp.apply_np), end)
-    after_adj.add_arc(any_of(is_verb, is_tobe), apply_from_subnet("noun_phrase", vp.apply_np), end)
-    
-    # After adjective conjunction, expect another adjective
-    adj_conj.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
-    
-    # After PP, apply both NP and PP then end
-    pp.add_arc(is_none, apply_from_subnet_multi("noun_phrase", vp.apply_np, "preposition", vp.apply_pp), end)
-    pp.add_arc(is_conjunction_no_consume, apply_from_subnet_multi("noun_phrase", vp.apply_np, "preposition", vp.apply_pp), end)
-    pp.add_arc(any_of(is_verb, is_tobe), apply_from_subnet_multi("noun_phrase", vp.apply_np, "preposition", vp.apply_pp), end)
-    
-    # Allow final transition if stream is exhausted
-    end.add_arc(is_none, noop, end)
-    
+    # After adjective complement: can have more adjectives or end
+    after_adj.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
+    after_adj.add_arc(is_none, noop, end)
+    after_adj.add_arc(is_conjunction_no_consume, noop, end)
+    after_adj.add_arc(any_of(is_verb, is_tobe), noop, end)
+
     return start, end
+
+
+def _extract_np_from_token(np_token):
+    """Extract or create a NounPhrase object from an NP token."""
+    from engraf.pos.noun_phrase import NounPhrase
+    
+    if hasattr(np_token, '_original_np'):
+        return np_token._original_np
+    
+    # Create a simple NounPhrase from the token
+    np = NounPhrase()
+    if hasattr(np_token, 'word') and np_token.word.startswith("NP("):
+        np_text = np_token.word[3:-1]  # Remove "NP(" and ")"
+        words = np_text.split()
+        if words:
+            np.head_noun = words[-1]  # Last word is usually the noun
+    np.vector = np_token
+    return np
+
+
+def _extract_pp_from_token(pp_token):
+    """Extract or create a PrepositionalPhrase object from a PP token."""
+    from engraf.pos.prepositional_phrase import PrepositionalPhrase
+    
+    if hasattr(pp_token, '_original_pp'):
+        return pp_token._original_pp
+    
+    # Create a simple PrepositionalPhrase from the token
+    pp = PrepositionalPhrase()
+    if hasattr(pp_token, 'word') and pp_token.word.startswith("PP("):
+        pp_text = pp_token.word[3:-1]  # Remove "PP(" and ")"
+        words = pp_text.split()
+        if words:
+            pp.preposition = words[0]  # First word is usually the preposition
+    pp.vector = pp_token
+    return pp
 
 

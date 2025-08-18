@@ -13,11 +13,13 @@ from dataclasses import dataclass
 from engraf.lexer.latn_tokenizer import latn_tokenize, TokenizationHypothesis
 from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2, NPTokenizationHypothesis
 from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3, PPTokenizationHypothesis
+from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4, VPTokenizationHypothesis
 from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder, Layer2GroundingResult
 from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer3GroundingResult
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
+from engraf.pos.verb_phrase import VerbPhrase
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_np import run_np
 from engraf.atn.subnet_pp import run_pp
@@ -51,6 +53,17 @@ class Layer3Result:
     hypotheses: List[PPTokenizationHypothesis]
     prepositional_phrases: List[PrepositionalPhrase]
     grounding_results: List[Layer3GroundingResult]
+    success: bool
+    confidence: float
+    description: str = ""
+
+
+@dataclass
+class Layer4Result:
+    """Result of Layer 4 execution (VP tokenization + execution)."""
+    layer3_result: Layer3Result
+    hypotheses: List[VPTokenizationHypothesis]
+    verb_phrases: List[VerbPhrase]
     success: bool
     confidence: float
     description: str = ""
@@ -236,6 +249,158 @@ class LATNLayerExecutor:
                 description=f"Layer 3 failed: {e}"
             )
     
+    def execute_layer4(self, sentence: str, enable_action_execution: bool = True) -> Layer4Result:
+        """Execute Layer 4: VP tokenization and action execution (requires Layer 1-3).
+        
+        Args:
+            sentence: Input sentence to process
+            enable_action_execution: Whether to execute VP actions (create objects, etc.)
+            
+        Returns:
+            Layer4Result with complete LATN processing results
+        """
+        try:
+            # Execute Layer 3 first (which includes Layer 1 and 2)
+            layer3_result = self.execute_layer3(sentence, enable_semantic_grounding=True)
+            
+            if not layer3_result.success:
+                return Layer4Result(
+                    layer3_result=layer3_result,
+                    hypotheses=[],
+                    verb_phrases=[],
+                    success=False,
+                    confidence=0.0,
+                    description=f"Layer 4 failed due to Layer 3 failure: {layer3_result.description}"
+                )
+            
+            # Execute Layer 4 VP tokenization
+            layer4_hypotheses = latn_tokenize_layer4(layer3_result.hypotheses)
+            
+            # Extract verb phrases
+            verb_phrases = self._extract_verb_phrases(layer4_hypotheses)
+            
+            # Execute actions if enabled
+            if enable_action_execution and verb_phrases:
+                self._execute_verb_phrase_actions(verb_phrases)
+            
+            layer4_confidence = layer4_hypotheses[0].confidence if layer4_hypotheses else layer3_result.confidence
+            overall_confidence = (layer3_result.confidence + layer4_confidence) / 2
+            
+            return Layer4Result(
+                layer3_result=layer3_result,
+                hypotheses=layer4_hypotheses,
+                verb_phrases=verb_phrases,
+                success=True,
+                confidence=overall_confidence,
+                description=f"Layer 4 processed {len(verb_phrases)} verb phrases"
+            )
+            
+        except Exception as e:
+            return Layer4Result(
+                layer3_result=layer3_result,
+                hypotheses=[],
+                verb_phrases=[],
+                success=False,
+                confidence=0.0,
+                description=f"Layer 4 failed: {e}"
+            )
+    
+    def _extract_verb_phrases(self, layer4_hypotheses: List[VPTokenizationHypothesis]) -> List[VerbPhrase]:
+        """Extract VerbPhrase objects from Layer 4 processing."""
+        verb_phrases = []
+        
+        for hypothesis in layer4_hypotheses:
+            # Extract from VP replacements (this is the authoritative source)
+            if hasattr(hypothesis, 'vp_replacements'):
+                for start_idx, end_idx, vp_token in hypothesis.vp_replacements:
+                    if hasattr(vp_token, '_original_vp') and isinstance(vp_token._original_vp, VerbPhrase):
+                        verb_phrases.append(vp_token._original_vp)
+        
+        return verb_phrases
+    
+    def _execute_verb_phrase_actions(self, verb_phrases: List[VerbPhrase]):
+        """Execute actions specified by verb phrases."""
+        for vp in verb_phrases:
+            if not vp.verb:
+                continue
+                
+            verb_word = vp.verb.word if hasattr(vp.verb, 'word') else str(vp.verb)
+            
+            if verb_word in ["create", "make", "build"] and vp.noun_phrase:
+                self._execute_create_action(vp)
+            elif verb_word in ["move", "translate"] and vp.noun_phrase:
+                self._execute_move_action(vp)
+            elif verb_word in ["rotate", "turn"] and vp.noun_phrase:
+                self._execute_rotate_action(vp)
+            elif verb_word in ["delete", "remove", "destroy"] and vp.noun_phrase:
+                self._execute_delete_action(vp)
+    
+    def _execute_create_action(self, vp: VerbPhrase):
+        """Execute a create action from a verb phrase."""
+        if not self.scene_model or not vp.noun_phrase:
+            return
+            
+        # Extract object properties from the noun phrase
+        # Try vector property first, then to_vector() method
+        np_vector = None
+        if hasattr(vp.noun_phrase, 'vector') and vp.noun_phrase.vector:
+            np_vector = vp.noun_phrase.vector
+        elif hasattr(vp.noun_phrase, 'to_vector'):
+            try:
+                np_vector = vp.noun_phrase.to_vector()
+            except AttributeError:
+                # Fallback if to_vector() fails due to missing noun
+                np_vector = vp.noun_phrase.vector if hasattr(vp.noun_phrase, 'vector') else None
+        
+        if not np_vector:
+            return
+            
+        # Determine shape from the word content
+        shape = "box"  # default
+        if hasattr(np_vector, 'word') and np_vector.word:
+            word_content = np_vector.word.lower()
+            if "sphere" in word_content:
+                shape = "sphere"
+            elif "cube" in word_content:
+                shape = "cube" 
+            elif "cylinder" in word_content:
+                shape = "cylinder"
+            elif "box" in word_content:
+                shape = "box"
+            
+        # Create the object
+        from engraf.visualizer.scene.scene_object import SceneObject
+        import uuid
+        
+        obj_id = f"{shape}_{str(uuid.uuid4())[:8]}"
+        
+        # Create a copy of the vector for the scene object
+        scene_vector = np_vector.copy() if hasattr(np_vector, 'copy') else np_vector
+        
+        scene_obj = SceneObject(
+            name=shape,
+            vector=scene_vector,
+            object_id=obj_id
+        )
+        
+        self.scene_model.add_object(scene_obj)
+        print(f"✅ Created {shape} with ID {obj_id}")
+    
+    def _execute_move_action(self, vp: VerbPhrase):
+        """Execute a move action from a verb phrase."""
+        # Placeholder for move action
+        print(f"🚀 Move action requested for {vp.noun_phrase}")
+    
+    def _execute_rotate_action(self, vp: VerbPhrase):
+        """Execute a rotate action from a verb phrase."""
+        # Placeholder for rotate action
+        print(f"🔄 Rotate action requested for {vp.noun_phrase}")
+    
+    def _execute_delete_action(self, vp: VerbPhrase):
+        """Execute a delete action from a verb phrase."""
+        # Placeholder for delete action
+        print(f"🗑️ Delete action requested for {vp.noun_phrase}")
+    
     def _extract_noun_phrases(self, layer2_hypotheses: List[NPTokenizationHypothesis]) -> List[NounPhrase]:
         """Extract NounPhrase objects from Layer 2 processing."""
         noun_phrases = []
@@ -395,3 +560,10 @@ def execute_layer3(sentence: str, scene_model: Optional[SceneModel] = None,
     """Convenience function to execute Layer 3 (includes Layers 1 & 2)."""
     executor = LATNLayerExecutor(scene_model)
     return executor.execute_layer3(sentence, enable_semantic_grounding, return_all_matches)
+
+
+def execute_layer4(sentence: str, scene_model: Optional[SceneModel] = None,
+                  enable_action_execution: bool = True) -> Layer4Result:
+    """Convenience function to execute Layer 4 (includes Layers 1-3)."""
+    executor = LATNLayerExecutor(scene_model)
+    return executor.execute_layer4(sentence, enable_action_execution)

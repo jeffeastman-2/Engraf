@@ -11,6 +11,8 @@ def is_none(tok): return tok is None
 def is_vector(tok): return tok is not None and tok.isa("vector")
 def is_quoted(tok): return tok is not None and tok.isa("quoted")
 def is_adjective_or_adverb(tok): return tok is not None and (tok.isa("adj") or tok.isa("adv"))
+def is_np_token(tok): return tok is not None and tok.isa("NP")
+def is_pp_token(tok): return tok is not None and tok.isa("PP")
 def any_of(*predicates):
     def combined_predicate(tok):
         return any(pred(tok) for pred in predicates)

@@ -1,4 +1,5 @@
 from engraf.lexer.vector_space import VectorSpace   
+from engraf.utils.debug import debug_print   
 
 
 class NounPhrase():
@@ -27,7 +28,7 @@ class NounPhrase():
         """Store the adverb vector for use in scaling the next adjective."""
         if not hasattr(self, 'scale_vector') or self.scale_vector is None:
             self.scale_vector = VectorSpace()
-        print(f"✅ Scale_vector is {self.scale_vector} for token {tok}")
+        debug_print(f"✅ Scale_vector is {self.scale_vector} for token {tok}")
         self.scale_vector += tok  # Combine adverbs if needed (e.g., "very extremely")
         self.consumed_tokens.append(tok)
 
@@ -36,18 +37,18 @@ class NounPhrase():
         scale = getattr(self, "scale_vector", None)
         if scale:
             strength = scale.scalar_projection("adv")
-            print(f"✅ Scaling adjective {tok.word} by {strength}")
-            print(f"✅ Adjective vector before scale: {tok}")
+            debug_print(f"✅ Scaling adjective {tok.word} by {strength}")
+            debug_print(f"✅ Adjective vector before scale: {tok}")
             self.vector += tok * strength
             self.scale_vector = None
         else:
-            print(f"✅ Setting adjective vector without scale: {tok}")
+            debug_print(f"✅ Setting adjective vector without scale: {tok}")
             self.vector += tok
         self.consumed_tokens.append(tok)
 
 
     def apply_noun(self, tok):
-        print(f"✅ NP applying noun {tok.word} with vector {tok}")
+        debug_print(f"✅ NP applying noun {tok.word} with vector {tok}")
         
         # Check number agreement between determiner and noun using vector dimensions
         if self.determiner and hasattr(self, 'vector') and self.vector:
@@ -65,7 +66,7 @@ class NounPhrase():
                     error_msg = f"Number agreement error: plural determiner '{self.determiner}' (number={determiner_number}) cannot modify singular noun '{tok.word}'"
                 else:
                     error_msg = f"Number agreement error between '{self.determiner}' and '{tok.word}'"
-                print(f"❌ {error_msg}")
+                debug_print(f"❌ {error_msg}")
                 raise ValueError(error_msg)
         
         self.noun = tok.word
@@ -89,7 +90,7 @@ class NounPhrase():
         return False
 
     def apply_pronoun(self, tok):
-        print(f"✅ NP applying pronoun {tok.word} with vector {tok}")
+        debug_print(f"✅ NP applying pronoun {tok.word} with vector {tok}")
         self.pronoun = tok.word
         self.vector += tok
         self.consumed_tokens.append(tok)
@@ -103,16 +104,16 @@ class NounPhrase():
         """
         if has_determiner:
             # "called a 'sun'" - type designation, not proper noun
-            print(f"✅ NP applying type designation: {name_token.word}")
+            debug_print(f"✅ NP applying type designation: {name_token.word}")
             # This will be handled as a regular noun with determiner
         else:
             # "called 'Charlie'" - proper noun
-            print(f"✅ NP applying proper noun: {name_token.word}")
+            debug_print(f"✅ NP applying proper noun: {name_token.word}")
             self.proper_noun = name_token.word
         # Don't add to vector as this is a naming directive, not semantic content
 
     def apply_pp(self, pp_obj):
-        print(f"✅ Np applying PP: {pp_obj}")
+        debug_print(f"✅ Np applying PP: {pp_obj}")
         self.preps.append(pp_obj)
         self.vector += pp_obj.vector
 

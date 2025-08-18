@@ -19,6 +19,8 @@ import copy
 from engraf.lexer.latn_tokenizer import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_np import run_np
+from engraf.atn.np import build_np_atn
+from engraf.atn.core import run_atn
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.utils.predicates import is_determiner, is_adjective, is_noun, is_vector
@@ -92,22 +94,28 @@ def find_np_sequences(tokens: List[VectorSpace]) -> List[tuple]:
     i = 0
     
     while i < len(tokens):
-        # Try to parse NP starting at position i using all remaining tokens
-        best_np = None
-        best_end = i
-        
-        # Try different lengths starting at position i
-        for j in range(i, len(tokens)):
-            subsequence = tokens[i:j+1]
-            try:
-                np = run_np(subsequence)
-                if np is not None:
-                    # Found a valid NP, keep track of the longest one
-                    best_np = np
-                    best_end = j
-            except Exception:
-                # NP parsing failed for this length, try next length
-                pass
+        # Try to parse NP starting at position i
+        # Use TokenStream position tracking to determine how many tokens were consumed
+        subsequence = tokens[i:]  # Use all remaining tokens
+        try:
+            ts = TokenStream(subsequence)
+            np = NounPhrase()
+            np_start, np_end = build_np_atn(np, ts)
+            initial_pos = ts.position
+            result = run_atn(np_start, np_end, ts, np)
+            
+            if result is not None:
+                # Found a valid NP - use actual consumed token count
+                tokens_consumed = ts.position - initial_pos
+                best_np = result
+                best_end = i + tokens_consumed - 1  # Convert to absolute index
+            else:
+                best_np = None
+                best_end = i
+        except Exception:
+            # NP parsing failed
+            best_np = None
+            best_end = i
         
         if best_np is not None:
             # Found an NP, add it and skip past it

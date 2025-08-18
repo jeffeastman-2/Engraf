@@ -36,8 +36,18 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     adj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
     # Handle adverbs that modify subsequent adjectives (e.g., "small bright blue")
     adj.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj)
-    # Handle conjunctions between adjectives (e.g., "tall and red")
-    adj.add_arc(is_conjunction, lambda _, tok: None, adj_conj)  # Consume the conjunction
+    # Handle conjunctions between adjectives (e.g., "tall and red") - but NOT noun phrase coordination
+    def is_adjective_conjunction(tok):
+        if not is_conjunction(tok):
+            return False
+        # Peek ahead to see if next token is an adjective (not a determiner starting new NP)
+        current_pos = ts.position
+        next_tok = None
+        if current_pos + 1 < len(ts.tokens):
+            next_tok = ts.tokens[current_pos + 1]
+        return next_tok and is_adjective(next_tok) and not is_determiner(next_tok)
+    
+    adj.add_arc(is_adjective_conjunction, lambda _, tok: None, adj_conj)  # Consume the conjunction
     
     # After conjunction, expect another adjective (possibly with adverb modifier)
     adj_conj.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_conj)

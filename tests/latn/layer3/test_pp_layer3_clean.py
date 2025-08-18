@@ -11,16 +11,18 @@ The beauty of Layer 3 is that the PP ATN becomes incredibly simple:
 """
 
 import pytest
-from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3, latn_tokenize_layer3_best
+from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
 from engraf.lexer.vector_space import vector_from_features
 
 
 def run_layer3(text):
     """Process text through all LATN layers up to Layer 3."""
-    hypotheses = latn_tokenize_layer3(text)
-    if not hypotheses:
-        return None
-    return hypotheses[0]  # Return best hypothesis
+    from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+    executor = LATNLayerExecutor()
+    result = executor.execute_layer3(text)
+    if result.success and result.hypotheses:
+        return result.hypotheses[0]
+    return None
 
 
 class TestLATNLayer3BasicPP:
@@ -81,8 +83,12 @@ class TestLATNLayer3Integration:
     def test_layer3_tokenization_simple_pp(self):
         """Test Layer 3 tokenization of simple prepositional phrases."""
         sentence = "at [1,2,3]"
-        
-        hypotheses = latn_tokenize_layer3(sentence)
+
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3(sentence)
+        assert result.success, "Layer 3 should succeed"
+        hypotheses = result.hypotheses
         assert len(hypotheses) > 0
         
         # Check the best hypothesis
@@ -95,16 +101,23 @@ class TestLATNLayer3Integration:
         assert any("PP(" in token for token in tokens), "Should have PP token"
         assert len(best_hyp.pp_replacements) > 0, "Should have PP replacements"
         
-        # Test the convenience function
-        best_tokens = latn_tokenize_layer3_best(sentence)
-        pp_tokens = [tok for tok in best_tokens if tok.isa("PP")]
+        # Test using the Layer Executor
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3(sentence)
+        assert result.success, "Layer 3 should succeed"
+        pp_tokens = [tok for tok in result.hypotheses[0].tokens if tok.isa("PP")]
         assert len(pp_tokens) > 0, "Should have PP tokens"
     
     def test_layer3_complex_pp(self):
         """Test Layer 3 with complex prepositional phrase."""
         sentence = "above the very large red sphere"
-        
-        hypotheses = latn_tokenize_layer3(sentence)
+
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3(sentence)
+        assert result.success, "Layer 3 should succeed"
+        hypotheses = result.hypotheses
         assert len(hypotheses) > 0
         
         best_hyp = hypotheses[0]
@@ -125,7 +138,11 @@ class TestLATNLayer3Ambiguity:
         """Test how NP ambiguity affects PP parsing: 'near the red box'."""
         sentence = "near the red box"
         
-        hypotheses = latn_tokenize_layer3(sentence)
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3(sentence)
+        assert result.success, "Layer 3 should succeed"
+        hypotheses = result.hypotheses
         assert len(hypotheses) > 0
         
         print(f"\nPP ambiguity test: '{sentence}'")
@@ -159,7 +176,11 @@ class TestLATNLayer3Ambiguity:
         try:
             sentence = "above the light house"
             
-            hypotheses = latn_tokenize_layer3(sentence)
+            from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+            executor = LATNLayerExecutor()
+            result = executor.execute_layer3(sentence)
+            assert result.success, "Layer 3 should succeed"
+            hypotheses = result.hypotheses
             assert len(hypotheses) > 0
             
             print(f"\nCompound ambiguity in PP: '{sentence}'")
@@ -183,7 +204,11 @@ class TestLATNLayer3Ambiguity:
         """Test multiple ambiguous PPs: 'from the table to the green sphere'."""
         sentence = "from the table to the green sphere"
         
-        hypotheses = latn_tokenize_layer3(sentence)
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3(sentence)
+        assert result.success, "Layer 3 should succeed"
+        hypotheses = result.hypotheses
         assert len(hypotheses) > 0
         
         print(f"\nComplex PP chain: '{sentence}'")

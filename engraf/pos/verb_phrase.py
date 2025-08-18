@@ -5,7 +5,7 @@ from engraf.pos.noun_phrase import NounPhrase
 
 class VerbPhrase():
     def __init__(self, verb=None):
-        super().__init__()
+        # VerbPhrase doesn't need to call super() if it doesn't inherit from anything
         self.verb = verb
         self.noun_phrase = None
         self.preps = []

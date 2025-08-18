@@ -1,5 +1,6 @@
 # atn/core.py
 from engraf.lexer.token_stream import TokenStream
+from engraf.utils.debug import debug_print
 
 class ATNState:
     def __init__(self, name):
@@ -32,7 +33,7 @@ def get_all_states(start_state):
             if isinstance(next_state, ATNState):
                 stack.append(next_state)
             else:
-                print(f"Warning: next_state {next_state} is not an ATNState")
+                debug_print(f"Warning: next_state {next_state} is not an ATNState")
     return all_states
 
 def run_atn(start_state, end_state, ts: TokenStream, pos):
@@ -44,9 +45,9 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
 
         for test, action, next_state in current.arcs:
             if tok is not None:
-                print(f"🔍  Testing '{tok.word}' in {current.name} → {next_state.name}")
+                debug_print(f"🔍  Testing '{tok.word}' in {current.name} → {next_state.name}")
             else:
-                print(f"🔍  Testing 'None' in {current.name} → {next_state.name}")
+                debug_print(f"🔍  Testing 'None' in {current.name} → {next_state.name}")
                 
             match_result = test(tok)
             if isinstance(match_result, tuple):
@@ -56,17 +57,17 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
 
             if matched_bool:
                 if tok is not None:
-                    print(f"    🎯  Token '{tok.word}' matches in {current.name} → {next_state.name}")
+                    debug_print(f"    🎯  Token '{tok.word}' matches in {current.name} → {next_state.name}")
                 else:
-                    print(f"    🎯  Token is None, but matched in {current.name} → {next_state.name}")
+                    debug_print(f"    🎯  Token is None, but matched in {current.name} → {next_state.name}")
 
                 if action is None:
-                    print(" ⚠️ ERROR: This arc has a None action!")
+                    debug_print(" ⚠️ ERROR: This arc has a None action!")
 
                 if getattr(action, "_is_subnetwork", False):
                     result = action(pos, tok)
                     if result is None:
-                        print(" ⚠️ Subnetwork failed — aborting parse")
+                        debug_print(" ⚠️ Subnetwork failed — aborting parse")
                         return None
                     pos = result  # use the result from the subnetwork as the next pos
                 else:
@@ -79,27 +80,27 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
                 if should_consume and tok is not None and action != noop and not is_subnet:
                     ts.advance()
                 else:
-                    print(f"    Token '{tok}' accepted but not consumed") 
-                    print(f"        should_consume = {should_consume}")   
-                    if tok is None: print(f"        tok was None")   
-                    print(f"        action was {action}") 
-                    print(f"        is_subnet was {is_subnet}")  
+                    debug_print(f"    Token '{tok}' accepted but not consumed") 
+                    debug_print(f"        should_consume = {should_consume}")   
+                    if tok is None: debug_print(f"        tok was None")   
+                    debug_print(f"        action was {action}") 
+                    debug_print(f"        is_subnet was {is_subnet}")  
 
                 matched = True
                 break
             else:
                 if tok is not None:
-                    print(f"    ✗ Failed to match in {current.name} on '{tok.word}' → {next_state.name}")
+                    debug_print(f"    ✗ Failed to match in {current.name} on '{tok.word}' → {next_state.name}")
                 else:
-                    print(f"    ✗ Failed to match in {current.name} on None → {next_state.name}")
+                    debug_print(f"    ✗ Failed to match in {current.name} on None → {next_state.name}")
 
         if not matched:
             if tok is not None:
-                print(f"    ⚠️ No arc matched in {current.name} on token '{tok.word}'")
+                debug_print(f"    ⚠️ No arc matched in {current.name} on token '{tok.word}'")
             else:
-                print(f"    ⚠️ No arc matched in {current.name} on None token")
+                debug_print(f"    ⚠️ No arc matched in {current.name} on None token")
             return None
 
         if current == end_state:
-            print(f"✅ Reached final state: {end_state.name} with context: {pos}")
+            debug_print(f"✅ Reached final state: {end_state.name} with context: {pos}")
             return pos
