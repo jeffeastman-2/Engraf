@@ -1,29 +1,19 @@
 from engraf.lexer.token_stream import TokenStream
-from engraf.utils.predicates import is_preposition, is_np_head, is_none
+from engraf.utils.predicates import is_preposition, is_noun_phrase_token
 from engraf.atn.core import ATNState
-from engraf.utils.actions import make_run_np_into_atn
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
-from engraf.utils.actions import make_run_np_into_atn
-from engraf.utils.actions import apply_from_subnet
 
 # --- Build the Prepositional Phrase ATN ---
 
 def build_pp_atn(pp:PrepositionalPhrase, ts:TokenStream):
     start = ATNState("PP-START")
     after_prep = ATNState("PP-AFTER-PREP")
-    after_np = ATNState("PP-NP-RESULT")
     end = ATNState("PP-END")
 
     # PREP
     start.add_arc(is_preposition, lambda _, tok: pp.apply_preposition(tok), after_prep)
-
-    # NP as subnetwork
-    after_np.add_arc(is_none, apply_from_subnet("noun_phrase",pp.apply_np), end)
-
-    # Use NP object from result directly
-    after_np.add_arc(is_none, lambda _, np_obj: pp.apply_np(np_obj), end)
-
-    # match an NP
-    after_prep.add_arc(is_np_head, make_run_np_into_atn(ts, fieldname="noun_phrase"), end)
+    
+    # Handle NounPhrase tokens from Layer 2 directly
+    after_prep.add_arc(is_noun_phrase_token, lambda _, tok: pp.apply_np(tok._original_np), end)
 
     return start, end

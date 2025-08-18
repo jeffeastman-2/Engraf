@@ -208,5 +208,3 @@ class TestGrammaticalErrorDetection:
         assert called_tok["verb_past_part"] > 0.0
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

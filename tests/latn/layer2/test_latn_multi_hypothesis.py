@@ -102,5 +102,3 @@ def multi_hypothesis_query(scene, query, expected_count):
     return candidates
 
 
-if __name__ == "__main__":
-    test_latn_multi_hypothesis_generation()

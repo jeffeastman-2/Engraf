@@ -119,10 +119,3 @@ def test_latn_layer1_adjective_inflection():
         assert tok["adj"] > 0.0
 
 
-if __name__ == "__main__":
-    test_latn_layer1_morphological_inflection()
-    test_latn_layer1_verb_inflection()
-    test_latn_layer1_multi_hypothesis_generation()
-    test_latn_layer1_best_tokenization()
-    test_latn_layer1_adjective_inflection()
-    print("✅ All LATN Layer 1 tests passed!")

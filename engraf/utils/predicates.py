@@ -21,9 +21,13 @@ def is_anything_no_consume(tok):
     return True, False
 def is_conjunction_no_consume(tok):
     return is_conjunction(tok), False
+def is_noun_phrase_token(tok):
+    """Returns True if the token is a NounPhrase token from Layer 2."""
+    return tok is not None and tok.isa("NP")
+
 def is_np_head(tok):
     """Returns True if the token starts a noun phrase."""
-    return any_of(is_determiner, is_pronoun, is_vector)(tok)
+    return any_of(is_determiner, is_pronoun, is_vector, is_noun_phrase_token)(tok)
 
 def is_adjective_conjunction(ts):
     """Returns a predicate that checks if current token is 'and' followed by adjective."""

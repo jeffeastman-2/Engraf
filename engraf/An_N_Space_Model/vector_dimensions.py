@@ -13,6 +13,8 @@ VECTOR_DIMENSIONS = [
     "pronoun",   # pronouns (it, they, them)
     "assembly",  # assembly/compound objects (house, car, table_setting)
     "unknown",   # unrecognized tokens that don't match vocabulary
+    "NP",        # noun phrase tokens (Layer 2 composite tokens)
+    "PP",        # prepositional phrase tokens (Layer 3 composite tokens)
     
     # Grammatical features
     "number",    # numeric quantity information

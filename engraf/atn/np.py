@@ -80,3 +80,21 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     return start, end
 
 
+def run_np(tokens):
+    """Run the NP ATN on a sequence of tokens.
+    
+    Args:
+        tokens: List of VectorSpace tokens
+        
+    Returns:
+        NounPhrase object if successful, None if parsing fails
+    """
+    from engraf.atn.core import run_atn
+    
+    ts = TokenStream(tokens)
+    np = NounPhrase()
+    np_start, np_end = build_np_atn(np, ts)
+    result = run_atn(np_start, np_end, ts, np)
+    return result
+
+

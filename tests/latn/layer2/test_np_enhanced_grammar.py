@@ -247,5 +247,3 @@ class TestEnhancedNPGrammar:
         assert len(set(hypothesis_lengths)) > 1, "Should have hypotheses of different lengths (specificity)"
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

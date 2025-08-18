@@ -58,5 +58,3 @@ def test_vocabulary_learning_sequence():
     print(f"  'sky blue' in vocabulary: {has_word('sky blue')}")
     print(f"  'sky' in vocabulary: {has_word('sky')}")
 
-if __name__ == "__main__":
-    test_vocabulary_learning_sequence()

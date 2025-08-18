@@ -223,5 +223,3 @@ class TestGrammaticalConstraints:
         # (This would be handled by the noun inflection system)
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

@@ -273,5 +273,3 @@ class TestNounInflectorIntegration:
             pytest.skip(f"Vocabulary integration not ready: {e}")
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
