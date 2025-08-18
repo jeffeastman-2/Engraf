@@ -194,25 +194,30 @@ class TestLATNLayerIntegration:
         print(f"\n🔄 LATN Layer Progression for: '{sentence}'")
         print("=" * 60)
         
-        # Layer 1: Multi-hypothesis tokenization
-        from engraf.lexer.latn_tokenizer import latn_tokenize
-        layer1_hyps = latn_tokenize(sentence)
-        print(f"Layer 1: {len(layer1_hyps)} tokenization hypotheses")
-        print(f"  Best: {[t.word for t in layer1_hyps[0].tokens]}")
+        # Use the LayerExecutor for proper pipeline testing
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        executor = LATNLayerExecutor()
         
-        # TODO: Layer 2: NP token replacement (when available)
-        print("Layer 2: NP token replacement (TODO)")
+        # Layer 1: Multi-hypothesis tokenization
+        layer1_result = executor.execute_layer1(sentence)
+        print(f"Layer 1: {len(layer1_result.hypotheses)} tokenization hypotheses")
+        print(f"  Best: {[t.word for t in layer1_result.hypotheses[0].tokens]}")
+        
+        # Layer 2: NP token replacement
+        layer2_result = executor.execute_layer2(sentence, enable_semantic_grounding=False)
+        print(f"Layer 2: {len(layer2_result.hypotheses)} NP-enhanced hypotheses")
+        print(f"  Best: {[t.word for t in layer2_result.hypotheses[0].tokens]}")
         
         # Layer 3: PP token replacement  
-        from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
-        layer3_hyps = latn_tokenize_layer3(sentence)
-        print(f"Layer 3: {len(layer3_hyps)} PP-enhanced hypotheses")
-        print(f"  Best: {[t.word for t in layer3_hyps[0].tokens]}")
-        print(f"  PP replacements: {len(layer3_hyps[0].pp_replacements)}")
+        layer3_result = executor.execute_layer3(sentence, enable_semantic_grounding=False)
+        print(f"Layer 3: {len(layer3_result.hypotheses)} PP-enhanced hypotheses")
+        print(f"  Best: {[t.word for t in layer3_result.hypotheses[0].tokens]}")
+        print(f"  PP replacements: {len(layer3_result.hypotheses[0].pp_replacements)}")
         
         # Each layer should add value
-        assert len(layer1_hyps) > 0
-        assert len(layer3_hyps) > 0
+        assert layer1_result.success
+        assert layer2_result.success  
+        assert layer3_result.success
         print("\n✅ Beautiful layer progression!")
 
 

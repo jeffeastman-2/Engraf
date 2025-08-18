@@ -18,7 +18,8 @@ from typing import List, Optional
 from dataclasses import dataclass
 import copy
 
-from engraf.lexer.latn_tokenizer import latn_tokenize, TokenizationHypothesis  
+from engraf.lexer.latn_tokenizer import TokenizationHypothesis  
+from engraf.lexer.latn_tokenizer_layer2 import NPTokenizationHypothesis
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_pp import run_pp
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
@@ -134,27 +135,24 @@ def replace_pp_sequences(tokens: List[VectorSpace], pp_sequences: List[tuple]) -
     return new_tokens
 
 
-def latn_tokenize_layer3(text: str) -> List[PPTokenizationHypothesis]:
+def latn_tokenize_layer3(layer2_hypotheses: List[NPTokenizationHypothesis]) -> List[PPTokenizationHypothesis]:
     """LATN Layer 3: Generate tokenization hypotheses with PP token replacement.
     
     This function:
-    1. Gets LATN tokenization (currently Layer 1, can be enhanced to use Layer 2)
+    1. Takes Layer 2 hypotheses (with NP tokens)
     2. For each hypothesis, finds prepositional phrases using the enhanced PP ATN
     3. Replaces PP sequences with single PrepositionalPhrase tokens
     4. Returns hypotheses ranked by confidence
     
     Args:
-        text: Input text to tokenize
+        layer2_hypotheses: List of NPTokenizationHypothesis from Layer 2
         
     Returns:
         List of PPTokenizationHypothesis objects, ranked by confidence
     """
-    # Get Layer 2 hypotheses (which include NounPhrase tokens)
-    from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
-    base_hypotheses = latn_tokenize_layer2(text)
     layer3_hypotheses = []
     
-    for base_hyp in base_hypotheses:
+    for base_hyp in layer2_hypotheses:
         # Find PP sequences in this tokenization using the enhanced PP ATN
         pp_sequences = find_pp_sequences(base_hyp.tokens)
         
@@ -190,34 +188,3 @@ def latn_tokenize_layer3(text: str) -> List[PPTokenizationHypothesis]:
     layer3_hypotheses.sort(key=lambda h: h.confidence, reverse=True)
     
     return layer3_hypotheses
-
-
-def latn_tokenize_layer3_best(text: str) -> List[VectorSpace]:
-    """Get the best Layer 3 tokenization (highest confidence hypothesis).
-    
-    This is the main entry point for getting tokenized input with PP token replacement.
-    
-    Args:
-        text: Input text to tokenize
-        
-    Returns:
-        List of tokens from the highest confidence hypothesis
-    """
-    hypotheses = latn_tokenize_layer3(text)
-    
-    if not hypotheses:
-        # Fallback to base LATN if no Layer 3 hypotheses
-        from engraf.lexer.latn_tokenizer import latn_tokenize_best
-        return latn_tokenize_best(text)
-    
-    return hypotheses[0].tokens
-
-
-# Convenience alias for backward compatibility
-latn_tokenize_best = latn_tokenize_layer3_best
-
-# For testing and debugging
-def run_layer3(text: str):
-    """Simple function to run Layer 3 and return the best hypothesis."""
-    hypotheses = latn_tokenize_layer3(text)
-    return hypotheses[0] if hypotheses else None

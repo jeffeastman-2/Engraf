@@ -7,7 +7,7 @@ that were previously in the __main__ section.
 """
 
 import pytest
-from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 
 
 class TestLATNLayer2Examples:
@@ -15,10 +15,11 @@ class TestLATNLayer2Examples:
     
     def test_the_red_box(self):
         """Test: 'the red box' -> NP token."""
-        hypotheses = latn_tokenize_layer2("the red box")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer2("the red box", enable_semantic_grounding=False)
+        assert result.success, "Layer 2 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         print(f"NP replacements: {len(best.np_replacements)}")
         
@@ -28,10 +29,11 @@ class TestLATNLayer2Examples:
     
     def test_very_large_sphere(self):
         """Test: 'a very large sphere' -> NP token."""
-        hypotheses = latn_tokenize_layer2("a very large sphere")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer2("a very large sphere", enable_semantic_grounding=False)
+        assert result.success, "Layer 2 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
@@ -39,10 +41,11 @@ class TestLATNLayer2Examples:
     
     def test_vector_coordinate(self):
         """Test: '[1,2,3]' -> NP token."""
-        hypotheses = latn_tokenize_layer2("[1,2,3]")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer2("[1,2,3]", enable_semantic_grounding=False)
+        assert result.success, "Layer 2 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
@@ -51,10 +54,11 @@ class TestLATNLayer2Examples:
     
     def test_big_red_sphere(self):
         """Test: 'the big red sphere' -> NP token."""
-        hypotheses = latn_tokenize_layer2("the big red sphere")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer2("the big red sphere", enable_semantic_grounding=False)
+        assert result.success, "Layer 2 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
@@ -62,10 +66,11 @@ class TestLATNLayer2Examples:
     
     def test_complex_with_pp(self):
         """Test: 'a small green box on the table' -> multiple tokens."""
-        hypotheses = latn_tokenize_layer2("a small green box on the table")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer2("a small green box on the table", enable_semantic_grounding=False)
+        assert result.success, "Layer 2 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         print(f"NP replacements: {len(best.np_replacements)}")
         

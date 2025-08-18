@@ -16,7 +16,7 @@ from typing import List, Optional
 from dataclasses import dataclass
 import copy
 
-from engraf.lexer.latn_tokenizer import latn_tokenize, TokenizationHypothesis  
+from engraf.lexer.latn_tokenizer import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_np import run_np
 from engraf.pos.noun_phrase import NounPhrase
@@ -149,7 +149,7 @@ def replace_np_sequences(tokens: List[VectorSpace], np_sequences: List[tuple]) -
     return new_tokens
 
 
-def latn_tokenize_layer2(text: str) -> List[NPTokenizationHypothesis]:
+def latn_tokenize_layer2(layer1_hypotheses: List[TokenizationHypothesis]) -> List[NPTokenizationHypothesis]:
     """LATN Layer 2: Replace noun phrase sequences with NounPhrase tokens.
     
     This is the main entry point for Layer 2 tokenization. It takes Layer 1 
@@ -157,16 +157,14 @@ def latn_tokenize_layer2(text: str) -> List[NPTokenizationHypothesis]:
     single NounPhrase tokens.
     
     Args:
-        text: Input text to tokenize
+        layer1_hypotheses: List of TokenizationHypothesis from Layer 1
         
     Returns:
         List of NPTokenizationHypothesis objects, ranked by confidence
     """
-    # Get base LATN hypotheses (Layer 1)
-    base_hypotheses = latn_tokenize(text)
     layer2_hypotheses = []
     
-    for base_hyp in base_hypotheses:
+    for base_hyp in layer1_hypotheses:
         # Find NP sequences in this tokenization using the NP ATN
         np_sequences = find_np_sequences(base_hyp.tokens)
         
@@ -198,16 +196,3 @@ def latn_tokenize_layer2(text: str) -> List[NPTokenizationHypothesis]:
     layer2_hypotheses.sort(key=lambda h: h.confidence, reverse=True)
     
     return layer2_hypotheses
-
-
-def latn_tokenize_layer2_best(text: str) -> List[VectorSpace]:
-    """Convenience function to get the best Layer 2 tokenization."""
-    hypotheses = latn_tokenize_layer2(text)
-    return hypotheses[0].tokens if hypotheses else []
-
-
-# For testing and debugging
-def run_layer2(text: str):
-    """Simple function to run Layer 2 and return the best hypothesis."""
-    hypotheses = latn_tokenize_layer2(text)
-    return hypotheses[0] if hypotheses else None

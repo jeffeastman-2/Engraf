@@ -7,7 +7,7 @@ including those that were previously in the __main__ section.
 """
 
 import pytest
-from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 
 
 class TestLATNLayer3ComplexExamples:
@@ -15,11 +15,12 @@ class TestLATNLayer3ComplexExamples:
     
     def test_at_vector_coordinates(self):
         """Test: 'at [1,2,3]' -> single PP token."""
-        hypotheses = latn_tokenize_layer3("at [1,2,3]")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("at [1,2,3]", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        print(f"Generated {len(hypotheses)} Layer 3 hypotheses")
-        best = hypotheses[0]
+        print(f"Generated {len(result.hypotheses)} Layer 3 hypotheses")
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         print(f"PP replacements: {len(best.pp_replacements)}")
         
@@ -30,10 +31,11 @@ class TestLATNLayer3ComplexExamples:
     
     def test_above_complex_np(self):
         """Test: 'above the table' -> single PP token with NP inside."""
-        hypotheses = latn_tokenize_layer3("above the table")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("above the table", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         print(f"PP replacements: {len(best.pp_replacements)}")
         
@@ -44,10 +46,11 @@ class TestLATNLayer3ComplexExamples:
     
     def test_on_complex_np(self):
         """Test: 'on the red sphere' -> single PP token."""
-        hypotheses = latn_tokenize_layer3("on the red sphere")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("on the red sphere", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         # Should have PP token for "on the red sphere"
@@ -57,10 +60,11 @@ class TestLATNLayer3ComplexExamples:
     
     def test_multiple_prep_phrases(self):
         """Test: 'from the table to the sphere' -> two PP tokens."""
-        hypotheses = latn_tokenize_layer3("from the table to the sphere")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("from the table to the sphere", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         print(f"PP replacements: {len(best.pp_replacements)}")
         
@@ -74,10 +78,11 @@ class TestLATNLayer3SimpleExamples:
     
     def test_at_vector_only(self):
         """Test: 'at [1,2,3]' -> single PP token."""
-        hypotheses = latn_tokenize_layer3("at [1,2,3]")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("at [1,2,3]", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         assert len(best.tokens) == 1, "Should have single token"
@@ -86,10 +91,11 @@ class TestLATNLayer3SimpleExamples:
     
     def test_on_the_table_only(self):
         """Test: 'on the table' -> single PP token."""
-        hypotheses = latn_tokenize_layer3("on the table")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("on the table", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         pp_tokens = [tok for tok in best.tokens if tok.isa("PP")]
@@ -97,10 +103,11 @@ class TestLATNLayer3SimpleExamples:
     
     def test_above_red_sphere_only(self):
         """Test: 'above the red sphere' -> single PP token."""
-        hypotheses = latn_tokenize_layer3("above the red sphere")
-        assert len(hypotheses) > 0
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer3("above the red sphere", enable_semantic_grounding=False)
+        assert result.success, "Layer 3 should succeed"
         
-        best = hypotheses[0]
+        best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
         
         pp_tokens = [tok for tok in best.tokens if tok.isa("PP")]
@@ -117,30 +124,31 @@ class TestLATNLayer3LayerProgression:
         print(f"\n🔄 LATN Layer Progression for: '{sentence}'")
         print("=" * 60)
         
+        # Use the LayerExecutor for proper pipeline testing
+        executor = LATNLayerExecutor()
+        
         # Layer 1: Multi-hypothesis tokenization
-        from engraf.lexer.latn_tokenizer import latn_tokenize
-        layer1_hyps = latn_tokenize(sentence)
-        print(f"Layer 1: {len(layer1_hyps)} tokenization hypotheses")
-        print(f"  Best: {[t.word for t in layer1_hyps[0].tokens]}")
+        layer1_result = executor.execute_layer1(sentence)
+        print(f"Layer 1: {len(layer1_result.hypotheses)} tokenization hypotheses")
+        print(f"  Best: {[t.word for t in layer1_result.hypotheses[0].tokens]}")
         
         # Layer 2: NP token replacement
-        from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
-        layer2_hyps = latn_tokenize_layer2(sentence)
-        print(f"Layer 2: {len(layer2_hyps)} NP-enhanced hypotheses")
-        print(f"  Best: {[t.word for t in layer2_hyps[0].tokens]}")
+        layer2_result = executor.execute_layer2(sentence, enable_semantic_grounding=False)
+        print(f"Layer 2: {len(layer2_result.hypotheses)} NP-enhanced hypotheses")
+        print(f"  Best: {[t.word for t in layer2_result.hypotheses[0].tokens]}")
         
         # Layer 3: PP token replacement  
-        layer3_hyps = latn_tokenize_layer3(sentence)
-        print(f"Layer 3: {len(layer3_hyps)} PP-enhanced hypotheses")
-        print(f"  Best: {[t.word for t in layer3_hyps[0].tokens]}")
+        layer3_result = executor.execute_layer3(sentence, enable_semantic_grounding=False)
+        print(f"Layer 3: {len(layer3_result.hypotheses)} PP-enhanced hypotheses")
+        print(f"  Best: {[t.word for t in layer3_result.hypotheses[0].tokens]}")
         
         # Verify progression
-        assert len(layer1_hyps) > 0, "Layer 1 should work"
-        assert len(layer2_hyps) > 0, "Layer 2 should work"
-        assert len(layer3_hyps) > 0, "Layer 3 should work"
+        assert layer1_result.success, "Layer 1 should work"
+        assert layer2_result.success, "Layer 2 should work"
+        assert layer3_result.success, "Layer 3 should work"
         
         # Layer 3 should have the most compact representation
-        layer3_best = layer3_hyps[0]
+        layer3_best = layer3_result.hypotheses[0]
         assert len(layer3_best.tokens) == 1, "Layer 3 should create single PP token"
         assert layer3_best.tokens[0].isa("PP"), "Should be PP token"
 
