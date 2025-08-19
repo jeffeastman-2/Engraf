@@ -14,6 +14,7 @@ VECTOR_DIMENSIONS = [
     "assembly",  # assembly/compound objects (house, car, table_setting)
     "unknown",   # unrecognized tokens that don't match vocabulary
     "NP",        # noun phrase tokens (Layer 2 composite tokens)
+    "SO",        # scene object tokens are bound NPs to existing scene objects (Layer 2 composite tokens)
     "PP",        # prepositional phrase tokens (Layer 3 composite tokens)
     "VP",        # verb phrase tokens (Layer 4 composite tokens)
     
@@ -70,3 +71,35 @@ VECTOR_DIMENSIONS = [
     "relational_possession", # possession/part-of: of (belongs to, part of)
     "relational_comparison"  # comparison baseline: than (comparison reference)
 ]
+
+# Semantic dimension categories for masking during similarity comparisons
+# POS dimensions should not be used for semantic similarity
+POS_DIMENSIONS = {
+    "verb", "tobe", "action", "prep", "det", "def", "adv", "adj", "noun", 
+    "proper_noun", "pronoun", "assembly", "unknown", "NP", "SO", "PP", "VP",
+    "number", "vector", "singular", "plural", "conj", "disj", "neg", "modal", 
+    "question", "unit", "verb_past", "verb_past_part", "verb_present_part",
+    "comp", "super", "quoted"
+}
+
+# Semantic content dimensions that should be used for similarity
+SEMANTIC_DIMENSIONS = {
+    # Spatial coordinates
+    "locX", "locY", "locZ", "scaleX", "scaleY", "scaleZ", "rotX", "rotY", "rotZ",
+    # Visual properties  
+    "red", "green", "blue", "texture", "transparency",
+    # High-level verb intent vectors
+    "create", "transform", "move", "rotate", "scale", "style", "organize", 
+    "edit", "select", "naming",
+    # Semantic preposition dimensions
+    "spatial_location", "spatial_proximity", "directional_target", 
+    "directional_agency", "relational_possession", "relational_comparison"
+}
+
+def get_semantic_mask():
+    """Return a boolean mask for semantic dimensions only."""
+    return [dim in SEMANTIC_DIMENSIONS for dim in VECTOR_DIMENSIONS]
+
+def get_pos_mask():
+    """Return a boolean mask for POS dimensions only."""
+    return [dim in POS_DIMENSIONS for dim in VECTOR_DIMENSIONS]

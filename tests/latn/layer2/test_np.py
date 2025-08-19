@@ -298,15 +298,21 @@ def test_latn_semantic_grounding_ambiguous_objects():
                 # Test semantic grounding using SceneModel
                 matched_object = scene.find_noun_phrase(np)
                 if matched_object:
-                    # Resolve the NP to the found scene object
-                    np.resolve_to_scene_object(matched_object)
+                    # Create SceneObjectPhrase from the NP and resolve it
+                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
+                    so = SceneObjectPhrase.from_noun_phrase(np)
+                    so.resolve_to_scene_object(matched_object)
                     print(f"    🎯 Scene resolution: {matched_object.object_id}")
-                    print(f"    ✅ NP resolved: {np}")
+                    print(f"    ✅ SO resolved: {so}")
                     
-                    # Test the resolution functionality
-                    assert np.is_resolved(), "NP should be marked as resolved"
-                    assert np.get_resolved_object() == matched_object, "Should return the correct resolved object"
+                    # Test the resolution functionality on SceneObjectPhrase
+                    assert so.is_resolved(), "SO should be marked as resolved"
+                    assert so.get_resolved_object() == matched_object, "Should return the correct resolved object"
                     assert matched_object.name == "box", f"Should match a box, got {matched_object.name}"
+                    
+                    # Verify original NP doesn't have resolution methods
+                    assert not hasattr(np, 'is_resolved'), "Original NP should not have is_resolved method"
+                    assert not hasattr(np, 'resolve_to_scene_object'), "Original NP should not have resolve_to_scene_object method"
                     
                     # For ambiguous "the box", any box is valid
                     assert matched_object.object_id in ["red_box_1", "green_box_1", "tall_red_box_1"]
@@ -336,12 +342,15 @@ def test_latn_semantic_grounding_ambiguous_objects():
                 # Test semantic grounding for red box
                 matched_object = scene.find_noun_phrase(np)
                 if matched_object:
-                    np.resolve_to_scene_object(matched_object)
+                    # Create SceneObjectPhrase from the NP and resolve it
+                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
+                    so = SceneObjectPhrase.from_noun_phrase(np)
+                    so.resolve_to_scene_object(matched_object)
                     print(f"    🎯 Scene resolution: {matched_object.object_id}")
-                    print(f"    ✅ NP resolved: {np}")
+                    print(f"    ✅ SO resolved: {so}")
                     
                     # Should match a red box (either red_box_1 or tall_red_box_1)
-                    assert np.is_resolved(), "NP should be resolved"
+                    assert so.is_resolved(), "SO should be resolved"
                     assert matched_object.name == "box"
                     assert matched_object.vector["red"] > 0.0, "Matched object should be red"
                     assert matched_object.object_id in ["red_box_1", "tall_red_box_1"], f"Should match red box, got {matched_object.object_id}"
@@ -367,12 +376,15 @@ def test_latn_semantic_grounding_ambiguous_objects():
                 # Test semantic grounding for green box
                 matched_object = scene.find_noun_phrase(np)
                 if matched_object:
-                    np.resolve_to_scene_object(matched_object)
+                    # Create SceneObjectPhrase from the NP and resolve it
+                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
+                    so = SceneObjectPhrase.from_noun_phrase(np)
+                    so.resolve_to_scene_object(matched_object)
                     print(f"    🎯 Scene resolution: {matched_object.object_id}")
-                    print(f"    ✅ NP resolved: {np}")
+                    print(f"    ✅ SO resolved: {so}")
                     
                     # Should uniquely match the green box
-                    assert np.is_resolved(), "NP should be resolved"
+                    assert so.is_resolved(), "SO should be resolved"
                     assert matched_object.name == "box"
                     assert matched_object.vector["green"] > 0.0, "Matched object should be green"
                     assert matched_object.object_id == "green_box_1", f"Should match green box, got {matched_object.object_id}"
@@ -466,14 +478,21 @@ def test_latn_semantic_grounding_resolution():
                     # Test semantic grounding using SceneModel
                     matched_object = scene.find_noun_phrase(np)
                     if matched_object:
-                        np.resolve_to_scene_object(matched_object)
+                        # Create SceneObjectPhrase from the NP and resolve it
+                        from engraf.pos.scene_object_phrase import SceneObjectPhrase
+                        so = SceneObjectPhrase.from_noun_phrase(np)
+                        so.resolve_to_scene_object(matched_object)
                         print(f"    🎯 Scene resolution: {matched_object.object_id}")
-                        print(f"    ✅ NP resolved: {np}")
+                        print(f"    ✅ SO resolved: {so}")
                         
-                        # Test resolution functionality
-                        assert np.is_resolved(), "NP should be marked as resolved"
-                        assert np.get_resolved_object() == matched_object, "Should return the correct resolved object"
+                        # Test resolution functionality on SceneObjectPhrase
+                        assert so.is_resolved(), "SO should be marked as resolved"
+                        assert so.get_resolved_object() == matched_object, "Should return the correct resolved object"
                         assert matched_object.name == "sphere", f"Should match a sphere, got {matched_object.name}"
+                        
+                        # Verify original NP doesn't have resolution methods
+                        assert not hasattr(np, 'is_resolved'), "Original NP should not have is_resolved method"
+                        assert not hasattr(np, 'resolve_to_scene_object'), "Original NP should not have resolve_to_scene_object method"
                         
                         # Verify specific expectations based on the sentence
                         if "big" in np.get_consumed_words() and "blue" in np.get_consumed_words():

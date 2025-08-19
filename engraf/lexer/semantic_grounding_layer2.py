@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple
 from dataclasses import dataclass
 
 from engraf.pos.noun_phrase import NounPhrase
+from engraf.pos.scene_object_phrase import SceneObjectPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 
@@ -20,6 +21,7 @@ class Layer2GroundingResult:
     success: bool
     confidence: float
     resolved_object: Optional[SceneObject] = None
+    scene_object_phrase: Optional[SceneObjectPhrase] = None  # The converted SO phrase
     description: str = ""
     alternative_matches: List[Tuple[float, SceneObject]] = None
     
@@ -66,10 +68,15 @@ class Layer2SemanticGrounder:
             # Best match is the first one (highest confidence)
             best_confidence, best_object = candidates[0]
             
+            # Create SceneObjectPhrase from the original NounPhrase
+            scene_object_phrase = SceneObjectPhrase.from_noun_phrase(np)
+            scene_object_phrase.resolve_to_scene_object(best_object)
+            
             return Layer2GroundingResult(
                 success=True,
                 confidence=best_confidence,
                 resolved_object=best_object,
+                scene_object_phrase=scene_object_phrase,
                 description=f"Grounded NP '{np}' to {best_object.object_id}",
                 alternative_matches=candidates[1:]  # All except the best match
             )
@@ -90,23 +97,27 @@ class Layer2SemanticGrounder:
             else:
                 confidence = 1.0  # Perfect name match without semantic constraints
             
+            # Create SceneObjectPhrase from the original NounPhrase
+            scene_object_phrase = SceneObjectPhrase.from_noun_phrase(np)
+            scene_object_phrase.resolve_to_scene_object(matched_object)
+            
             return Layer2GroundingResult(
                 success=True,
                 confidence=confidence,
                 resolved_object=matched_object,
+                scene_object_phrase=scene_object_phrase,
                 description=f"Grounded NP '{np}' to {matched_object.object_id}"
             )
     
     def ground_multiple(self, np_list: List[NounPhrase], return_all_matches: bool = False) -> List[Layer2GroundingResult]:
-        """Ground multiple NounPhrase tokens."""
+        """Ground multiple NounPhrase tokens.
+        
+        Returns:
+            List of Layer2GroundingResult objects, each containing a SceneObjectPhrase if successful
+        """
         results = []
         for np in np_list:
             result = self.ground(np, return_all_matches=return_all_matches)
-            
-            # If grounding succeeds, resolve the NP to the found object
-            if result.success and hasattr(np, 'resolve_to_scene_object'):
-                np.resolve_to_scene_object(result.resolved_object)
-            
             results.append(result)
         
         return results

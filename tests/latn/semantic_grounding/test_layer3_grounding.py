@@ -73,7 +73,7 @@ class TestLayer3SemanticGrounding:
         # Create PP "on the table"
         pp = PrepositionalPhrase()
         pp.preposition = "on"
-        pp.np = np
+        pp.noun_phrase = np
         
         result = self.grounder.ground(pp)
         
@@ -93,7 +93,7 @@ class TestLayer3SemanticGrounding:
         # Create PP "on the chair"
         pp = PrepositionalPhrase()
         pp.preposition = "on"
-        pp.np = np
+        pp.noun_phrase = np
         
         result = self.grounder.ground(pp)
         
@@ -127,7 +127,7 @@ class TestLayer3SemanticGrounding:
         
         pp2 = PrepositionalPhrase()
         pp2.preposition = "above"
-        pp2.np = np
+        pp2.noun_phrase = np
         
         results = self.grounder.ground_multiple([pp1, pp2])
         

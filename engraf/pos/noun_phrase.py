@@ -12,7 +12,6 @@ class NounPhrase():
         self.scale_factor = 1.0
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
         self.consumed_tokens = []  # All original tokens that were consumed to build this NP
-        self.resolved_object = None  # Resolved SceneObject after semantic grounding (LATN Layer 2)
 
     def apply_determiner(self, tok):
         self.determiner = tok.word
@@ -130,8 +129,6 @@ class NounPhrase():
     def __repr__(self):
         consumed_words = [tok.word for tok in self.consumed_tokens]
         parts = [f"noun={self.noun}", f"determiner={self.determiner}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
-        if self.resolved_object:
-            parts.append(f"resolved_to={self.resolved_object.object_id}")
         return f"NP({', '.join(parts)})"
     
     def get_consumed_words(self):
@@ -148,19 +145,3 @@ class NounPhrase():
             return (0, 0)
         # Assuming tokens have position information (would need to be added to token structure)
         return (0, len(self.consumed_tokens))  # Placeholder - would use actual positions
-    
-    def resolve_to_scene_object(self, scene_object):
-        """Resolve this NP to a specific SceneObject (LATN Layer 2 semantic grounding).
-        
-        Args:
-            scene_object: The SceneObject this NP refers to
-        """
-        self.resolved_object = scene_object
-        
-    def is_resolved(self):
-        """Check if this NP has been resolved to a scene object."""
-        return self.resolved_object is not None
-        
-    def get_resolved_object(self):
-        """Get the resolved SceneObject, or None if not resolved."""
-        return self.resolved_object

@@ -47,35 +47,33 @@ class TestLayer2Grounding:
         print(f"DEBUG: Hypothesis tokens: {[token.word for token in best_hypothesis.tokens]}")
         print(f"DEBUG: NP replacements: {best_hypothesis.np_replacements}")
         
-        # Check the result object itself for grounding info
-        print(f"DEBUG: Result attributes: {dir(result)}")
-        if hasattr(result, 'grounding_results'):
-            print(f"DEBUG: Grounding results: {result.grounding_results}")
-        if hasattr(result, 'noun_phrases'):
-            print(f"DEBUG: Noun phrases: {result.noun_phrases}")
-            for i, np in enumerate(result.noun_phrases):
-                print(f"DEBUG: NP {i}: {np}")
-                print(f"DEBUG: NP {i} resolved_object: {np.resolved_object}")
-                print(f"DEBUG: NP {i} is_resolved: {np.is_resolved()}")
+        # Check grounding results
+        assert len(result.grounding_results) > 0, "Should have grounding results"
+        grounding_result = result.grounding_results[0]
+        assert grounding_result.success, "Grounding should succeed"
+        assert grounding_result.resolved_object is not None, "Should resolve to an object"
+        assert grounding_result.scene_object_phrase is not None, "Should create SceneObjectPhrase"
         
-        # Check the NP token itself
+        # Check the grounded SceneObjectPhrase
+        so_phrase = grounding_result.scene_object_phrase
+        assert so_phrase.is_resolved(), "SceneObjectPhrase should be resolved"
+        assert so_phrase.get_resolved_object() == red_box, "Should resolve to red box"
+        
+        # Check that original NounPhrase doesn't have resolution methods
+        original_np = result.noun_phrases[0]
+        assert not hasattr(original_np, 'resolved_object'), "Original NP should not have resolved_object"
+        assert not hasattr(original_np, 'is_resolved'), "Original NP should not have is_resolved"
+        
+        # Check the NP token has grounded phrase
         np_token = best_hypothesis.tokens[0]
-        if hasattr(np_token, '_original_np'):
-            original_np = np_token._original_np
-            print(f"DEBUG: Original NP: {original_np}")
-            print(f"DEBUG: Original NP resolved_object: {original_np.resolved_object}")
-            print(f"DEBUG: Original NP is_resolved: {original_np.is_resolved()}")
+        assert hasattr(np_token, '_grounded_phrase'), "Token should have grounded phrase"
+        grounded_phrase = np_token._grounded_phrase
+        assert grounded_phrase.is_resolved(), "Grounded phrase should be resolved"
+        assert grounded_phrase.get_resolved_object() == red_box, "Grounded phrase should resolve to red box"
         
-        # Check if grounding info is present (this will help us understand current structure)
-        print(f"DEBUG: Hypothesis attributes: {dir(best_hypothesis)}")
-        if hasattr(best_hypothesis, 'groundings'):
-            print(f"DEBUG: Groundings: {best_hypothesis.groundings}")
-        
-        # Basic assertions (we'll refine these as we understand the mechanism)
+        # Basic token structure assertions
         assert len(best_hypothesis.tokens) == 1, "Should have one NP token"
         assert best_hypothesis.tokens[0].word == "NP(the red box)", "Should create NP token"
-        
-        # TODO: Add assertions about actual grounding once we see the structure
     
     def test_multiple_objects_same_query(self):
         """Test NP grounding with multiple matching objects: 'the box' should find multiple boxes."""
@@ -124,11 +122,17 @@ class TestLayer2Grounding:
         # Verify we have 2 noun phrases (one per hypothesis)  
         assert len(result.noun_phrases) == 2, f"Should have 2 noun phrases (one per hypothesis), got {len(result.noun_phrases)}"
         
-        # Verify each NP is resolved to a different object
-        resolved_objects = [np.resolved_object.object_id for np in result.noun_phrases if np.resolved_object]
-        assert len(resolved_objects) == 2, "Both NPs should be resolved"
-        assert "box-1" in resolved_objects, "Should have box-1"
-        assert "box-2" in resolved_objects, "Should have box-2"
+        # Verify each hypothesis has grounding information via tokens
+        grounded_objects = []
+        for hypothesis in result.hypotheses:
+            for token in hypothesis.tokens:
+                if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
+                    if token._grounded_phrase.is_resolved():
+                        grounded_objects.append(token._grounded_phrase.get_resolved_object().object_id)
+        
+        assert len(grounded_objects) == 2, "Both hypotheses should be grounded"
+        assert "box-1" in grounded_objects, "Should have box-1"
+        assert "box-2" in grounded_objects, "Should have box-2"
         
         # Verify each hypothesis has a different grounding
         hypothesis_descriptions = [h.description for h in result.hypotheses]
@@ -138,8 +142,7 @@ class TestLayer2Grounding:
         print(f"✅ Hypothesis multiplication successful!")
         print(f"   Hypothesis 1: {result.hypotheses[0].description}")
         print(f"   Hypothesis 2: {result.hypotheses[1].description}")
-        print(f"   NP 1 resolved to: {result.noun_phrases[0].resolved_object.object_id}")
-        print(f"   NP 2 resolved to: {result.noun_phrases[1].resolved_object.object_id}")
+        print(f"   Grounded to: {grounded_objects}")
     
     def test_cartesian_product_multiple_nps(self):
         """Test Cartesian product: 2 ambiguous NPs should create 4 hypotheses (2×2)."""
@@ -186,12 +189,12 @@ class TestLayer2Grounding:
         for i, hypothesis in enumerate(result.hypotheses):
             print(f"DEBUG: Hypothesis {i+1}: {hypothesis.description}")
             
-            # Extract the resolved objects for this hypothesis
+            # Extract the resolved objects for this hypothesis via grounded phrases
             hypothesis_nps = []
             for token in hypothesis.tokens:
-                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                    if token._original_np.is_resolved():
-                        hypothesis_nps.append(token._original_np.resolved_object.object_id)
+                if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
+                    if token._grounded_phrase.is_resolved():
+                        hypothesis_nps.append(token._grounded_phrase.get_resolved_object().object_id)
             
             combinations.append(tuple(hypothesis_nps))
             print(f"       → Objects: {hypothesis_nps}")
@@ -256,12 +259,12 @@ class TestLayer2Grounding:
         for i, hypothesis in enumerate(result.hypotheses[:5]):  # Show first 5
             print(f"DEBUG: Hypothesis {i+1}: {hypothesis.description}")
             
-            # Extract the resolved objects for this hypothesis
+            # Extract the resolved objects for this hypothesis via grounded phrases
             hypothesis_nps = []
             for token in hypothesis.tokens:
-                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                    if token._original_np.is_resolved():
-                        hypothesis_nps.append(token._original_np.resolved_object.object_id)
+                if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
+                    if token._grounded_phrase.is_resolved():
+                        hypothesis_nps.append(token._grounded_phrase.get_resolved_object().object_id)
             
             print(f"       → Objects: {hypothesis_nps}")
         
@@ -283,9 +286,9 @@ class TestLayer2Grounding:
         for hypothesis in result.hypotheses:
             hypothesis_objects = []
             for token in hypothesis.tokens:
-                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                    if token._original_np.is_resolved():
-                        hypothesis_objects.append(token._original_np.resolved_object.object_id)
+                if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
+                    if token._grounded_phrase.is_resolved():
+                        hypothesis_objects.append(token._grounded_phrase.get_resolved_object().object_id)
             
             if len(hypothesis_objects) == 3:  # box, sphere, object
                 object_position_matches.add(hypothesis_objects[2])  # Third NP should be the "green object"

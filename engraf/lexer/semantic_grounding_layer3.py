@@ -58,7 +58,7 @@ class Layer3SemanticGrounder:
         if hasattr(pp, 'vector_text') and pp.vector_text:
             # Vector coordinates like "at [1,2,3]"
             return self._ground_vector_location(pp)
-        elif hasattr(pp, 'preposition') and hasattr(pp, 'np') and pp.np:
+        elif hasattr(pp, 'preposition') and hasattr(pp, 'noun_phrase') and pp.noun_phrase:
             # Spatial relationships like "on the table", "above the red box"
             return self._ground_spatial_relationship(pp, return_all_matches)
         else:
@@ -105,15 +105,15 @@ class Layer3SemanticGrounder:
     def _ground_spatial_relationship(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
         """Ground a prepositional phrase with spatial relationship to an object."""
         # First, ground the noun phrase within the PP
-        if hasattr(pp, 'np') and pp.np:
+        if hasattr(pp, 'noun_phrase') and pp.noun_phrase:
             # Use Layer 2 grounding for the contained NP
-            np_grounding = self.layer2_grounder.ground(pp.np, return_all_matches=return_all_matches)
+            np_grounding = self.layer2_grounder.ground(pp.noun_phrase, return_all_matches=return_all_matches)
             
             if not np_grounding.success:
                 return Layer3GroundingResult(
                     success=False,
                     confidence=0.0,
-                    description=f"Failed to ground NP within PP: {pp.np}"
+                    description=f"Failed to ground NP within PP: {pp.noun_phrase}"
                 )
             
             # Create spatial relationship vector

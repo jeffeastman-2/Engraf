@@ -472,7 +472,12 @@ class LATNLayerExecutor:
                     for token in new_hypothesis.tokens:
                         if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
                             specific_object = combination[np_index]
-                            token._original_np.resolve_to_scene_object(specific_object)
+                            # Create a SceneObjectPhrase for this grounding
+                            from engraf.pos.scene_object_phrase import SceneObjectPhrase
+                            scene_object_phrase = SceneObjectPhrase.from_noun_phrase(token._original_np)
+                            scene_object_phrase.resolve_to_scene_object(specific_object)
+                            # Store both the original NP and the grounded version
+                            token._grounded_phrase = scene_object_phrase
                             all_noun_phrases.append(token._original_np)
                             np_index += 1
                     
