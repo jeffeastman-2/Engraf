@@ -31,7 +31,6 @@ class SceneAssembly(SceneEntity):
         self.name = name                          # e.g., 'house', 'car', 'table_setting'
         self.assembly_id = assembly_id or name    # unique identifier
         self.objects = objects or []              # list of actual SceneObject instances
-        self.metadata = {}                        # Store additional metadata for matching
         
         # Assembly-level transformations (applied to all contained objects)
         self.position = {'x': 0.0, 'y': 0.0, 'z': 0.0}

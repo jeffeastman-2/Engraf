@@ -59,10 +59,12 @@ class TestLayer2Grounding:
         assert so_phrase.is_resolved(), "SceneObjectPhrase should be resolved"
         assert so_phrase.get_resolved_object() == red_box, "Should resolve to red box"
         
-        # Check that original NounPhrase doesn't have resolution methods
-        original_np = result.noun_phrases[0]
-        assert not hasattr(original_np, 'resolved_object'), "Original NP should not have resolved_object"
-        assert not hasattr(original_np, 'is_resolved'), "Original NP should not have is_resolved"
+        # With our improved architecture, the result.noun_phrases should contain SceneObjectPhrases for grounded NPs
+        grounded_np = result.noun_phrases[0]
+        from engraf.pos.scene_object_phrase import SceneObjectPhrase
+        assert isinstance(grounded_np, SceneObjectPhrase), "Grounded NP should be SceneObjectPhrase"
+        assert grounded_np.is_resolved(), "Grounded NP should be resolved"
+        assert grounded_np.get_resolved_object() == red_box, "Should resolve to red box"
         
         # Check the NP token has grounded phrase
         np_token = best_hypothesis.tokens[0]

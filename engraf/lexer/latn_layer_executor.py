@@ -151,14 +151,16 @@ class LATNLayerExecutor:
             
             # Semantic grounding with hypothesis multiplication (if enabled)
             if enable_semantic_grounding and self.layer2_grounder:
-                grounded_hypotheses, all_noun_phrases, all_grounding_results = self._multiply_hypotheses_with_grounding(
+                grounded_hypotheses, all_grounding_results = self._multiply_hypotheses_with_grounding(
                     layer2_hypotheses, return_all_matches
                 )
             else:
-                # No grounding - extract NPs without modification
+                # No grounding - keep original hypotheses
                 grounded_hypotheses = layer2_hypotheses
-                all_noun_phrases = self._extract_noun_phrases(layer2_hypotheses)
                 all_grounding_results = []
+            
+            # Extract noun phrases from the (possibly grounded) hypotheses
+            all_noun_phrases = self._extract_noun_phrases(grounded_hypotheses)
             
             # Calculate confidence based on best hypothesis
             layer2_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer1_result.confidence
@@ -407,14 +409,23 @@ class LATNLayerExecutor:
         
         The token stream is the single source of truth - NP tokens are already
         properly placed in the tokens list by replace_np_sequences().
+        
+        If grounding has occurred, returns SceneObjectPhrase objects for successfully
+        grounded NPs and original NounPhrase objects for ungrounded ones.
         """
         noun_phrases = []
         
-        for hypothesis in layer2_hypotheses:
+        for i, hypothesis in enumerate(layer2_hypotheses):
             # Look for NP tokens in the hypothesis token stream
-            for token in hypothesis.tokens:
+            for j, token in enumerate(hypothesis.tokens):
                 if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                    noun_phrases.append(token._original_np)
+                    # Check if this token has been grounded
+                    if hasattr(token, '_grounded_phrase'):
+                        # Use the grounded SceneObjectPhrase
+                        noun_phrases.append(token._grounded_phrase)
+                    else:
+                        # Use the original NounPhrase
+                        noun_phrases.append(token._original_np)
         
         return noun_phrases
     
@@ -425,13 +436,12 @@ class LATNLayerExecutor:
         Pass 2: Generate combinatorial hypotheses with one object per NP
         
         Returns:
-            tuple: (grounded_hypotheses, all_noun_phrases, all_grounding_results)
+            tuple: (grounded_hypotheses, all_grounding_results)
         """
         import copy
         from itertools import product
         
         all_grounded_hypotheses = []
-        all_noun_phrases = []
         all_grounding_results = []
         
         for base_hypothesis in layer2_hypotheses:
@@ -458,48 +468,66 @@ class LATNLayerExecutor:
                         all_grounding_results.append(grounding_result)
             
             # Pass 2: Generate combinatorial hypotheses
-            if np_matches and all(matches for np_obj, matches in np_matches):
-                # Extract just the match lists for Cartesian product
-                match_lists = [matches for np_obj, matches in np_matches]
+            if np_matches:
+                # Handle mixed success/failure: some NPs ground, others don't
+                grounded_matches = [(np_obj, matches) for np_obj, matches in np_matches if matches]
+                ungrounded_nps = [np_obj for np_obj, matches in np_matches if not matches]
                 
-                # Generate all combinations using Cartesian product
-                for combination in product(*match_lists):
-                    # Create new hypothesis with this specific grounding combination
-                    new_hypothesis = copy.deepcopy(base_hypothesis)
+                if grounded_matches:
+                    # Extract match lists for successfully grounded NPs
+                    match_lists = [matches for np_obj, matches in grounded_matches]
                     
-                    # Update each NP in the hypothesis with its specific grounding
-                    np_index = 0
-                    for token in new_hypothesis.tokens:
-                        if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                            specific_object = combination[np_index]
-                            # Create a SceneObjectPhrase for this grounding
-                            from engraf.pos.scene_object_phrase import SceneObjectPhrase
-                            scene_object_phrase = SceneObjectPhrase.from_noun_phrase(token._original_np)
-                            scene_object_phrase.resolve_to_scene_object(specific_object)
-                            # Store both the original NP and the grounded version
-                            token._grounded_phrase = scene_object_phrase
-                            all_noun_phrases.append(token._original_np)
-                            np_index += 1
-                    
-                    # Update hypothesis description
-                    object_ids = [obj.object_id for obj in combination]
-                    new_hypothesis.description = f"{base_hypothesis.description} → grounded to {object_ids}"
-                    
-                    all_grounded_hypotheses.append(new_hypothesis)
-            else:
-                # No valid groundings - keep original hypothesis but mark NPs as ungrounded
-                ungrounded_hypothesis = copy.deepcopy(base_hypothesis)
-                for token in ungrounded_hypothesis.tokens:
-                    if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                        all_noun_phrases.append(token._original_np)
-                
-                ungrounded_hypothesis.description = f"{base_hypothesis.description} → no valid grounding"
-                all_grounded_hypotheses.append(ungrounded_hypothesis)
+                    # Generate all combinations using Cartesian product
+                    for combination in product(*match_lists):
+                        # Create new hypothesis with this specific grounding combination
+                        new_hypothesis = copy.deepcopy(base_hypothesis)
+                        
+                        # Update each NP in the hypothesis with its specific grounding
+                        grounded_index = 0
+                        for token_idx, token in enumerate(new_hypothesis.tokens):
+                            if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
+                                np_obj = token._original_np
+                                
+                                # Check if this NP was successfully grounded
+                                grounded_np_objs = [grounded_np for grounded_np, matches in grounded_matches]
+                                
+                                # Compare NPs by content, not object identity
+                                np_grounded = False
+                                matching_grounded_index = -1
+                                for idx, grounded_np in enumerate(grounded_np_objs):
+                                    if (np_obj.noun == grounded_np.noun and 
+                                        np_obj.determiner == grounded_np.determiner):
+                                        np_grounded = True
+                                        matching_grounded_index = idx
+                                        break
+                                
+                                if np_grounded:
+                                    # This NP was successfully grounded
+                                    specific_object = combination[grounded_index]
+                                    # Create a SceneObjectPhrase for this grounding
+                                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
+                                    scene_object_phrase = SceneObjectPhrase.from_noun_phrase(np_obj)
+                                    scene_object_phrase.resolve_to_scene_object(specific_object)
+                                    # Store the grounded version in the token
+                                    token._grounded_phrase = scene_object_phrase
+                                    grounded_index += 1
+                        
+                        # Update hypothesis description
+                        grounded_object_ids = [obj.object_id for obj in combination]
+                        ungrounded_count = len(ungrounded_nps)
+                        new_hypothesis.description = f"{base_hypothesis.description} → grounded {len(grounded_object_ids)} to {grounded_object_ids}, {ungrounded_count} ungrounded"
+                        
+                        all_grounded_hypotheses.append(new_hypothesis)
+                else:
+                    # No NPs could be grounded - keep original hypothesis
+                    ungrounded_hypothesis = copy.deepcopy(base_hypothesis)
+                    ungrounded_hypothesis.description = f"{base_hypothesis.description} → no valid grounding"
+                    all_grounded_hypotheses.append(ungrounded_hypothesis)
         
         # Sort hypotheses by confidence
         all_grounded_hypotheses.sort(key=lambda h: h.confidence, reverse=True)
         
-        return all_grounded_hypotheses, all_noun_phrases, all_grounding_results
+        return all_grounded_hypotheses, all_grounding_results
     
     def _extract_prepositional_phrases(self, layer3_hypotheses: List[PPTokenizationHypothesis]) -> List[PrepositionalPhrase]:
         """Extract PrepositionalPhrase objects from Layer 3 processing."""

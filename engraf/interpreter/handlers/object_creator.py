@@ -79,21 +79,12 @@ class ObjectCreator:
             # Apply default properties based on object type
             self._apply_default_properties(vector_space, obj_info)
             
-            # Create and add scene object with metadata
+            # Create and add scene object
             scene_object = SceneObject(
                 name=obj_info['type'],  # Store the base noun (e.g., 'cube')
                 vector=vector_space,
                 object_id=obj_id       # Store the descriptive ID (e.g., 'red_cube_1')
             )
-            
-            # Store descriptive metadata for later matching
-            scene_object.metadata = {
-                'type': obj_info['type'],
-                'adjectives': obj_info.get('adjectives', []),
-                'colors': self._extract_colors_from_vector(vector_space),
-                'sizes': self._extract_sizes_from_vector(vector_space),
-                'determiner': obj_info.get('determiner')
-            }
             
             # Apply prepositional phrases (positioning) if present
             if 'prepositional_phrases' in obj_info:

@@ -195,13 +195,13 @@ class TestLayer3Grounding:
         scene.add_object(table)
         
         # Create box-1 positioned ON the table (Y=1, above table) - make it RED
-        box1_vector = vector_from_features("noun", color=[1.0, 0.0, 0.0], scale=[2.0, 0.0, 0.0], loc=[0,1,0])
+        box1_vector = vector_from_features("noun", color=[1.0, 0.0, 0.0], loc=[0,1,0])
         box1 = SceneObject("box", box1_vector, object_id="box-1") 
         print(f"Box-1 vector: {box1_vector}")
         scene.add_object(box1)
         
         # Create box-2 positioned UNDER the table (Y=-1, below table) - make it BLUE
-        box2_vector = vector_from_features("noun", color=[0.0, 0.0, 1.0], scale=[2.0, 0.0, 0.0], loc=[0,-1,0])
+        box2_vector = vector_from_features("noun", color=[0.0, 0.0, 1.0], loc=[0,-1,0])
         box2 = SceneObject("box", box2_vector, object_id="box-2") 
         print(f"Box-2 vector: {box2_vector}")
         scene.add_object(box2)
