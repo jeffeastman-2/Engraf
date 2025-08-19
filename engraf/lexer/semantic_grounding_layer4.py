@@ -20,12 +20,15 @@ class Layer4GroundingResult:
     """Result of Layer 4 semantic grounding operation."""
     success: bool
     confidence: float
-    executed_action: Optional[str] = None
     description: str = ""
 
 
 class Layer4SemanticGrounder:
-    """Semantic grounding for LATN Layer 4 VerbPhrase tokens."""
+    """Semantic grounding for LATN Layer 4 VerbPhrase tokens.
+    
+    Layer 4 performs semantic grounding of verb phrases - understanding their meaning
+    and context within the scene. It does NOT execute actions or modify the scene.
+    """
     
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
@@ -48,35 +51,38 @@ class Layer4SemanticGrounder:
         
         return verb_phrases
     
-    def execute_verb_phrase_actions(self, verb_phrases: List[VerbPhrase]) -> List[Layer4GroundingResult]:
-        """Execute actions for verb phrases.
+    def ground_verb_phrases(self, verb_phrases: List[VerbPhrase]) -> List[Layer4GroundingResult]:
+        """Semantically ground verb phrases by analyzing their meaning and scene context.
+        
+        This performs semantic analysis of verb phrases without executing actions.
         
         Args:
-            verb_phrases: List of VerbPhrase objects to execute
+            verb_phrases: List of VerbPhrase objects to ground
             
         Returns:
-            List of execution results
+            List of grounding results with semantic analysis
         """
         results = []
         
         for vp in verb_phrases:
             try:
-                # Get verb word from VectorSpace or direct attribute
+                # Get verb word from VectorSpace
                 verb_word = vp.verb.word if hasattr(vp.verb, 'word') else str(vp.verb)
                 
+                # Analyze the semantic meaning without executing actions
                 if verb_word in ['create', 'make', 'build']:
-                    result = self._execute_create_action(vp)
+                    result = self._analyze_creation_intent(vp)
                 elif verb_word in ['move', 'translate']:
-                    result = self._execute_move_action(vp)
+                    result = self._analyze_movement_intent(vp)
                 elif verb_word in ['rotate', 'turn']:
-                    result = self._execute_rotate_action(vp)
+                    result = self._analyze_rotation_intent(vp)
                 elif verb_word in ['delete', 'remove', 'destroy']:
-                    result = self._execute_delete_action(vp)
+                    result = self._analyze_deletion_intent(vp)
                 else:
                     result = Layer4GroundingResult(
-                        success=False,
-                        confidence=0.0,
-                        description=f"Unknown verb: {verb_word}"
+                        success=True,
+                        confidence=0.5,
+                        description=f"Identified verb phrase with unknown action intent: {verb_word}"
                     )
                 
                 results.append(result)
@@ -85,109 +91,76 @@ class Layer4SemanticGrounder:
                 results.append(Layer4GroundingResult(
                     success=False,
                     confidence=0.0,
-                    description=f"Action execution failed: {e}"
+                    description=f"Verb phrase grounding failed: {e}"
                 ))
         
         return results
     
-    def _execute_create_action(self, vp: VerbPhrase) -> Layer4GroundingResult:
-        """Execute create action."""
-        if not self.scene_model:
-            return Layer4GroundingResult(
-                success=False,
-                confidence=0.0,
-                description="No scene model available"
-            )
+    def _analyze_creation_intent(self, vp: VerbPhrase) -> Layer4GroundingResult:
+        """Analyze creation intent without executing the action."""
+        # Extract semantic properties that would be created
+        object_type = "object"  # Default
+        properties = {}
         
-        # Extract object properties from verb phrase
-        object_type = "cube"  # Default
-        position = [0, 0, 0]  # Default
-        color = "blue"  # Default
-        
-        # Parse noun phrases and prepositional phrases for details
+        # Extract object type from noun phrase
         if vp.noun_phrase:
-            if hasattr(vp.noun_phrase, 'word'):
-                np_word = vp.noun_phrase.word if hasattr(vp.noun_phrase, 'word') else str(vp.noun_phrase)
-                if 'cube' in np_word or 'box' in np_word:
+            if hasattr(vp.noun_phrase, 'noun') and hasattr(vp.noun_phrase.noun, 'word'):
+                noun_word = vp.noun_phrase.noun.word.lower()
+                if 'cube' in noun_word or 'box' in noun_word:
                     object_type = "cube"
-                elif 'sphere' in np_word or 'ball' in np_word:
+                elif 'sphere' in noun_word or 'ball' in noun_word:
                     object_type = "sphere"
-                elif 'pyramid' in np_word:
+                elif 'pyramid' in noun_word:
                     object_type = "pyramid"
-                    
-                # Extract color from noun phrase
-                if 'red' in np_word:
-                    color = "red"
-                elif 'blue' in np_word:
-                    color = "blue"
-                elif 'green' in np_word:
-                    color = "green"
-                elif 'yellow' in np_word:
-                    color = "yellow"
+            
+            # Extract properties from noun phrase vector
+            if hasattr(vp.noun_phrase, 'vector') and vp.noun_phrase.vector:
+                vector = vp.noun_phrase.vector
+                if vector.get("red", 0.0) > 0.0:
+                    properties["color"] = "red"
+                elif vector.get("blue", 0.0) > 0.0:
+                    properties["color"] = "blue"
+                elif vector.get("green", 0.0) > 0.0:
+                    properties["color"] = "green"
+                elif vector.get("yellow", 0.0) > 0.0:
+                    properties["color"] = "yellow"
         
-        if vp.prepositional_phrases:
-            for pp in vp.prepositional_phrases:
+        # Extract position from prepositional phrases
+        if vp.preps:
+            for pp in vp.preps:
                 if pp.preposition == 'at' and hasattr(pp, 'coordinates'):
-                    position = pp.coordinates
+                    properties["position"] = pp.coordinates
         
-        # Create the object
-        from engraf.visualizer.scene.scene_object import SceneObject
-        from engraf.lexer.vector_space import VectorSpace
-        import uuid
-        
-        # Create a vector for the object
-        object_vector = VectorSpace(word=object_type)
-        object_vector['noun'] = 1.0
-        object_vector[color] = 1.0
-        
-        # Set position if provided
-        if position != [0, 0, 0]:
-            object_vector['locX'] = position[0]
-            object_vector['locY'] = position[1]
-            object_vector['locZ'] = position[2]
-        
-        # Create unique ID
-        obj_id = f"{object_type}_{str(uuid.uuid4())[:8]}"
-        
-        # Create and add the scene object
-        scene_obj = SceneObject(
-            name=object_type,
-            object_id=obj_id,
-            vector=object_vector
-        )
-        
-        self.scene_model.add_object(scene_obj)
+        description = f"Analyzed creation intent: {object_type}"
+        if properties:
+            description += f" with properties {properties}"
         
         return Layer4GroundingResult(
             success=True,
             confidence=1.0,
-            executed_action=f"create {object_type}",
-            description=f"Created {object_type} at {position}"
+            description=description
         )
     
-    def _execute_move_action(self, vp: VerbPhrase) -> Layer4GroundingResult:
-        """Execute move action."""
+    def _analyze_movement_intent(self, vp: VerbPhrase) -> Layer4GroundingResult:
+        """Analyze movement intent without executing the action."""
         return Layer4GroundingResult(
             success=True,
             confidence=0.8,
-            executed_action="move",
-            description="Move action executed (placeholder)"
+            description="Analyzed movement intent (placeholder)"
         )
     
-    def _execute_rotate_action(self, vp: VerbPhrase) -> Layer4GroundingResult:
-        """Execute rotate action."""
+    def _analyze_rotation_intent(self, vp: VerbPhrase) -> Layer4GroundingResult:
+        """Analyze rotation intent without executing the action."""
         return Layer4GroundingResult(
             success=True,
             confidence=0.8,
-            executed_action="rotate",
-            description="Rotate action executed (placeholder)"
+            description="Analyzed rotation intent (placeholder)"
         )
     
-    def _execute_delete_action(self, vp: VerbPhrase) -> Layer4GroundingResult:
-        """Execute delete action."""
+    def _analyze_deletion_intent(self, vp: VerbPhrase) -> Layer4GroundingResult:
+        """Analyze deletion intent without executing the action."""
         return Layer4GroundingResult(
             success=True,
             confidence=0.8,
-            executed_action="delete",
-            description="Delete action executed (placeholder)"
+            description="Analyzed deletion intent (placeholder)"
         )
