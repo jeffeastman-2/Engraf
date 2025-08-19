@@ -213,83 +213,24 @@ class ObjectModifier:
     def _calculate_spatial_position(self, moving_obj: SceneObject, ref_obj: SceneObject, preposition: str, preposition_vector):
         """Calculate the position for spatial relationships like 'above', 'below', 'beside', etc.
         
-        Uses the simplified approach where prepositions directly specify their spatial effects
-        through locX, locY, and locZ values rather than separate spatial dimension flags.
+        Uses the shared spatial validation utilities for consistent positioning logic.
         """
-        # Get direction factors directly from the preposition vector
-        # Use __contains__ to check if dimension exists, then get the actual value (positive or negative)
-        x_factor = preposition_vector['locX'] if 'locX' in preposition_vector and preposition_vector['locX'] != 0.0 else 0.0
-        y_factor = preposition_vector['locY'] if 'locY' in preposition_vector and preposition_vector['locY'] != 0.0 else 0.0
-        z_factor = preposition_vector['locZ'] if 'locZ' in preposition_vector and preposition_vector['locZ'] != 0.0 else 0.0
-
-        # Get reference object's position and size
-        ref_x = ref_obj.vector['locX']
-        ref_y = ref_obj.vector['locY'] 
-        ref_z = ref_obj.vector['locZ']
+        from engraf.utils.spatial_validation import SpatialValidator
         
-        # Calculate object dimensions for proper spacing
-        refHeight, refBreadth, refDepth = self._get_object_half_scale(ref_obj)
-        movingHeight, movingBreadth, movingDepth = self._get_object_half_scale(moving_obj)
-
-        print(f"🔧 Reference {ref_obj.name}: center=[{ref_x}, {ref_y}, {ref_z}], half_size=[{refBreadth}, {refHeight}, {refDepth}]")
-        print(f"🔧 Moving {moving_obj.name}: half_size=[{movingBreadth}, {movingHeight}, {movingDepth}]")
+        new_x, new_y, new_z = SpatialValidator.calculate_spatial_position(
+            moving_obj, ref_obj, preposition, preposition_vector
+        )
         
-        # Start with reference object's position as base
-        new_x = ref_x
-        new_y = ref_y
-        new_z = ref_z
-
-        # Calculate X position based on directional factor
-        if x_factor > 0:
-            # Place object to the positive X direction (right/beside)
-            new_x = ref_x + refBreadth + movingBreadth + abs(x_factor)
-        elif x_factor < 0:
-            # Place object to the negative X direction (left)
-            new_x = ref_x - refBreadth - movingBreadth - abs(x_factor)
-
-        # Calculate Y position based on directional factor
-        if y_factor > 0:
-            # Place object in positive Y direction (above)
-            new_y = ref_y + refHeight + movingHeight + abs(y_factor)
-        elif y_factor < 0:
-            # Place object in negative Y direction (below)
-            new_y = ref_y - refHeight - movingHeight - abs(y_factor)
-
-        # Calculate Z position based on directional factor
-        if z_factor > 0:
-            # Place object in positive Z direction (behind)
-            new_z = ref_z + refDepth + movingDepth + abs(z_factor)
-        elif z_factor < 0:
-            # Place object in negative Z direction (in front)
-            new_z = ref_z - refDepth - movingDepth - abs(z_factor)
-
-        print(f"🔧 Calculated position for preposition={preposition} (x:{x_factor}, y:{y_factor}, z:{z_factor}): [{new_x}, {new_y}, {new_z}]")
+        print(f"🔧 Calculated position for preposition={preposition}: [{new_x}, {new_y}, {new_z}]")
         return new_x, new_y, new_z
     
     def _get_object_half_scale(self, obj: SceneObject):
         """Get the half-scale of an object based on its type and size.
         
-        Returns:
-            tuple: (half_height, half_breadth, half_depth) representing the object's half-dimensions
+        Uses the shared spatial validation utilities for consistency.
         """
-        if 'cube' in obj.name.lower():
-            # For cubes, all scales represent edge lengths, so half-size is scale/2
-            half_height = obj.vector['scaleY'] / 2.0
-            half_breadth = obj.vector['scaleX'] / 2.0
-            half_depth = obj.vector['scaleZ'] / 2.0
-        elif 'sphere' in obj.name.lower():
-            # For spheres, all scales represent radius, so half-size equals the radius
-            radius = max(obj.vector['scaleX'], obj.vector['scaleY'], obj.vector['scaleZ'])
-            half_height = radius
-            half_breadth = radius
-            half_depth = radius
-        else:
-            # Default: assume scales represent full dimensions, so half-size is scale/2
-            half_height = obj.vector['scaleY'] / 2.0
-            half_breadth = obj.vector['scaleX'] / 2.0
-            half_depth = obj.vector['scaleZ'] / 2.0
-            
-        return half_height, half_breadth, half_depth
+        from engraf.utils.spatial_validation import SpatialValidator
+        return SpatialValidator.get_object_half_scale(obj)
 
 
     def _apply_scaling(self, scene_obj: SceneObject, vp: VerbPhrase):

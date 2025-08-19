@@ -77,15 +77,6 @@ class LATNLayerExecutor:
     
     def __init__(self, scene_model: Optional[SceneModel] = None):
         self.scene = scene_model
-        self.scene_model = scene_model  # Alias for backward compatibility
-        self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
-        self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
-        self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
-    
-    def update_scene_model(self, scene_model: Optional[SceneModel]):
-        """Update the scene model and reinitialize grounders."""
-        self.scene = scene_model
-        self.scene_model = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
         self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
@@ -169,11 +160,7 @@ class LATNLayerExecutor:
                 all_grounding_results = []
             
             # Extract noun phrases from the (possibly grounded) hypotheses
-            if self.layer2_grounder:
-                all_noun_phrases = self.layer2_grounder.extract_noun_phrases(grounded_hypotheses)
-            else:
-                # Fallback: extract NPs without grounder
-                all_noun_phrases = self._extract_noun_phrases_fallback(grounded_hypotheses)
+            all_noun_phrases = self.layer2_grounder.extract_noun_phrases(grounded_hypotheses) if self.layer2_grounder else []
             
             # Calculate confidence based on best hypothesis
             layer2_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer1_result.confidence
@@ -326,72 +313,6 @@ class LATNLayerExecutor:
                 confidence=0.0,
                 description=f"Layer 4 failed: {e}"
             )
-    
-    def _extract_noun_phrases_fallback(self, layer2_hypotheses: List[NPTokenizationHypothesis]) -> List[NounPhrase]:
-        """Fallback method to extract NPs when no grounder is available."""
-        noun_phrases = []
-        
-        for hypothesis in layer2_hypotheses:
-            for token in hypothesis.tokens:
-                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
-                    noun_phrases.append(token._original_np)
-        
-        return noun_phrases
-    
-    def get_layer_analysis(self, sentence: str, target_layer: int = 4) -> Dict[str, Any]:
-        """Get detailed analysis of layer processing.
-        
-        Args:
-            sentence: Input sentence to analyze
-            target_layer: Maximum layer to execute (1-4)
-            
-        Returns:
-            Dictionary with analysis results for each layer
-        """
-        analysis = {}
-        
-        if target_layer >= 1:
-            layer1_result = self.execute_layer1(sentence)
-            analysis['layer1'] = {
-                'success': layer1_result.success,
-                'confidence': layer1_result.confidence,
-                'hypotheses': len(layer1_result.hypotheses),
-                'description': layer1_result.description
-            }
-        
-        if target_layer >= 2 and analysis.get('layer1', {}).get('success', False):
-            layer2_result = self.execute_layer2(sentence)
-            analysis['layer2'] = {
-                'success': layer2_result.success,
-                'confidence': layer2_result.confidence,
-                'hypotheses': len(layer2_result.hypotheses),
-                'noun_phrases': len(layer2_result.noun_phrases),
-                'grounding_results': len(layer2_result.grounding_results),
-                'description': layer2_result.description
-            }
-        
-        if target_layer >= 3 and analysis.get('layer2', {}).get('success', False):
-            layer3_result = self.execute_layer3(sentence)
-            analysis['layer3'] = {
-                'success': layer3_result.success,
-                'confidence': layer3_result.confidence,
-                'hypotheses': len(layer3_result.hypotheses),
-                'prepositional_phrases': len(layer3_result.prepositional_phrases),
-                'grounding_results': len(layer3_result.grounding_results),
-                'description': layer3_result.description
-            }
-        
-        if target_layer >= 4 and analysis.get('layer3', {}).get('success', False):
-            layer4_result = self.execute_layer4(sentence)
-            analysis['layer4'] = {
-                'success': layer4_result.success,
-                'confidence': layer4_result.confidence,
-                'hypotheses': len(layer4_result.hypotheses),
-                'verb_phrases': len(layer4_result.verb_phrases),
-                'description': layer4_result.description
-            }
-        
-        return analysis
 
 
 # Convenience functions for direct layer execution
