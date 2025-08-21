@@ -22,6 +22,8 @@ from engraf.lexer.latn_tokenizer import TokenizationHypothesis
 from engraf.lexer.latn_tokenizer_layer2 import NPTokenizationHypothesis
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_pp import run_pp
+from engraf.atn.pp import build_pp_atn
+from engraf.atn.core import run_atn
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
@@ -75,11 +77,8 @@ def create_pp_token(pp: PrepositionalPhrase) -> VectorSpace:
 def find_pp_sequences(tokens: List[VectorSpace]) -> List[tuple]:
     """Find sequences in tokens that can be parsed as prepositional phrases.
     
-    Uses greedy left-to-right parsing like Layer 2: try PP at each position, if successful
-    consume those tokens and continue from the next position.
-    
-    This works with tokens that may already contain NounPhrase tokens from Layer 2.
-    The PP ATN will handle NounPhrase tokens directly.
+    Uses the same logical approach as Layer 2: try PP parsing at each position,
+    letting the PP ATN handle token consumption naturally.
     
     Returns:
         List of (start_idx, end_idx, pp_object) tuples for successful PP parses
@@ -93,30 +92,32 @@ def find_pp_sequences(tokens: List[VectorSpace]) -> List[tuple]:
             i += 1
             continue
             
-        # Try to parse PP starting at position i
-        # Use remaining tokens for parsing
-        subsequence = tokens[i:]
-        best_pp = None
-        best_end = i
-        
-        # Try different ending positions (PPs are typically 2-4 tokens)
-        for length in range(2, min(5, len(subsequence) + 1)):
-            subseq = subsequence[:length]
+        # Try to parse PP starting at position i using TokenStream
+        # The ATN will handle token consumption naturally
+        try:
+            ts = TokenStream(tokens)
+            ts.position = i  # Start parsing at position i
+            pp = PrepositionalPhrase()
+            pp_start, pp_end = build_pp_atn(pp, ts)
+            initial_pos = ts.position
+            result = run_atn(pp_start, pp_end, ts, pp)
             
-            try:
-                # Try to parse as PP using the enhanced PP ATN
-                pp = run_pp(subseq)
-                if pp and pp.preposition and pp.noun_phrase:
-                    best_pp = pp
-                    best_end = i + length - 1
-                    # Continue trying longer sequences (greedy - take longest match)
-            except Exception:
-                # Failed to parse as PP, continue trying
-                continue
+            if result is not None:
+                # Found a valid PP - use actual consumed token count
+                tokens_consumed = ts.position - initial_pos
+                best_pp = result
+                best_end = i + tokens_consumed - 1  # Convert to absolute index
+            else:
+                best_pp = None
+                best_end = i
+        except Exception:
+            # PP parsing failed
+            best_pp = None
+            best_end = i
         
         if best_pp is not None:
             # Found a PP, add it and skip past it
-            pp_sequences.append((i, best_end + 1, best_pp))  # end_idx is exclusive
+            pp_sequences.append((i, best_end, best_pp))
             i = best_end + 1
         else:
             # No PP found starting at position i, move to next position
@@ -138,17 +139,26 @@ def replace_pp_sequences(tokens: List[VectorSpace], pp_sequences: List[tuple]) -
     if not pp_sequences:
         return tokens
     
-    # Sort by start position (reverse order for safe replacement)
-    pp_sequences.sort(key=lambda x: x[0], reverse=True)
+    new_tokens = []
+    i = 0
     
-    # Create a copy of tokens to modify
-    new_tokens = tokens[:]
-    
-    # Replace each PP sequence with a single PP token
     for start_idx, end_idx, pp in pp_sequences:
+        # Add tokens before this PP
+        while i < start_idx:
+            new_tokens.append(tokens[i])
+            i += 1
+        
+        # Add the PP token
         pp_token = create_pp_token(pp)
-        # Replace the sequence with the single PP token
-        new_tokens[start_idx:end_idx] = [pp_token]
+        new_tokens.append(pp_token)
+        
+        # Skip the original PP tokens
+        i = end_idx + 1
+    
+    # Add remaining tokens
+    while i < len(tokens):
+        new_tokens.append(tokens[i])
+        i += 1
     
     return new_tokens
 
