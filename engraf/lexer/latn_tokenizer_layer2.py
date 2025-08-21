@@ -71,7 +71,7 @@ def create_np_token(np: NounPhrase) -> VectorSpace:
             parts.extend(np.adjectives)
         if hasattr(np, 'noun') and np.noun:
             parts.append(np.noun)
-        if hasattr(np, 'vector_text') and np.vector_text:
+        if np.vector_text is not None and np.vector_text:
             parts.append(np.vector_text)
         
         text = " ".join(parts) if parts else "NP"

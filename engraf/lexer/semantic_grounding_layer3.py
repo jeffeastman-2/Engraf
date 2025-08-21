@@ -80,10 +80,10 @@ class Layer3SemanticGrounder:
             )
         
         # Handle different types of prepositional phrases
-        if hasattr(pp, 'vector_text') and pp.vector_text:
+        if pp.vector_text is not None and pp.vector_text:
             # Vector coordinates like "at [1,2,3]"
             return self._ground_vector_location(pp)
-        elif hasattr(pp, 'preposition') and hasattr(pp, 'noun_phrase') and pp.noun_phrase:
+        elif pp.preposition is not None and pp.noun_phrase is not None and pp.noun_phrase:
             # Spatial relationships like "on the table", "above the red box"
             return self._ground_spatial_relationship(pp, return_all_matches)
         else:
@@ -97,7 +97,7 @@ class Layer3SemanticGrounder:
         """Ground a prepositional phrase with vector coordinates."""
         try:
             # Extract coordinates from vector_text
-            if hasattr(pp, 'vector') and pp.vector:
+            if pp.vector is not None and pp.vector:
                 # Use the PP's computed vector as the spatial location
                 location_vector = VectorSpace()
                 # Copy the vector data using proper VectorSpace iteration
@@ -133,9 +133,9 @@ class Layer3SemanticGrounder:
         # Check if the PP contains grounded scene objects
         # PP grounding should only succeed if the NP within the PP is grounded to a Scene Object
         has_grounded_object = False
-        if hasattr(pp, 'noun_phrase') and pp.noun_phrase:
+        if pp.noun_phrase is not None and pp.noun_phrase:
             np = pp.noun_phrase
-            if hasattr(np, 'scene_object') and np.scene_object:
+            if np.scene_object is not None and np.scene_object:
                 has_grounded_object = True
                 
         if not has_grounded_object:
@@ -150,29 +150,33 @@ class Layer3SemanticGrounder:
         spatial_vector = VectorSpace()
         
         # Add preposition semantics
-        if hasattr(pp, 'preposition') and pp.preposition:
+        if pp.preposition is not None and pp.preposition:
             # Look up preposition in vocabulary for spatial semantics
             from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
             
             prep_key = pp.preposition.lower()
             if prep_key in SEMANTIC_VECTOR_SPACE:
                 prep_vector = SEMANTIC_VECTOR_SPACE[prep_key]
-                spatial_vector.merge_vector(prep_vector)
+                spatial_vector += prep_vector
         
         # Add spatial location properties if available
-        if hasattr(pp, 'spatial_location') and pp.spatial_location:
+        if pp.spatial_location is not None and pp.spatial_location:
             spatial_vector.spatial_location = pp.spatial_location
             
         # Add coordinate properties if available  
-        if hasattr(pp, 'locX'):
+        if pp.locX is not None:
             spatial_vector.locX = pp.locX
-        if hasattr(pp, 'locY'):
+        if pp.locY is not None:
             spatial_vector.locY = pp.locY
-        if hasattr(pp, 'locZ'):
+        if pp.locZ is not None:
             spatial_vector.locZ = pp.locZ
             
         # Get the actual scene object for reference
         scene_obj_id = getattr(pp.noun_phrase.scene_object, 'object_id', 'unknown')
+        
+        # Add reference to the scene object and preposition
+        spatial_vector._reference_object = pp.noun_phrase.scene_object
+        spatial_vector._preposition = pp.preposition
             
         return Layer3GroundingResult(
             success=True,
@@ -236,7 +240,7 @@ class Layer3SemanticGrounder:
                     pp_token = new_hypothesis.tokens[pp_idx]
                     
                     # Add attachment information
-                    if not hasattr(pp_token, '_attachment_info'):
+                    if pp_token._attachment_info is None:
                         pp_token._attachment_info = {}
                     pp_token._attachment_info['attaches_to'] = target_idx
                     pp_token._attachment_info['combination_id'] = str(combination)
@@ -259,7 +263,7 @@ class Layer3SemanticGrounder:
             
             # Check each PP attachment for spatial validity
             for token in hypothesis.tokens:
-                if (hasattr(token, '_attachment_info') and 
+                if (token._attachment_info is not None and 
                     hasattr(token, 'word') and token.word and token.word.startswith('PP(')):
                     
                     # Extract preposition and noun phrase from PP token
@@ -308,7 +312,7 @@ class Layer3SemanticGrounder:
             
             # First pass: collect attachment information
             for i, token in enumerate(hypothesis.tokens):
-                if (hasattr(token, '_attachment_info') and 
+                if (token._attachment_info is not None and 
                     hasattr(token, 'word') and token.word and token.word.startswith('PP(')):
                     
                     target_idx = token._attachment_info.get('attaches_to')
@@ -331,7 +335,7 @@ class Layer3SemanticGrounder:
                 
                 if attachments_for_this_token:
                     # Get or create SceneObjectPhrase for this token
-                    if hasattr(token, '_grounded_phrase') and isinstance(token._grounded_phrase, SceneObjectPhrase):
+                    if token._grounded_phrase is not None and isinstance(token._grounded_phrase, SceneObjectPhrase):
                         # Token was grounded in Layer 2 - enhance existing SceneObjectPhrase
                         scene_obj_phrase = token._grounded_phrase
                         print(f"[Layer3] Found existing SceneObjectPhrase from Layer 2: {scene_obj_phrase}")
@@ -358,7 +362,7 @@ class Layer3SemanticGrounder:
                         prep_phrase.spatial_vector = getattr(pp_token, 'spatial_vector', None)
                         
                         # Add to spatial relationships (initialize if needed)
-                        if not hasattr(scene_obj_phrase, 'spatial_relationships'):
+                        if scene_obj_phrase.spatial_relationships is None:
                             scene_obj_phrase.spatial_relationships = []
                         scene_obj_phrase.spatial_relationships.append(prep_phrase)
                         consumed_indices.add(pp_idx)  # Mark PP token as consumed
@@ -399,14 +403,14 @@ class Layer3SemanticGrounder:
         
         # Extract grounded objects from Layer 2 results
         target_obj = None
-        if hasattr(target_token, '_grounded_phrase') and target_token._grounded_phrase:
-            if hasattr(target_token._grounded_phrase, 'grounded_objects') and target_token._grounded_phrase.grounded_objects:
+        if target_token._grounded_phrase is not None and target_token._grounded_phrase:
+            if target_token._grounded_phrase.grounded_objects is not None and target_token._grounded_phrase.grounded_objects:
                 target_obj = target_token._grounded_phrase.grounded_objects[0]
         
         # Extract object from PP token (should also be grounded by Layer 2)
         pp_obj = None
-        if hasattr(pp_token, '_grounded_phrase') and pp_token._grounded_phrase:
-            if hasattr(pp_token._grounded_phrase, 'grounded_objects') and pp_token._grounded_phrase.grounded_objects:
+        if pp_token._grounded_phrase is not None and pp_token._grounded_phrase:
+            if pp_token._grounded_phrase.grounded_objects is not None and pp_token._grounded_phrase.grounded_objects:
                 pp_obj = pp_token._grounded_phrase.grounded_objects[0]
         
         if not target_obj or not pp_obj:
@@ -470,7 +474,7 @@ class Layer3SemanticGrounder:
         
         for hypothesis in layer3_hypotheses:
             for token in hypothesis.tokens:
-                if hasattr(token, '_original_pp') and isinstance(token._original_pp, PrepositionalPhrase):
+                if token._original_pp is not None and isinstance(token._original_pp, PrepositionalPhrase):
                     prepositional_phrases.append(token._original_pp)
         
         return prepositional_phrases

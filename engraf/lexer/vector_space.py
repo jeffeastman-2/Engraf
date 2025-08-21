@@ -18,6 +18,15 @@ class VectorSpace:
             self.vector = np.array(array, dtype=float)
         self.word = word  # NEW
         self.data = data or {}
+        
+        # Static fields to replace dynamic attributes used in Layer 2/3
+        self._grounded_phrase = None  # Set by Layer 2 grounding
+        self._original_np = None      # Set when creating NP tokens
+        self._original_pp = None      # Set when creating PP tokens
+        self.scene_object = None      # Expected by Layer 3 spatial validation
+        self._attachment_info = {}    # Set during PP attachment processing
+        self._reference_object = None # Expected by Layer 3 spatial grounding results
+        self._preposition = None      # Expected by Layer 3 spatial grounding results
 
     # Add optional __str__ override for easier debugging
     def __repr__(self):

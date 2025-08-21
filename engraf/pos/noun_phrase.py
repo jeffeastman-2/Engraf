@@ -12,6 +12,9 @@ class NounPhrase():
         self.scale_factor = 1.0
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
         self.consumed_tokens = []  # All original tokens that were consumed to build this NP
+        
+        # Static fields to replace dynamic attributes used in Layer 2/3
+        self.scene_object = None  # Expected by Layer 3 for spatial validation
 
     def apply_determiner(self, tok):
         self.determiner = tok.word

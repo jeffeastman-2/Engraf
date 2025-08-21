@@ -54,7 +54,7 @@ def _extract_np_from_token(np_token):
     """Extract or create a NounPhrase object from an NP token."""
     from engraf.pos.noun_phrase import NounPhrase
     
-    if hasattr(np_token, '_original_np'):
+    if np_token._original_np is not None:
         return np_token._original_np
     
     # Create a simple NounPhrase from the token
@@ -72,7 +72,7 @@ def _extract_pp_from_token(pp_token):
     """Extract or create a PrepositionalPhrase object from a PP token."""
     from engraf.pos.prepositional_phrase import PrepositionalPhrase
     
-    if hasattr(pp_token, '_original_pp'):
+    if pp_token._original_pp is not None:
         return pp_token._original_pp
     
     # Create a simple PrepositionalPhrase from the token

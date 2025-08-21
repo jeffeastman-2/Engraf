@@ -243,12 +243,12 @@ class TestLayer2Grounding:
         scene.add_object(green_sphere)
         scene.add_object(tall_sphere)
         
-        # Test query with 3 NPs: "a box under a sphere next to a green object"
+        # Test query with 3 NPs: "a box under a sphere above a green object"
         # - "box" matches: red-box, blue-box, green-box (3 options)
         # - "sphere" matches: green-sphere, tall-sphere (2 options)  
         # - "green object" matches: green-box, green-sphere (2 options)
         executor = LATNLayerExecutor(scene_model=scene)
-        result = executor.execute_layer2("a box under a sphere next to a green object", enable_semantic_grounding=True, return_all_matches=True)
+        result = executor.execute_layer2("a box under a sphere above a green object", enable_semantic_grounding=True, return_all_matches=True)
         
         # Verify basic success
         assert result.success, "Layer 2 should process successfully"

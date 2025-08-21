@@ -140,9 +140,9 @@ class Layer2SemanticGrounder:
         for i, hypothesis in enumerate(layer2_hypotheses):
             # Look for NP tokens in the hypothesis token stream
             for j, token in enumerate(hypothesis.tokens):
-                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
+                if token._original_np is not None and isinstance(token._original_np, NounPhrase):
                     # Check if this token has been grounded
-                    if hasattr(token, '_grounded_phrase'):
+                    if token._grounded_phrase is not None:
                         # Use the grounded SceneObjectPhrase
                         noun_phrases.append(token._grounded_phrase)
                     else:
@@ -170,7 +170,7 @@ class Layer2SemanticGrounder:
             np_positions = []  # Track which tokens are NPs
             
             for i, token in enumerate(hypothesis.tokens):
-                if hasattr(token, '_original_np') and isinstance(token._original_np, NounPhrase):
+                if token._original_np is not None and isinstance(token._original_np, NounPhrase):
                     np_positions.append(i)
                     np = token._original_np
                     

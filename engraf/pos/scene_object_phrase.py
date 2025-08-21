@@ -28,6 +28,7 @@ class SceneObjectPhrase(NounPhrase):
             self.determiner = source_np.determiner
             self.preps = source_np.preps.copy()
             self.scale_factor = source_np.scale_factor
+            self.scene_object = source_np.scene_object  # Copy scene_object reference
             self.proper_noun = source_np.proper_noun
             self.consumed_tokens = source_np.consumed_tokens.copy()
             # Move resolved_object from the source NP if it exists
@@ -36,7 +37,12 @@ class SceneObjectPhrase(NounPhrase):
             super().__init__(noun)
             self.resolved_object = None
         
+        # Static fields to replace dynamic attributes used in Layer 2/3  
+        self.spatial_relationships = []   # Set during Layer 3 processing
+        self.grounded_objects = []        # Referenced in spatial validation
+        
         # Add the SO part of speech marker to the vector
+        self.vector["SO"] = 1.0
         self.vector["SO"] = 1.0
     
     def resolve_to_scene_object(self, scene_object):

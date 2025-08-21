@@ -9,7 +9,15 @@ class PrepositionalPhrase():
         super().__init__()
         self.preposition = None
         self.noun_phrase = None 
-        self.vector = VectorSpace() 
+        self.vector = VectorSpace()
+        
+        # Static fields to replace dynamic attributes used in Layer 2/3
+        self.spatial_vector = None       # Set during Layer 3 processing
+        self.vector_text = None          # Expected for vector coordinates
+        self.spatial_location = None     # Expected for spatial processing
+        self.locX = None                 # Expected for spatial processing
+        self.locY = None                 # Expected for spatial processing
+        self.locZ = None                 # Expected for spatial processing 
 
     def __repr__(self):
         return f"PrepositionalPhrase(preposition={self.preposition!r}, noun_phrase={self.noun_phrase!r})"

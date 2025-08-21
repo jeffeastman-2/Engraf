@@ -2,7 +2,7 @@ import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
-    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_vector, is_conjunction, is_number
+    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_vector, is_conjunction, is_number, is_unknown
 from engraf.atn.core import ATNState, noop
 from engraf.pos.noun_phrase import NounPhrase
 
@@ -32,6 +32,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # ADJ → ADJ / NOUN
     det.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), det)
     det.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    # Terminate on unknown tokens after determiners
+    det.add_arc(is_unknown, noop, end)
 
     adj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
     # Handle adverbs that modify subsequent adjectives (e.g., "small bright blue")
@@ -79,6 +81,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Allow ADJ state to end on various conditions
     adj.add_arc(is_none, noop, end)
     adj.add_arc(any_of(is_verb, is_tobe, is_conjunction), noop, end)
+    # Terminate on unknown tokens after adjectives
+    adj.add_arc(is_unknown, noop, end)
 
     # NOUN → END (simple NP)
     noun.add_arc(is_none, noop, end)
@@ -86,6 +90,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     noun.add_arc(is_conjunction, noop, end)
     # NOUN → END (when verb, tobe, adjective, or preposition is encountered - don't consume)
     noun.add_arc(any_of(is_verb, is_tobe, is_adjective, is_preposition), noop, end)
+    # Terminate on unknown tokens after nouns - this is the key fix
+    noun.add_arc(is_unknown, noop, end)
 
     return start, end
 

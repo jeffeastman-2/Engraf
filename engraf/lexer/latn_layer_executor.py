@@ -168,7 +168,7 @@ class LATNLayerExecutor:
                 all_noun_phrases = []
                 for hypothesis in grounded_hypotheses:
                     for token in hypothesis.tokens:
-                        if hasattr(token, '_original_np') and token._original_np:
+                        if token._original_np is not None and token._original_np:
                             all_noun_phrases.append(token._original_np)
             
             # Calculate confidence based on best hypothesis
