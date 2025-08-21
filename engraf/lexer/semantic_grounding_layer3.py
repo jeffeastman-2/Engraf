@@ -10,10 +10,8 @@ from typing import List, Optional, Tuple, Union
 from dataclasses import dataclass
 
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
-from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.visualizer.scene.scene_object import SceneObject
+from engraf.pos.scene_object_phrase import SceneObjectPhrase
 from engraf.lexer.vector_space import VectorSpace
-from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder
 from engraf.lexer.latn_tokenizer_layer3 import PPTokenizationHypothesis
 
 
@@ -22,9 +20,9 @@ class Layer3GroundingResult:
     """Result of Layer 3 semantic grounding operation."""
     success: bool
     confidence: float
-    resolved_object: Optional[Union[SceneObject, VectorSpace]] = None
+    resolved_object: Optional[VectorSpace] = None
     description: str = ""
-    alternative_matches: List[Tuple[float, Union[SceneObject, VectorSpace]]] = None
+    alternative_matches: List[Tuple[float, VectorSpace]] = None
     
     def __post_init__(self):
         if self.alternative_matches is None:
@@ -34,19 +32,19 @@ class Layer3GroundingResult:
 class Layer3SemanticGrounder:
     """Semantic grounding for LATN Layer 3 PrepositionalPhrase tokens."""
     
-    def __init__(self, scene_model: SceneModel):
-        self.scene_model = scene_model
-        self.layer2_grounder = Layer2SemanticGrounder(scene_model)
+    def __init__(self):
+        """Initialize Layer 3 grounding - no scene model needed, uses Layer 2 results."""
+        pass
     
     def process_pp_attachments(self, layer3_hypotheses, return_all_matches: bool = False):
-        """Two-pass PP attachment resolution with spatial validation.
+        """Two-pass PP attachment resolution with spatial validation and semantic grounding.
         
         Args:
             layer3_hypotheses: Hypotheses with PP tokens to process
             return_all_matches: Whether to return all valid combinations
             
         Returns:
-            Processed hypotheses with validated PP attachments
+            Processed hypotheses with validated PP attachments and semantic grounding
         """
         # Pass 1: Generate all possible PP attachment combinations
         attachment_hypotheses = self._generate_pp_attachment_combinations(layer3_hypotheses)
@@ -56,7 +54,13 @@ class Layer3SemanticGrounder:
         validated_hypotheses = self._validate_spatial_attachments(attachment_hypotheses)
         print(f"✅ Pass 2: {len(validated_hypotheses)} spatially valid combinations")
         
-        return validated_hypotheses if validated_hypotheses else layer3_hypotheses
+        # Pass 3: Semantic grounding for validated attachments
+        if validated_hypotheses:
+            grounded_hypotheses = self._ground_validated_attachments(validated_hypotheses)
+            print(f"🎯 Pass 3: Semantic grounding complete")
+            return grounded_hypotheses
+        
+        return layer3_hypotheses
     
     def ground(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
         """Ground a PrepositionalPhrase to spatial locations or object relationships.
@@ -124,69 +128,58 @@ class Layer3SemanticGrounder:
             )
     
     def _ground_spatial_relationship(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
-        """Ground a prepositional phrase with spatial relationship to an object."""
-        # First, ground the noun phrase within the PP
+        """Process a prepositional phrase with spatial relationship - requires grounded Scene Objects."""
+        
+        # Check if the PP contains grounded scene objects
+        # PP grounding should only succeed if the NP within the PP is grounded to a Scene Object
+        has_grounded_object = False
         if hasattr(pp, 'noun_phrase') and pp.noun_phrase:
-            # Use Layer 2 grounding for the contained NP
-            np_grounding = self.layer2_grounder.ground(pp.noun_phrase, return_all_matches=return_all_matches)
-            
-            if not np_grounding.success:
-                return Layer3GroundingResult(
-                    success=False,
-                    confidence=0.0,
-                    description=f"Failed to ground NP within PP: {pp.noun_phrase}"
-                )
-            
-            # Create spatial relationship vector
-            spatial_vector = VectorSpace()
-            
-            # Add preposition semantics
-            if hasattr(pp, 'preposition') and pp.preposition:
-                # Look up preposition in vocabulary for spatial semantics
-                from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-                if pp.preposition in SEMANTIC_VECTOR_SPACE:
-                    prep_vector = SEMANTIC_VECTOR_SPACE[pp.preposition]
-                    spatial_vector += prep_vector
-            
-            # Add object reference
-            if hasattr(np_grounding.resolved_object, 'vector'):
-                spatial_vector += np_grounding.resolved_object.vector
-            
-            spatial_vector.word = f"SpatialRel({pp.preposition} {np_grounding.resolved_object.object_id})"
-            
-            # Store reference to the grounded object for spatial calculations
-            spatial_vector._reference_object = np_grounding.resolved_object
-            spatial_vector._preposition = pp.preposition
-            
-            result = Layer3GroundingResult(
-                success=True,
-                confidence=np_grounding.confidence,
-                resolved_object=spatial_vector,
-                description=f"Grounded PP '{pp}' to spatial relationship: {pp.preposition} {np_grounding.resolved_object.object_id}"
-            )
-            
-            if return_all_matches and np_grounding.alternative_matches:
-                # Create alternative spatial relationships for each alternative NP match
-                alternatives = []
-                for alt_confidence, alt_object in np_grounding.alternative_matches:
-                    alt_spatial = VectorSpace()
-                    # Copy the vector data instead of using update()
-                    for dim, value in spatial_vector.items():
-                        if value != 0.0:
-                            alt_spatial[dim] = value
-                    alt_spatial.word = f"SpatialRel({pp.preposition} {alt_object.object_id})"
-                    alt_spatial._reference_object = alt_object
-                    alt_spatial._preposition = pp.preposition
-                    alternatives.append((alt_confidence, alt_spatial))
-                result.alternative_matches = alternatives
-            
-            return result
-        else:
+            np = pp.noun_phrase
+            if hasattr(np, 'scene_object') and np.scene_object:
+                has_grounded_object = True
+                
+        if not has_grounded_object:
             return Layer3GroundingResult(
                 success=False,
                 confidence=0.0,
-                description=f"PP has no NP to ground: {pp}"
+                resolved_object=None,
+                description=f"Failed to ground NP within PP '{pp.preposition}' - no scene object found"
             )
+        
+        # Create spatial relationship vector
+        spatial_vector = VectorSpace()
+        
+        # Add preposition semantics
+        if hasattr(pp, 'preposition') and pp.preposition:
+            # Look up preposition in vocabulary for spatial semantics
+            from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+            
+            prep_key = pp.preposition.lower()
+            if prep_key in SEMANTIC_VECTOR_SPACE:
+                prep_vector = SEMANTIC_VECTOR_SPACE[prep_key]
+                spatial_vector.merge_vector(prep_vector)
+        
+        # Add spatial location properties if available
+        if hasattr(pp, 'spatial_location') and pp.spatial_location:
+            spatial_vector.spatial_location = pp.spatial_location
+            
+        # Add coordinate properties if available  
+        if hasattr(pp, 'locX'):
+            spatial_vector.locX = pp.locX
+        if hasattr(pp, 'locY'):
+            spatial_vector.locY = pp.locY
+        if hasattr(pp, 'locZ'):
+            spatial_vector.locZ = pp.locZ
+            
+        # Get the actual scene object for reference
+        scene_obj_id = getattr(pp.noun_phrase.scene_object, 'object_id', 'unknown')
+            
+        return Layer3GroundingResult(
+            success=True,
+            confidence=0.8,
+            resolved_object=spatial_vector,
+            description=f"Processed spatial PP: {pp.preposition} (grounded to {scene_obj_id})"
+        )
     
     def ground_multiple(self, pp_list: List[PrepositionalPhrase], return_all_matches: bool = False) -> List[Layer3GroundingResult]:
         """Ground multiple PrepositionalPhrase tokens."""
@@ -276,8 +269,8 @@ class Layer3SemanticGrounder:
                     # Get attachment target
                     target_idx = token._attachment_info.get('attaches_to')
                     
-                    # Apply prep-specific spatial validation
-                    spatial_score = self._validate_prep_spatial_relationship(prep, np_part, target_idx, hypothesis)
+                    # Apply prep-specific spatial validation using the PP token
+                    spatial_score = self._validate_prep_spatial_relationship(token, target_idx, hypothesis)
                     validation_scores.append(spatial_score)
                     
                     print(f"🔍 Spatial validation: PP '{prep} {np_part}' → score {spatial_score:.2f}")
@@ -298,61 +291,154 @@ class Layer3SemanticGrounder:
         validated.sort(key=lambda h: h.confidence, reverse=True)
         return validated
     
-    def _validate_prep_spatial_relationship(self, prep: str, np_part: str, target_idx, hypothesis) -> float:
-        """Validate a specific prepositional relationship using spatial reasoning."""
-        if not self.scene_model or target_idx is None:
-            print(f"🔍 No scene model or target: scene={bool(self.scene_model)}, target_idx={target_idx}")
-            return 0.5  # Neutral score if no scene or no attachment
-        
-        # Get scene objects involved in the relationship
-        try:
-            # Extract object names from the PP and target
-            pp_object_name = self._extract_object_name_from_np(np_part)
-            target_token = hypothesis.tokens[target_idx]
-            target_object_name = self._extract_object_name_from_token(target_token)
-            
-            print(f"🔍 PP object: '{pp_object_name}', Target object: '{target_object_name}'")
-            
-            if not pp_object_name or not target_object_name:
-                print(f"🔍 Missing object names: pp_object='{pp_object_name}', target_object='{target_object_name}'")
-                return 0.5  # Can't determine objects
-            
-            # Find actual scene objects
-            pp_object = self._find_scene_object(pp_object_name)
-            target_object = self._find_scene_object(target_object_name)
-            
-            print(f"🔍 Found scene objects: pp_object={bool(pp_object)}, target_object={bool(target_object)}")
-            if pp_object:
-                print(f"🔍 PP object position: {pp_object.position if hasattr(pp_object, 'position') else pp_object.vector}")
-            if target_object:
-                print(f"🔍 Target object position: {target_object.position if hasattr(target_object, 'position') else target_object.vector}")
-            
-            if not pp_object or not target_object:
-                print(f"🔍 Objects not found in scene")
-                return 0.3  # Objects not found in scene
-            
-            # Apply prep-specific spatial tests
-            score = self._apply_prep_spatial_test(prep, target_object, pp_object)
-            print(f"🔍 Final spatial score for '{prep}' between '{target_object_name}' and '{pp_object_name}': {score}")
-            return score
-            
-        except Exception as e:
-            print(f"🔍 Exception in validation: {e}")
-            return 0.2  # Error in validation
-    
-    def _apply_prep_spatial_test(self, prep: str, obj1, obj2) -> float:
-        """Apply prep-specific spatial relationship test using shared utilities.
+    def _ground_validated_attachments(self, validated_hypotheses):
+        """Ground validated PP attachments by enhancing existing SceneObjectPhrases.
         
         Args:
-            prep: Preposition (e.g., 'on', 'under', 'beside')
+            validated_hypotheses: List of hypotheses with validated PP attachments
+            
+        Returns:
+            List of hypotheses with enhanced SceneObjectPhrases
+        """
+        grounded_hypotheses = []
+        
+        for hypothesis in validated_hypotheses:
+            grounded_tokens = []
+            pp_attachments = []  # Track PP tokens that need to be embedded
+            
+            # First pass: collect attachment information
+            for i, token in enumerate(hypothesis.tokens):
+                if (hasattr(token, '_attachment_info') and 
+                    hasattr(token, 'word') and token.word and token.word.startswith('PP(')):
+                    
+                    target_idx = token._attachment_info.get('attaches_to')
+                    if target_idx is not None:
+                        pp_attachments.append((i, target_idx, token))
+                        print(f"[Layer3] Found PP attachment: token[{i}] '{token}' -> target[{target_idx}]")
+            
+            # Second pass: create grounded tokens
+            consumed_indices = set()  # Track PP tokens that have been consumed
+            
+            for i, token in enumerate(hypothesis.tokens):
+                if i in consumed_indices:
+                    continue  # Skip PP tokens that have been consumed
+                
+                # Check if this token is a target for PP attachments
+                attachments_for_this_token = [
+                    (pp_idx, pp_token) for pp_idx, target_idx, pp_token in pp_attachments 
+                    if target_idx == i
+                ]
+                
+                if attachments_for_this_token:
+                    # Get or create SceneObjectPhrase for this token
+                    if hasattr(token, '_grounded_phrase') and isinstance(token._grounded_phrase, SceneObjectPhrase):
+                        # Token was grounded in Layer 2 - enhance existing SceneObjectPhrase
+                        scene_obj_phrase = token._grounded_phrase
+                        print(f"[Layer3] Found existing SceneObjectPhrase from Layer 2: {scene_obj_phrase}")
+                    else:
+                        # Token not grounded in Layer 2 - create new SceneObjectPhrase
+                        if hasattr(token, 'word') and token.word and token.word.startswith('NP('):
+                            object_name = token.word[3:-1]  # Remove 'NP(' and ')'
+                        else:
+                            object_name = str(token)
+                        
+                        scene_obj_phrase = SceneObjectPhrase(head_noun=object_name)
+                        print(f"[Layer3] Created new SceneObjectPhrase: {scene_obj_phrase}")
+                    
+                    # Add spatial relationships to the SceneObjectPhrase
+                    for pp_idx, pp_token in attachments_for_this_token:
+                        # Extract preposition and object from PP token
+                        pp_content = pp_token.word[3:-1]  # Remove 'PP(' and ')'
+                        prep, np_part = pp_content.split(' ', 1) if ' ' in pp_content else (pp_content, '')
+                        
+                        # Create PrepositionalPhrase for the spatial relationship
+                        prep_phrase = PrepositionalPhrase()
+                        prep_phrase.preposition = prep
+                        prep_phrase.noun_phrase = np_part
+                        prep_phrase.spatial_vector = getattr(pp_token, 'spatial_vector', None)
+                        
+                        # Add to spatial relationships (initialize if needed)
+                        if not hasattr(scene_obj_phrase, 'spatial_relationships'):
+                            scene_obj_phrase.spatial_relationships = []
+                        scene_obj_phrase.spatial_relationships.append(prep_phrase)
+                        consumed_indices.add(pp_idx)  # Mark PP token as consumed
+                        
+                        print(f"[Layer3] Added PrepositionalPhrase: {prep} {np_part}")
+                    
+                    # Keep the original VectorSpace token but enhance its _grounded_phrase
+                    enhanced_token = token  # Keep the VectorSpace token
+                    enhanced_token._grounded_phrase = scene_obj_phrase  # Enhance with spatial relationships
+                    grounded_tokens.append(enhanced_token)
+                    print(f"[Layer3] Enhanced VectorSpace token with SceneObjectPhrase: {scene_obj_phrase}")
+                    
+                else:
+                    # Token is not a target for PP attachment - keep original VectorSpace token
+                    grounded_tokens.append(token)
+                    print(f"[Layer3] Kept original token: {type(token).__name__}: {token}")
+            
+            # Create new hypothesis with grounded tokens
+            from copy import deepcopy
+            grounded_hypothesis = deepcopy(hypothesis)
+            grounded_hypothesis.tokens = grounded_tokens
+            grounded_hypotheses.append(grounded_hypothesis)
+            
+            print(f"[Layer3] Grounded hypothesis: {len(grounded_tokens)} tokens (was {len(hypothesis.tokens)})")
+            for i, token in enumerate(grounded_tokens):
+                print(f"  [{i}] {type(token).__name__}: {token}")
+        
+        return grounded_hypotheses
+    
+    def _validate_prep_spatial_relationship(self, pp_token, target_idx, hypothesis) -> float:
+        """Validate a specific prepositional relationship using grounded objects from Layer 2."""
+        if target_idx is None:
+            print(f"🔍 No target index for spatial validation")
+            return 0.5  # Neutral score if no attachment
+        
+        # Get the target token that the PP should attach to
+        target_token = hypothesis.tokens[target_idx]
+        
+        # Extract grounded objects from Layer 2 results
+        target_obj = None
+        if hasattr(target_token, '_grounded_phrase') and target_token._grounded_phrase:
+            if hasattr(target_token._grounded_phrase, 'grounded_objects') and target_token._grounded_phrase.grounded_objects:
+                target_obj = target_token._grounded_phrase.grounded_objects[0]
+        
+        # Extract object from PP token (should also be grounded by Layer 2)
+        pp_obj = None
+        if hasattr(pp_token, '_grounded_phrase') and pp_token._grounded_phrase:
+            if hasattr(pp_token._grounded_phrase, 'grounded_objects') and pp_token._grounded_phrase.grounded_objects:
+                pp_obj = pp_token._grounded_phrase.grounded_objects[0]
+        
+        if not target_obj or not pp_obj:
+            print(f"🔍 Missing grounded objects: target_obj={bool(target_obj)}, pp_obj={bool(pp_obj)}")
+            # PP grounding should only be attempted with Scene Objects, not NPs
+            return 0.0  # No spatial validation possible without grounded scene objects
+        
+        print(f"🔍 Found grounded objects for spatial validation")
+        if hasattr(target_obj, 'position'):
+            print(f"🔍 Target object position: {target_obj.position}")
+        if hasattr(pp_obj, 'position'):
+            print(f"🔍 PP object position: {pp_obj.position}")
+        
+        # Apply prep-specific spatial tests using grounded objects
+        score = self._apply_prep_spatial_test(pp_token, target_obj, pp_obj)
+        print(f"🔍 Final spatial score: {score}")
+        return score
+    
+    def _apply_prep_spatial_test(self, pp_token, obj1, obj2) -> float:
+        """Apply prep-specific spatial relationship test using PP token's VectorSpace features.
+        
+        Args:
+            pp_token: VectorSpace token containing spatial features (spatial_location, locX, locY, locZ)
             obj1: Target object that should be positioned relative to obj2
             obj2: Reference object (PP object) 
             
-        For "box on table": obj1=box, obj2=table, validates box is on table
+        For "box above table": obj1=box, obj2=table, validates box is above table
         """
         from engraf.utils.spatial_validation import SpatialValidator
-        # For spatial validation: obj2 (PP object) is reference, obj1 (target) is positioned relative to it
-        return SpatialValidator.validate_spatial_relationship(prep, obj2, obj1, use_preposition_vector=True)
+                
+        # Use the correct SpatialValidator interface
+        return SpatialValidator.validate_spatial_relationship(pp_token, obj2, obj1, use_preposition_vector=True)
     
     def _extract_object_name_from_np(self, np_part: str):
         """Extract object name from noun phrase text."""
@@ -369,17 +455,6 @@ class Layer3SemanticGrounder:
             if token.word.startswith('NP(') or token.word.startswith('PP('):
                 content = token.word[3:-1]  # Remove prefix and parentheses
                 return self._extract_object_name_from_np(content)
-        return None
-    
-    def _find_scene_object(self, object_name: str):
-        """Find scene object by name."""
-        if not self.scene_model:
-            return None
-        for obj in self.scene_model.objects:
-            if hasattr(obj, 'word') and obj.word == object_name:
-                return obj
-            if hasattr(obj, 'object_id') and object_name in obj.object_id:
-                return obj
         return None
     
     def extract_prepositional_phrases(self, layer3_hypotheses: List[PPTokenizationHypothesis]) -> List[PrepositionalPhrase]:

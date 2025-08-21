@@ -131,16 +131,20 @@ SEMANTIC_VECTOR_SPACE = {
 
     # Prepositions with semantic dimensions
     # Spatial location relationships
-    'on': vector_from_features("prep spatial_location", locY=0.5),      # contact-high
     'over': vector_from_features("prep spatial_location", locY=1.0),    # higher
     'above': vector_from_features("prep spatial_location", locY=1.0),   # higher
     'under': vector_from_features("prep spatial_location", locY=-1.0),  # lower
     'below': vector_from_features("prep spatial_location", locY=-1.0),  # lower
+    'behind': vector_from_features("prep spatial_location", locZ=-1.0),  # behind
+    'in front of': vector_from_features("prep spatial_location", locZ=1.0),  # front
+    'right of': vector_from_features("prep spatial_location", locX=1.0),  # right 
+    'left of' : vector_from_features("prep spatial_location", locX=-1.0),  # left 
 
     # Spatial proximity relationships
-    'in': vector_from_features("prep spatial_proximity"),     # containment
-    'at': vector_from_features("prep spatial_proximity") ,     # specific location
-    'near': vector_from_features("prep spatial_proximity"),   # close
+    'on': vector_from_features("prep spatial_proximity", locY=1.0),      # contact-high
+    'in': vector_from_features("prep spatial_proximity", loc = [1.0, 1.0, 1.0]),     # containment
+    'at': vector_from_features("prep spatial_proximity",loc = [1.0, 1.0, 1.0]),     # specific location
+    'near': vector_from_features("prep spatial_proximity", loc = [1.0, 1.0, 1.0]),   # close
 
     # Directional/movement relationships
     'to': vector_from_features("prep", directional_target=1.0),    # toward destination
@@ -220,11 +224,5 @@ SEMANTIC_VECTOR_SPACE = {
     'z': vector_from_features("noun", rotZ=1.0),                                  # z-axis reference
     'x-axis': vector_from_features("noun", rotX=1.0),                             # x-axis explicit
     'y-axis': vector_from_features("noun", rotY=1.0),                             # y-axis explicit
-    'z-axis': vector_from_features("noun", rotZ=1.0),                             # z-axis explicit
-    
-    # Additional spatial prepositions not yet covered
-    'behind': vector_from_features("prep", spatial_proximity=0.7, locZ=-1.0),     # behind/back position
-    'beside': vector_from_features("prep", spatial_proximity=0.8, locX=1.0),      # beside/next to
-    'next': vector_from_features("prep", spatial_proximity=0.8),                  # next to context
-    'front': vector_from_features("prep", spatial_proximity=0.7, locZ=1.0)        # front position
+    'z-axis': vector_from_features("noun", rotZ=1.0)                             # z-axis explicit
 }

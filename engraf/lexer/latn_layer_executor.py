@@ -78,7 +78,7 @@ class LATNLayerExecutor:
     def __init__(self, scene_model: Optional[SceneModel] = None):
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
-        self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
+        self.layer3_grounder = Layer3SemanticGrounder()  # Layer 3 doesn't use SceneModel
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
     
     def execute_layer1(self, sentence: str) -> Layer1Result:
@@ -330,7 +330,7 @@ class LATNLayerExecutor:
         """Update the scene model and reinitialize grounders."""
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
-        self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
+        self.layer3_grounder = Layer3SemanticGrounder() if scene_model else None
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
     
     def get_layer_analysis(self, sentence: str, target_layer: int = 3) -> dict:

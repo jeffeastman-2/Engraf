@@ -14,6 +14,9 @@ Key patterns factored out:
 
 from typing import Tuple, Optional, Union
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vector_space import VectorSpace
+from engraf.pos.scene_object_phrase import SceneObjectPhrase
+from engraf.visualizer.scene.scene_object import SceneObject
 
 
 class SpatialValidator:
@@ -65,7 +68,7 @@ class SpatialValidator:
         return x_factor, y_factor, z_factor
     
     @staticmethod
-    def calculate_spatial_position(moving_obj, ref_obj, preposition: str, preposition_vector) -> Tuple[float, float, float]:
+    def calculate_spatial_position(moving_obj, ref_obj, preposition_vector) -> Tuple[float, float, float]:
         """Calculate the position for spatial relationships like 'above', 'below', 'beside', etc.
         
         Uses the preposition vector to determine spatial direction and object dimensions
@@ -124,36 +127,23 @@ class SpatialValidator:
         return new_x, new_y, new_z
     
     @staticmethod
-    def validate_spatial_relationship(prep: str, obj1, obj2, use_preposition_vector: bool = True) -> float:
+    def validate_spatial_relationship(prep_vector, obj1, obj2) -> float:
         """Validate a spatial relationship between two objects using proper spatial calculations.
         
         Args:
-            prep: Preposition describing the relationship
+            prep_vector: PP token containing spatial features (VectorSpace with locX, locY, locZ) or preposition string
             obj1: Reference object (obj2 is positioned relative to obj1)
             obj2: Object being positioned relative to obj1
-            use_preposition_vector: If True, use vocabulary vector for validation. If False, use position-based validation.
             
         Returns:
             float: Validation score between 0.0 and 1.0
         """
-        if use_preposition_vector and prep in SEMANTIC_VECTOR_SPACE:
-            # Use the sophisticated approach: calculate expected position and compare
-            return SpatialValidator._validate_using_preposition_vector(prep, obj1, obj2)
-        else:
-            # Fallback: use simple position-based validation
-            return SpatialValidator._validate_using_positions(prep, obj1, obj2)
-    
-    @staticmethod
-    def _validate_using_preposition_vector(prep: str, obj1, obj2) -> float:
-        """Validate spatial relationship using preposition vector semantics."""
         try:
-            # Get preposition vector from vocabulary
-            prep_vector = SEMANTIC_VECTOR_SPACE[prep]
-            print(f"🔍 Prep vector for '{prep}': locX={prep_vector['locX']}, locY={prep_vector['locY']}, locZ={prep_vector['locZ']}")
+            print(f"🔍 Prep vector for '{prep_vector.word}': locX={prep_vector['locX']}, locY={prep_vector['locY']}, locZ={prep_vector['locZ']}")
             
             # Calculate where obj2 should be positioned relative to obj1
             expected_x, expected_y, expected_z = SpatialValidator.calculate_spatial_position(
-                obj2, obj1, prep, prep_vector
+                obj2, obj1, prep_vector
             )
             print(f"🔍 Expected position for obj2 relative to obj1: [{expected_x}, {expected_y}, {expected_z}]")
             
@@ -195,61 +185,29 @@ class SpatialValidator:
         except Exception as e:
             print(f"🔍 Exception in preposition vector validation: {e}")
             # Fallback to position-based validation if vector approach fails
-            return SpatialValidator._validate_using_positions(prep, obj1, obj2)
+            return SpatialValidator._validate_using_positions(prep_vector, obj1, obj2)
     
     @staticmethod
-    def _validate_using_positions(prep: str, obj1, obj2) -> float:
+    def _validate_using_positions(pp_token: VectorSpace, obj1: SceneObject, obj2: SceneObject) -> float:
         """Fallback validation using simple position comparison."""
         try:
-            # Get positions (support both vector and position attributes)
-            if hasattr(obj1, 'vector'):
-                pos1 = [obj1.vector['locX'], obj1.vector['locY'], obj1.vector['locZ']]
-            elif hasattr(obj1, 'position'):
-                pos1 = obj1.position
-            else:
-                return 0.5  # Can't determine position
-                
-            if hasattr(obj2, 'vector'):
-                pos2 = [obj2.vector['locX'], obj2.vector['locY'], obj2.vector['locZ']]
-            elif hasattr(obj2, 'position'):
-                pos2 = obj2.position
-            else:
-                return 0.5  # Can't determine position
+            # Get positions 
+            pos1 = obj1.position                
+            pos2 = obj2.position
             
             dx, dy, dz = pos1[0] - pos2[0], pos1[1] - pos2[1], pos1[2] - pos2[2]
-            distance = (dx*dx + dy*dy + dz*dz) ** 0.5
+            px = pp_token['locX']
+            py = pp_token['locY']  
+            pz = pp_token['locZ']
             
-            # Prep-specific spatial tests (corrected relationship direction)
-            # For "obj1 PREP obj2", we check obj1's position relative to obj2
-            if prep in ['on', 'above']:
-                # 'on'/'above' requires obj1 above obj2 (obj1.y > obj2.y)
-                if distance < 0.1:  # Co-located objects
-                    return 0.1  # Can't be "on" if at same position
-                return 1.0 if dy > 0.5 and abs(dx) < 2.0 and abs(dz) < 2.0 else 0.2
-                
-            elif prep in ['under', 'below']:
-                # 'under'/'below' requires obj1 below obj2 (obj1.y < obj2.y)
-                if distance < 0.1:
-                    return 0.1
-                return 1.0 if dy < -0.5 and abs(dx) < 2.0 and abs(dz) < 2.0 else 0.2
-                
-            elif prep in ['beside', 'next to', 'near']:
-                # 'beside' requires lateral proximity
-                if distance < 0.1:
-                    return 0.1
-                return 1.0 if abs(dy) < 1.0 and (abs(dx) > 0.5 or abs(dz) > 0.5) else 0.3
-                
-            elif prep in ['to', 'at']:
-                # 'to'/'at' is valid for movement targets
-                return 0.9
-                
-            elif prep in ['in', 'inside']:
-                # 'in' requires containment (simplified check)
-                return 0.8 if distance < 1.0 else 0.2
-                
-            else:
-                # Unknown preposition - neutral score
-                return 0.5
-                
+            if pp_token.isa("spatial_location"):
+                # spatial relationships: prepositions affecting object positioning
+                dot = (dx * px + dy * py + dz * pz)
+                return 1.0 if dot > 0 else 0.0
+            elif pp_token.isa("spatial_proximity"):
+                # proximity relationships: near (+), at (specific), in (containment)
+                distance = (dx*dx + dy*dy + dz*dz) ** 0.5
+                return 1.0 if distance < 1.0 else 0.0
+            else: return 0.0
         except Exception:
-            return 0.2  # Error in validation
+            return 0.0

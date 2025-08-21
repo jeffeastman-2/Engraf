@@ -80,13 +80,13 @@ def latn_tokenize_layer4(layer3_hypotheses: List[PPTokenizationHypothesis]) -> L
 
 
 def _find_verb_phrases_in_hypothesis(hyp: PPTokenizationHypothesis) -> List[VPTokenizationHypothesis]:
-    """Find and replace verb phrases in a single hypothesis."""
-    results = []
+    """Find and replace verb phrases in a single hypothesis using greedy left-to-right parsing."""
     tokens = hyp.tokens[:]  # Copy tokens
+    vp_replacements = []
     
     debug_print(f"Layer 4: Looking for VPs in tokens: {[t.word for t in tokens]}")
     
-    # Scan for verb phrases starting with verbs
+    # Greedy left-to-right VP parsing (like Layers 2 and 3)
     i = 0
     while i < len(tokens):
         if is_verb(tokens[i]):
@@ -99,36 +99,26 @@ def _find_verb_phrases_in_hypothesis(hyp: PPTokenizationHypothesis) -> List[VPTo
                 vp_token, end_idx = vp_result
                 debug_print(f"Layer 4: Successfully parsed VP from {i} to {end_idx}: {vp_token.word}")
                 
-                # Create new hypothesis with VP token replacement
-                new_tokens = tokens[:i] + [vp_token] + tokens[end_idx + 1:]
+                # Replace the VP sequence with the single VP token
+                tokens[i:end_idx + 1] = [vp_token]
+                vp_replacements.append((i, end_idx, vp_token))
                 
-                vp_hyp = VPTokenizationHypothesis(
-                    tokens=new_tokens,
-                    confidence=hyp.confidence * 0.9,  # Slight confidence penalty for parsing complexity
-                    description=f"VP formed: {vp_token.word}",
-                    vp_replacements=[(i, end_idx, vp_token)]
-                )
-                
-                results.append(vp_hyp)
-                
-                # Continue looking for more VPs after this one
-                i = end_idx + 1
+                # Continue from after the replacement (greedy approach)
+                i += 1  # Move past the new VP token
             else:
                 i += 1
         else:
             i += 1
     
-    # If no VPs found, return original hypothesis converted to VP format
-    if not results:
-        vp_hyp = VPTokenizationHypothesis(
-            tokens=tokens,
-            confidence=hyp.confidence,
-            description="No verb phrases found",
-            vp_replacements=[]
-        )
-        results.append(vp_hyp)
+    # Create a single hypothesis with all VP replacements applied
+    vp_hyp = VPTokenizationHypothesis(
+        tokens=tokens,
+        confidence=hyp.confidence * (0.9 ** len(vp_replacements)),  # Confidence penalty per VP
+        description=f"VP parsing: {len(vp_replacements)} verb phrase(s) found",
+        vp_replacements=vp_replacements
+    )
     
-    return results
+    return [vp_hyp]
 
 
 def _try_parse_verb_phrase(tokens: List[VectorSpace], start_idx: int) -> Optional[tuple]:

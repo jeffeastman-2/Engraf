@@ -75,6 +75,9 @@ def create_pp_token(pp: PrepositionalPhrase) -> VectorSpace:
 def find_pp_sequences(tokens: List[VectorSpace]) -> List[tuple]:
     """Find sequences in tokens that can be parsed as prepositional phrases.
     
+    Uses greedy left-to-right parsing like Layer 2: try PP at each position, if successful
+    consume those tokens and continue from the next position.
+    
     This works with tokens that may already contain NounPhrase tokens from Layer 2.
     The PP ATN will handle NounPhrase tokens directly.
     
@@ -82,27 +85,42 @@ def find_pp_sequences(tokens: List[VectorSpace]) -> List[tuple]:
         List of (start_idx, end_idx, pp_object) tuples for successful PP parses
     """
     pp_sequences = []
+    i = 0
     
-    # Try to find PPs starting at each position
-    for start_idx in range(len(tokens)):
+    while i < len(tokens):
         # Must start with a preposition
-        if not tokens[start_idx].isa("prep"):
+        if not tokens[i].isa("prep"):
+            i += 1
             continue
             
+        # Try to parse PP starting at position i
+        # Use remaining tokens for parsing
+        subsequence = tokens[i:]
+        best_pp = None
+        best_end = i
+        
         # Try different ending positions (PPs are typically 2-4 tokens)
-        for end_idx in range(start_idx + 2, min(start_idx + 5, len(tokens) + 1)):
-            subsequence = tokens[start_idx:end_idx]
+        for length in range(2, min(5, len(subsequence) + 1)):
+            subseq = subsequence[:length]
             
             try:
                 # Try to parse as PP using the enhanced PP ATN
-                pp = run_pp(subsequence)
+                pp = run_pp(subseq)
                 if pp and pp.preposition and pp.noun_phrase:
-                    pp_sequences.append((start_idx, end_idx, pp))
-                    # Take the longest match starting at this position
-                    break
+                    best_pp = pp
+                    best_end = i + length - 1
+                    # Continue trying longer sequences (greedy - take longest match)
             except Exception:
-                # Failed to parse as PP, continue trying shorter sequences
+                # Failed to parse as PP, continue trying
                 continue
+        
+        if best_pp is not None:
+            # Found a PP, add it and skip past it
+            pp_sequences.append((i, best_end + 1, best_pp))  # end_idx is exclusive
+            i = best_end + 1
+        else:
+            # No PP found starting at position i, move to next position
+            i += 1
     
     return pp_sequences
 
