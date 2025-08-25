@@ -62,8 +62,7 @@ def demo_specific_object_grounding():
     print()
     
     scene = setup_demo_scene()
-    grounder = Layer2SemanticGrounder(scene)
-    executor = LATNLayerExecutor()
+    executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
         "the blue sphere",
@@ -74,36 +73,34 @@ def demo_specific_object_grounding():
     for phrase in test_phrases:
         print(f"Phrase: '{phrase}'")
         
-        # First get Layer 2 tokenization
-        result = executor.execute_layer2(phrase, enable_semantic_grounding=False)
+        # Get Layer 2 tokenization with semantic grounding enabled
+        result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
         if not result.success:
-            print(f"  ❌ Tokenization failed")
+            print(f"  ❌ Tokenization failed: {result.description}")
             continue
             
-        # Get the noun phrases from the result
+        # Show the tokenization result
         hypothesis = result.hypotheses[0]
-        np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+        print(f"  Tokens: {[tok.word for tok in hypothesis.tokens]}")
         
-        if not np_tokens:
-            print(f"  ❌ No noun phrases found")
-            continue
-            
-        # Ground each noun phrase
-        for np_token in np_tokens:
-            # Get the NounPhrase structure from np_replacements
-            if hypothesis.np_replacements:
-                for np_replacement in hypothesis.np_replacements:
-                    # np_replacement is a tuple: (start_index, end_index, np_structure)
-                    start_idx, end_idx, np_structure = np_replacement
-                    
-                    # Check if this replacement corresponds to our NP token
-                    if hasattr(np_structure, 'word') and np_structure.word == np_token.word:
-                        # For now, let's just show that we found the structure
-                        print(f"  → Found NP structure for '{np_token.word}': {np_structure}")
-                        print(f"    (Grounding to scene objects not yet implemented in demo)")
-                        break
-                else:
-                    print(f"  ❌ No NP structure found for '{np_token.word}'")
+        # Check for grounded Scene Objects
+        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, 'grounding') and tok.grounding]
+        
+        if grounded_nps:
+            print(f"  → Grounded to {len(grounded_nps)} scene object(s):")
+            for np_token in grounded_nps:
+                obj = np_token.grounding['scene_object']
+                confidence = np_token.grounding['confidence']
+                print(f"    • {np_token.word} → {obj.object_id} (confidence: {confidence:.3f})")
+        else:
+            # Check for ungrounded NP tokens
+            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+            if np_tokens:
+                print(f"  → Found {len(np_tokens)} ungrounded NP token(s):")
+                for np_token in np_tokens:
+                    print(f"    • {np_token.word} (not grounded)")
+            else:
+                print("  → No noun phrases or scene objects found")
         print()
 
 
@@ -115,7 +112,7 @@ def demo_ambiguous_grounding():
     
     scene = setup_demo_scene()
     grounder = Layer2SemanticGrounder(scene)
-    executor = LATNLayerExecutor()
+    executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
         "the red object",  # Should match red_box, red_sphere, red_cube
@@ -126,28 +123,31 @@ def demo_ambiguous_grounding():
     for phrase in test_phrases:
         print(f"Phrase: '{phrase}'")
         
-        # Get Layer 2 tokenization
-        result = executor.execute_layer2(phrase, enable_semantic_grounding=False)
+        # Get Layer 2 tokenization with semantic grounding enabled
+        result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
         if not result.success:
             print(f"  ❌ Tokenization failed")
             continue
             
-        # Ground the noun phrases
+        # Check for grounded Scene Objects
         hypothesis = result.hypotheses[0]
-        np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, "grounding") and tok.grounding]
         
-        for np_token in np_tokens:
-            np_structure = hypothesis.np_replacements.get(np_token.word, None)
-            if np_structure:
-                grounded_objects = grounder.ground_noun_phrase(np_structure)
-                print(f"  → Found {len(grounded_objects)} candidate objects:")
-                for obj in grounded_objects:
-                    color_name = "red" if obj.color == [1.0, 0.0, 0.0] else \
-                                "blue" if obj.color == [0.0, 0.0, 1.0] else \
-                                "green" if obj.color == [0.0, 1.0, 0.0] else "unknown"
-                    size_desc = "large" if max(obj.scale) > 1.2 else \
-                               "small" if max(obj.scale) < 0.7 else "normal"
-                    print(f"    • {obj.object_id}: {size_desc} {color_name} {obj.shape}")
+        if grounded_nps:
+            print(f"  → Found {len(grounded_nps)} grounded scene object(s):")
+            for np_token in grounded_nps:
+                obj = np_token.grounding['scene_object']
+                confidence = np_token.grounding['confidence']
+                print(f"    • {np_token.word} → {obj.object_id} (confidence: {confidence:.3f})")
+        else:
+            # Fall back to checking NP tokens (if grounding didn't convert them to SOs)
+            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+            if np_tokens:
+                print(f"  → Found {len(np_tokens)} ungrounded NP token(s):")
+                for np_token in np_tokens:
+                    print(f"    • {np_token.word} (not grounded to scene objects)")
+            else:
+                print("  → No noun phrases or scene objects found")
         print()
 
 
@@ -159,7 +159,7 @@ def demo_no_match_grounding():
     
     scene = setup_demo_scene()
     grounder = Layer2SemanticGrounder(scene)
-    executor = LATNLayerExecutor()
+    executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
         "the yellow sphere",  # No yellow objects
@@ -170,24 +170,29 @@ def demo_no_match_grounding():
     for phrase in test_phrases:
         print(f"Phrase: '{phrase}'")
         
-        # Get Layer 2 tokenization
-        result = executor.execute_layer2(phrase, enable_semantic_grounding=False)
+        # Get Layer 2 tokenization with semantic grounding enabled
+        result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
         if not result.success:
             print(f"  ❌ Tokenization failed")
             continue
             
-        # Ground the noun phrases
+        # Check for grounded Scene Objects
         hypothesis = result.hypotheses[0]
-        np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, "grounding") and tok.grounding]
         
-        for np_token in np_tokens:
-            np_structure = hypothesis.np_replacements.get(np_token.word, None)
-            if np_structure:
-                grounded_objects = grounder.ground_noun_phrase(np_structure)
-                if grounded_objects:
-                    print(f"  → Found {len(grounded_objects)} objects")
-                else:
-                    print(f"  → No matching objects found in scene")
+        if grounded_nps:
+            print(f"  → Found {len(grounded_nps)} grounded scene object(s) (unexpected!)")
+            for np_token in grounded_nps:
+                print(f"    • {np_token.word}")
+        else:
+            # Check NP tokens to confirm they weren't grounded
+            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+            if np_tokens:
+                print(f"  → Found {len(np_tokens)} ungrounded NP token(s) (as expected)")
+                for np_token in np_tokens:
+                    print(f"    • {np_token.word} (no matching objects in scene)")
+            else:
+                print("  → No noun phrases found")
         print()
 
 
@@ -199,7 +204,7 @@ def demo_complex_grounding():
     
     scene = setup_demo_scene()
     grounder = Layer2SemanticGrounder(scene)
-    executor = LATNLayerExecutor()
+    executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
         "the large green object",
@@ -210,8 +215,8 @@ def demo_complex_grounding():
     for phrase in test_phrases:
         print(f"Phrase: '{phrase}'")
         
-        # Get Layer 2 tokenization
-        result = executor.execute_layer2(phrase, enable_semantic_grounding=False)
+        # Get Layer 2 tokenization with semantic grounding enabled
+        result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
         if not result.success:
             print(f"  ❌ Tokenization failed")
             continue
@@ -220,17 +225,24 @@ def demo_complex_grounding():
         hypothesis = result.hypotheses[0]
         print(f"  Tokens: {[tok.word for tok in hypothesis.tokens]}")
         
-        # Ground the noun phrases
-        np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+        # Check for grounded Scene Objects
+        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, "grounding") and tok.grounding]
         
-        for np_token in np_tokens:
-            np_structure = hypothesis.np_replacements.get(np_token.word, None)
-            if np_structure:
-                print(f"  NP Structure: {np_structure}")
-                grounded_objects = grounder.ground_noun_phrase(np_structure)
-                print(f"  → Grounded to {len(grounded_objects)} objects:")
-                for obj in grounded_objects:
-                    print(f"    • {obj.object_id}")
+        if grounded_nps:
+            print(f"  → Grounded to {len(grounded_nps)} scene object(s):")
+            for np_token in grounded_nps:
+                obj = np_token.grounding['scene_object']
+                confidence = np_token.grounding['confidence']
+                print(f"    • {np_token.word} → {obj.object_id} (confidence: {confidence:.3f})")
+        else:
+            # Check for ungrounded NP tokens
+            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
+            if np_tokens:
+                print(f"  → Found {len(np_tokens)} ungrounded NP token(s):")
+                for np_token in np_tokens:
+                    print(f"    • {np_token.word} (not grounded)")
+            else:
+                print("  → No noun phrases or scene objects found")
         print()
 
 

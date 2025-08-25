@@ -77,15 +77,17 @@ class TestLayer3SpatialValidation(unittest.TestCase):
         
         Expected: Some PP attachment combinations should be filtered out as spatially invalid.
         """
-        # Position objects to create realistic spatial relationships
-        self.table.position = [0, 0, 0]    # Reference object
-        self.box.position = [0, 1, 0]      # Above table (valid for "above table")
-        self.pyramid.position = [2, 0, 0]  # Beside table (valid for "beside pyramid")  
-        self.sphere.position = [0, -2, 0]  # Below table (valid for "under sphere")
+        # Position scene objects to create realistic spatial relationships
+        # "move the box above the table right of the pyramid under the sphere to [3,4,5]"
+
+        self.box.position = [0, 1, 0]      # Box is above the table
+        self.table.position = [0, 0, 0]    # Table is reference
+        self.pyramid.position = [-2, 0, 0] # Table is right of the pyramid  
+        self.sphere.position = [-2, 2, 0]  # Pyramid is under the sphere
         
         # Update vector positions to match
-        self.table.vector['locX'], self.table.vector['locY'], self.table.vector['locZ'] = 0, 0, 0
         self.box.vector['locX'], self.box.vector['locY'], self.box.vector['locZ'] = 0, 1, 0
+        self.table.vector['locX'], self.table.vector['locY'], self.table.vector['locZ'] = 0, 0, 0
         self.pyramid.vector['locX'], self.pyramid.vector['locY'], self.pyramid.vector['locZ'] = 2, 0, 0
         self.sphere.vector['locX'], self.sphere.vector['locY'], self.sphere.vector['locZ'] = 0, -2, 0
         
@@ -169,8 +171,31 @@ class TestLayer3SpatialValidation(unittest.TestCase):
                     for j, token in enumerate(hypothesis.tokens):
                         token_type = type(token).__name__
                         
+                        # Check for grounding first - VectorSpace tokens can be grounded!
+                        if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
+                            # This is a grounded VectorSpace token (from Layer 2)
+                            grounded = token._grounded_phrase
+                            if hasattr(grounded, 'scene_object') and grounded.scene_object:
+                                obj_id = grounded.scene_object.object_id
+                                token_repr = f"{token.word} → SceneObjectPhrase('{obj_id}') - GROUNDED"
+                            else:
+                                token_repr = f"{token.word} → {type(grounded).__name__} - GROUNDED"
+                        
+                        # Check if this is a PP token with grounded content
+                        elif hasattr(token, '_original_pp') and token._original_pp:
+                            pp = token._original_pp
+                            if hasattr(pp, 'noun_phrase') and pp.noun_phrase:
+                                np = pp.noun_phrase
+                                if hasattr(np, 'scene_object') and np.scene_object:
+                                    obj_id = np.scene_object.object_id
+                                    token_repr = f"{token.word} → PP with grounded NP('{obj_id}') - PPSO"
+                                else:
+                                    token_repr = f"{token.word} → PP with {type(np).__name__} - PP"
+                            else:
+                                token_repr = f"{token.word} → PP (no NP) - PP"
+                        
                         # VectorSpace tokens (ungrounded)
-                        if hasattr(token, 'word') and token_type == 'VectorSpace':
+                        elif hasattr(token, 'word') and token_type == 'VectorSpace':
                             token_repr = f"{token.word} (VectorSpace - ungrounded)"
                         
                         # SceneObjectPhrase (grounded noun phrase)

@@ -15,7 +15,8 @@ Key patterns factored out:
 from typing import Tuple, Optional, Union
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import VectorSpace
-from engraf.pos.scene_object_phrase import SceneObjectPhrase
+from engraf.pos.prepositional_phrase import PrepositionalPhrase
+from engraf.pos.noun_phrase import NounPhrase
 from engraf.visualizer.scene.scene_object import SceneObject
 
 
@@ -127,69 +128,17 @@ class SpatialValidator:
         return new_x, new_y, new_z
     
     @staticmethod
-    def validate_spatial_relationship(prep_vector, obj1, obj2) -> float:
+    def validate_spatial_relationship(pp_token, obj1, obj2) -> float:
         """Validate a spatial relationship between two objects using proper spatial calculations.
         
         Args:
-            prep_vector: PP token containing spatial features (VectorSpace with locX, locY, locZ) or preposition string
+            pp_token: PP token containing spatial features (VectorSpace with locX, locY, locZ) or preposition string
             obj1: Reference object (obj2 is positioned relative to obj1)
             obj2: Object being positioned relative to obj1
             
         Returns:
             float: Validation score between 0.0 and 1.0
         """
-        try:
-            print(f"🔍 Prep vector for '{prep_vector.word}': locX={prep_vector['locX']}, locY={prep_vector['locY']}, locZ={prep_vector['locZ']}")
-            
-            # Calculate where obj2 should be positioned relative to obj1
-            expected_x, expected_y, expected_z = SpatialValidator.calculate_spatial_position(
-                obj2, obj1, prep_vector
-            )
-            print(f"🔍 Expected position for obj2 relative to obj1: [{expected_x}, {expected_y}, {expected_z}]")
-            
-            # Get actual position of obj2
-            actual_x = obj2.vector['locX'] if hasattr(obj2, 'vector') else (obj2.position[0] if hasattr(obj2, 'position') else 0)
-            actual_y = obj2.vector['locY'] if hasattr(obj2, 'vector') else (obj2.position[1] if hasattr(obj2, 'position') else 0)
-            actual_z = obj2.vector['locZ'] if hasattr(obj2, 'vector') else (obj2.position[2] if hasattr(obj2, 'position') else 0)
-            print(f"🔍 Actual position of obj2: [{actual_x}, {actual_y}, {actual_z}]")
-            
-            # Calculate distance between expected and actual positions
-            dx = expected_x - actual_x
-            dy = expected_y - actual_y
-            dz = expected_z - actual_z
-            distance = (dx*dx + dy*dy + dz*dz) ** 0.5
-            print(f"🔍 Distance between expected and actual: {distance}")
-            
-            # Convert distance to validation score (closer = higher score)
-            # Use object dimensions to determine reasonable tolerance
-            obj1_half_height, obj1_half_breadth, obj1_half_depth = SpatialValidator.get_object_half_scale(obj1)
-            obj2_half_height, obj2_half_breadth, obj2_half_depth = SpatialValidator.get_object_half_scale(obj2)
-            
-            # Tolerance based on object sizes
-            tolerance = max(obj1_half_height, obj1_half_breadth, obj1_half_depth, 
-                          obj2_half_height, obj2_half_breadth, obj2_half_depth) * 0.5
-            print(f"🔍 Tolerance: {tolerance}")
-            
-            if distance <= tolerance:
-                score = 1.0  # Perfect spatial relationship
-            elif distance <= tolerance * 3:
-                score = 0.8  # Good spatial relationship
-            elif distance <= tolerance * 6:
-                score = 0.5  # Acceptable spatial relationship
-            else:
-                score = 0.1  # Poor spatial relationship
-                
-            print(f"🔍 Final score from preposition vector validation: {score}")
-            return score
-                
-        except Exception as e:
-            print(f"🔍 Exception in preposition vector validation: {e}")
-            # Fallback to position-based validation if vector approach fails
-            return SpatialValidator._validate_using_positions(prep_vector, obj1, obj2)
-    
-    @staticmethod
-    def _validate_using_positions(pp_token: VectorSpace, obj1: SceneObject, obj2: SceneObject) -> float:
-        """Fallback validation using simple position comparison."""
         try:
             # Get positions 
             pos1 = obj1.position                

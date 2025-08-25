@@ -13,7 +13,23 @@ def build_pp_atn(pp:PrepositionalPhrase, ts:TokenStream):
     # PREP
     start.add_arc(is_preposition, lambda _, tok: pp.apply_preposition(tok), after_prep)
     
-    # Handle NounPhrase tokens from Layer 2 directly
-    after_prep.add_arc(is_noun_phrase_token, lambda _, tok: pp.apply_np(tok._original_np), end)
+    # Handle NounPhrase tokens from Layer 2 - preserve grounded scene objects
+    def apply_grounded_np(pp_obj, tok):
+        # Use grounded phrase if available (from Layer 2 semantic grounding), otherwise original NP
+        try:
+            grounded_phrase = tok._grounded_phrase
+            if grounded_phrase is not None:
+                pp_obj.apply_np(grounded_phrase)
+                return
+        except AttributeError:
+            pass
+        
+        try:
+            original_np = tok._original_np
+            pp_obj.apply_np(original_np)
+        except AttributeError:
+            pass
+    
+    after_prep.add_arc(is_noun_phrase_token, apply_grounded_np, end)
 
     return start, end

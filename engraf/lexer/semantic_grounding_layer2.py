@@ -12,7 +12,6 @@ import copy
 from itertools import product
 
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.pos.scene_object_phrase import SceneObjectPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.latn_tokenizer_layer2 import NPTokenizationHypothesis
@@ -24,7 +23,7 @@ class Layer2GroundingResult:
     success: bool
     confidence: float
     resolved_object: Optional[SceneObject] = None
-    scene_object_phrase: Optional[SceneObjectPhrase] = None  # The converted SO phrase
+    grounded_noun_phrase: Optional[NounPhrase] = None  # The NP with grounding info added
     description: str = ""
     alternative_matches: List[Tuple[float, SceneObject]] = None
     
@@ -71,15 +70,19 @@ class Layer2SemanticGrounder:
             # Best match is the first one (highest confidence)
             best_confidence, best_object = candidates[0]
             
-            # Create SceneObjectPhrase from the original NounPhrase
-            scene_object_phrase = SceneObjectPhrase.from_noun_phrase(np)
-            scene_object_phrase.resolve_to_scene_object(best_object)
+            # Add grounding information directly to the NounPhrase
+            grounded_np = copy.deepcopy(np)
+            grounded_np.grounding = {
+                'scene_object': best_object,
+                'confidence': best_confidence,
+                'type': 'scene_object'
+            }
             
             return Layer2GroundingResult(
                 success=True,
                 confidence=best_confidence,
                 resolved_object=best_object,
-                scene_object_phrase=scene_object_phrase,
+                grounded_noun_phrase=grounded_np,
                 description=f"Grounded NP '{np}' to {best_object.object_id}",
                 alternative_matches=candidates[1:]  # All except the best match
             )
@@ -100,15 +103,19 @@ class Layer2SemanticGrounder:
             else:
                 confidence = 1.0  # Perfect name match without semantic constraints
             
-            # Create SceneObjectPhrase from the original NounPhrase
-            scene_object_phrase = SceneObjectPhrase.from_noun_phrase(np)
-            scene_object_phrase.resolve_to_scene_object(matched_object)
+            # Add grounding information directly to the NounPhrase
+            grounded_np = copy.deepcopy(np)
+            grounded_np.grounding = {
+                'scene_object': matched_object,
+                'confidence': confidence,
+                'type': 'scene_object'
+            }
             
             return Layer2GroundingResult(
                 success=True,
                 confidence=confidence,
                 resolved_object=matched_object,
-                scene_object_phrase=scene_object_phrase,
+                grounded_noun_phrase=grounded_np,
                 description=f"Grounded NP '{np}' to {matched_object.object_id}"
             )
     
@@ -181,16 +188,20 @@ class Layer2SemanticGrounder:
                     if grounding_result.success:
                         if return_all_matches and grounding_result.alternative_matches:
                             # Include best match + alternatives
-                            options = [(grounding_result.confidence, grounding_result.resolved_object, grounding_result.scene_object_phrase)]
+                            options = [(grounding_result.confidence, grounding_result.resolved_object, grounding_result.grounded_noun_phrase)]
                             for conf, obj in grounding_result.alternative_matches:
-                                # Create scene object phrase for alternative
-                                alt_sop = SceneObjectPhrase.from_noun_phrase(np)
-                                alt_sop.resolve_to_scene_object(obj)
-                                options.append((conf, obj, alt_sop))
+                                # Create grounded noun phrase for alternative
+                                alt_np = copy.deepcopy(np)
+                                alt_np.grounding = {
+                                    'scene_object': obj,
+                                    'confidence': conf,
+                                    'type': 'scene_object'
+                                }
+                                options.append((conf, obj, alt_np))
                             np_grounding_options.append(options)
                         else:
                             # Single best match
-                            np_grounding_options.append([(grounding_result.confidence, grounding_result.resolved_object, grounding_result.scene_object_phrase)])
+                            np_grounding_options.append([(grounding_result.confidence, grounding_result.resolved_object, grounding_result.grounded_noun_phrase)])
                     else:
                         # No grounding found - use original NP
                         np_grounding_options.append([(0.5, None, np)])  # Ungrounded gets neutral score
@@ -210,6 +221,16 @@ class Layer2SemanticGrounder:
                         
                         # Attach grounded phrase to token
                         token._grounded_phrase = grounded_phrase
+                        
+                        # Update token's vector to have grounded information if it's a grounded NP
+                        if hasattr(grounded_phrase, 'grounding') and grounded_phrase.grounding:
+                            # Copy the grounded phrase vector but preserve original token dimensions
+                            original_vector = token.vector.copy()
+                            token.vector = grounded_phrase.vector.copy()
+                            
+                            # Preserve the NP dimension to maintain token type
+                            if "NP" in original_vector and original_vector["NP"] > 0:
+                                token.vector["NP"] = original_vector["NP"]
                         
                         # Update confidence
                         combo_confidence *= conf

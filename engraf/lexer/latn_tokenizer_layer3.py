@@ -49,7 +49,7 @@ def create_pp_token(pp: PrepositionalPhrase) -> VectorSpace:
     This creates a single token that represents the entire prepositional phrase,
     similar to how we create NounPhrase tokens in Layer 2.
     """
-    # Create a new token with the PP's semantic vector
+    # Create PP token (no more PPSO distinction)
     pp_token = VectorSpace()
     
     # Copy the semantic content from the PrepositionalPhrase

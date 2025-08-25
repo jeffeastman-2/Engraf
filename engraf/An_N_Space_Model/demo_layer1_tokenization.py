@@ -146,7 +146,8 @@ def demo_multi_hypothesis_generation(compounds):
             print(f"\n  Hypothesis {i}: {tokens}")
             print(f"    Confidence: {hyp.confidence:.3f}")
             print(f"    Strategy: {hyp.description}")
-            
+            for t in hyp.tokens:
+                print(f"      {t}")
             # Show what makes this hypothesis unique
             compound_tokens = [t.word for t in hyp.tokens if ' ' in t.word]
             if compound_tokens:

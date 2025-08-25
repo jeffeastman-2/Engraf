@@ -13,8 +13,7 @@ class NounPhrase():
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
         self.consumed_tokens = []  # All original tokens that were consumed to build this NP
         
-        # Static fields to replace dynamic attributes used in Layer 2/3
-        self.scene_object = None  # Expected by Layer 3 for spatial validation
+        self.grounding = None        # Set in L2 grounding
 
     def apply_determiner(self, tok):
         self.determiner = tok.word
@@ -131,7 +130,16 @@ class NounPhrase():
 
     def __repr__(self):
         consumed_words = [tok.word for tok in self.consumed_tokens]
-        parts = [f"noun={self.noun}", f"determiner={self.determiner}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
+        
+        # If grounded, show grounding information in a more readable format
+        if self.grounding and self.grounding.get('scene_object'):
+            scene_obj = self.grounding['scene_object']
+            confidence = self.grounding.get('confidence', 0.0)
+            grounded_desc = f"grounded→{scene_obj.name}@{confidence:.2f}"
+            parts = [f"noun={self.noun}", f"{grounded_desc}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
+        else:
+            parts = [f"noun={self.noun}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
+        
         return f"NP({', '.join(parts)})"
     
     def get_consumed_words(self):

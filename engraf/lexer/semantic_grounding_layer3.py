@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple, Union
 from dataclasses import dataclass
 
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
-from engraf.pos.scene_object_phrase import SceneObjectPhrase
+from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.latn_tokenizer_layer3 import PPTokenizationHypothesis
 
@@ -80,7 +80,7 @@ class Layer3SemanticGrounder:
             )
         
         # Handle different types of prepositional phrases
-        if pp.vector_text is not None and pp.vector_text:
+        if pp.vector and pp.vector.isa("vector"):
             # Vector coordinates like "at [1,2,3]"
             return self._ground_vector_location(pp)
         elif pp.preposition is not None and pp.noun_phrase is not None and pp.noun_phrase:
@@ -96,7 +96,7 @@ class Layer3SemanticGrounder:
     def _ground_vector_location(self, pp: PrepositionalPhrase) -> Layer3GroundingResult:
         """Ground a prepositional phrase with vector coordinates."""
         try:
-            # Extract coordinates from vector_text
+            # Extract coordinates from the PP's vector
             if pp.vector is not None and pp.vector:
                 # Use the PP's computed vector as the spatial location
                 location_vector = VectorSpace()
@@ -106,19 +106,19 @@ class Layer3SemanticGrounder:
                     value = pp.vector[dim]
                     if value != 0.0:
                         location_vector[dim] = value
-                location_vector.word = f"Location({pp.vector_text})"
+                location_vector.word = f"Location({pp.preposition})"
                 
                 return Layer3GroundingResult(
                     success=True,
                     confidence=1.0,
                     resolved_object=location_vector,
-                    description=f"Grounded PP '{pp}' to absolute location {pp.vector_text}"
+                    description=f"Grounded PP '{pp}' to absolute location from vector"
                 )
             else:
                 return Layer3GroundingResult(
                     success=False,
                     confidence=0.0,
-                    description=f"PP has vector_text but no computed vector: {pp}"
+                    description=f"PP has no computed vector: {pp}"
                 )
         except Exception as e:
             return Layer3GroundingResult(
@@ -135,7 +135,7 @@ class Layer3SemanticGrounder:
         has_grounded_object = False
         if pp.noun_phrase is not None and pp.noun_phrase:
             np = pp.noun_phrase
-            if np.scene_object is not None and np.scene_object:
+            if hasattr(np, 'grounding') and np.grounding is not None and np.grounding.get('scene_object') is not None:
                 has_grounded_object = True
                 
         if not has_grounded_object:
@@ -172,10 +172,11 @@ class Layer3SemanticGrounder:
             spatial_vector.locZ = pp.locZ
             
         # Get the actual scene object for reference
-        scene_obj_id = getattr(pp.noun_phrase.scene_object, 'object_id', 'unknown')
+        scene_object = pp.noun_phrase.grounding['scene_object'] if hasattr(pp.noun_phrase, 'grounding') and pp.noun_phrase.grounding else None
+        scene_obj_id = getattr(scene_object, 'object_id', 'unknown')
         
         # Add reference to the scene object and preposition
-        spatial_vector._reference_object = pp.noun_phrase.scene_object
+        spatial_vector._reference_object = scene_object
         spatial_vector._preposition = pp.preposition
             
         return Layer3GroundingResult(
@@ -254,42 +255,59 @@ class Layer3SemanticGrounder:
         return all_combinations
     
     def _validate_spatial_attachments(self, attachment_hypotheses):
-        """Pass 2: Validate PP attachments using spatial reasoning."""
+        """Pass 2: Validate PP attachments using spatial reasoning and immediately merge valid PPSOs."""
         validated = []
         
         for hypothesis in attachment_hypotheses:
-            is_valid = True
-            validation_scores = []
+            # First pass: validate all PP attachments and collect merge information
+            pp_validations = []  # List of (pp_token_idx, target_idx, spatial_score, should_merge)
             
-            # Check each PP attachment for spatial validity
-            for token in hypothesis.tokens:
-                if (token._attachment_info is not None and 
+            for i, token in enumerate(hypothesis.tokens):
+                if (hasattr(token, '_attachment_info') and token._attachment_info is not None and 
                     hasattr(token, 'word') and token.word and token.word.startswith('PP(')):
-                    
-                    # Extract preposition and noun phrase from PP token
-                    pp_content = token.word[3:-1]  # Remove 'PP(' and ')'
-                    prep, np_part = pp_content.split(' ', 1) if ' ' in pp_content else (pp_content, '')
                     
                     # Get attachment target
                     target_idx = token._attachment_info.get('attaches_to')
                     
                     # Apply prep-specific spatial validation using the PP token
                     spatial_score = self._validate_prep_spatial_relationship(token, target_idx, hypothesis)
-                    validation_scores.append(spatial_score)
+                    print(f"🔍 Spatial validation: PP '{token.word}' → score {spatial_score:.2f}")
                     
-                    print(f"🔍 Spatial validation: PP '{prep} {np_part}' → score {spatial_score:.2f}")
+                    should_merge = spatial_score >= 0.3 and target_idx is not None
+                    pp_validations.append((i, target_idx, spatial_score, should_merge))
                     
-                    # Filter out impossible relationships (score < 0.3 for stricter filtering)
-                    if spatial_score < 0.3:
+                    if not should_merge and spatial_score < 0.3:
                         print(f"❌ Filtering out combination due to low spatial score: {spatial_score:.2f}")
-                        is_valid = False
-                        break
             
-            if is_valid and validation_scores:
+            # Check if all PP attachments are valid
+            all_valid = all(validation[3] for validation in pp_validations)  # Check should_merge for all
+            
+            if all_valid and pp_validations:
+                # Second pass: perform merges and collect tokens to remove
+                tokens_to_remove = set()
+                
+                for pp_idx, target_idx, spatial_score, should_merge in pp_validations:
+                    if should_merge:
+                        pp_token = hypothesis.tokens[pp_idx]
+                        target_token = hypothesis.tokens[target_idx]
+                        
+                        # Merge PPSO into target NP
+                        self._merge_ppso_into_np(target_token, pp_token)
+                        tokens_to_remove.add(pp_idx)
+                        print(f"✅ Merged and removing PPSO: {pp_token.word}")
+                
+                # Third pass: create new token list without consumed PPSOs
+                new_tokens = [token for i, token in enumerate(hypothesis.tokens) if i not in tokens_to_remove]
+                hypothesis.tokens = new_tokens
+                print(f"🔧 Removed {len(tokens_to_remove)} PPSO tokens, {len(new_tokens)} tokens remain")
+                
                 # Update hypothesis confidence based on spatial validation
-                avg_spatial_score = sum(validation_scores) / len(validation_scores)
+                spatial_scores = [validation[2] for validation in pp_validations]
+                avg_spatial_score = sum(spatial_scores) / len(spatial_scores)
                 hypothesis.confidence = hypothesis.confidence * avg_spatial_score
                 validated.append(hypothesis)
+            else:
+                print(f"❌ Hypothesis rejected: not all PP attachments are spatially valid")
         
         # Sort by confidence (best first)
         validated.sort(key=lambda h: h.confidence, reverse=True)
@@ -393,7 +411,7 @@ class Layer3SemanticGrounder:
         return grounded_hypotheses
     
     def _validate_prep_spatial_relationship(self, pp_token, target_idx, hypothesis) -> float:
-        """Validate a specific prepositional relationship using grounded objects from Layer 2."""
+        """Validate a specific prepositional relationship using Layer 3 tokenization structure."""
         if target_idx is None:
             print(f"🔍 No target index for spatial validation")
             return 0.5  # Neutral score if no attachment
@@ -401,17 +419,28 @@ class Layer3SemanticGrounder:
         # Get the target token that the PP should attach to
         target_token = hypothesis.tokens[target_idx]
         
-        # Extract grounded objects from Layer 2 results
+        # Extract grounded objects from Layer 3 tokenization structure
         target_obj = None
-        if target_token._grounded_phrase is not None and target_token._grounded_phrase:
-            if target_token._grounded_phrase.grounded_objects is not None and target_token._grounded_phrase.grounded_objects:
-                target_obj = target_token._grounded_phrase.grounded_objects[0]
+        try:
+            grounded_phrase = target_token._grounded_phrase
+            if grounded_phrase is not None and hasattr(grounded_phrase, 'get_resolved_object'):
+                target_obj = grounded_phrase.get_resolved_object()
+        except AttributeError:
+            pass
         
-        # Extract object from PP token (should also be grounded by Layer 2)
+        # Extract object from PP token's PrepositionalPhrase structure
         pp_obj = None
-        if pp_token._grounded_phrase is not None and pp_token._grounded_phrase:
-            if pp_token._grounded_phrase.grounded_objects is not None and pp_token._grounded_phrase.grounded_objects:
-                pp_obj = pp_token._grounded_phrase.grounded_objects[0]
+        try:
+            pp = pp_token._original_pp
+            if pp is not None:
+                try:
+                    noun_phrase = pp.noun_phrase
+                    if noun_phrase is not None and hasattr(noun_phrase, 'get_resolved_object'):
+                        pp_obj = noun_phrase.get_resolved_object()
+                except AttributeError:
+                    pass
+        except AttributeError:
+            pass
         
         if not target_obj or not pp_obj:
             print(f"🔍 Missing grounded objects: target_obj={bool(target_obj)}, pp_obj={bool(pp_obj)}")
@@ -425,8 +454,12 @@ class Layer3SemanticGrounder:
             print(f"🔍 PP object position: {pp_obj.position}")
         
         # Apply prep-specific spatial tests using grounded objects
-        score = self._apply_prep_spatial_test(pp_token, target_obj, pp_obj)
-        print(f"🔍 Final spatial score: {score}")
+        try:
+            score = self._apply_prep_spatial_test(pp_token, target_obj, pp_obj)
+            print(f"🔍 Final spatial score: {score}")
+        except Exception as e:
+            print(f"🔍 Error in spatial test: {e}")
+            score = 0.0
         return score
     
     def _apply_prep_spatial_test(self, pp_token, obj1, obj2) -> float:
@@ -442,7 +475,7 @@ class Layer3SemanticGrounder:
         from engraf.utils.spatial_validation import SpatialValidator
                 
         # Use the correct SpatialValidator interface
-        return SpatialValidator.validate_spatial_relationship(pp_token, obj2, obj1, use_preposition_vector=True)
+        return SpatialValidator.validate_spatial_relationship(pp_token, obj2, obj1)
     
     def _extract_object_name_from_np(self, np_part: str):
         """Extract object name from noun phrase text."""
@@ -478,3 +511,36 @@ class Layer3SemanticGrounder:
                     prepositional_phrases.append(token._original_pp)
         
         return prepositional_phrases
+    
+    def _merge_ppso_into_np(self, target_token, ppso_token):
+        """Merge a validated PPSO into its target NP, creating spatial chain."""
+        try:
+            # Extract spatial relationship from PPSO
+            pp = ppso_token._original_pp
+            if pp is not None and pp.preposition is not None:
+                spatial_relationship = f"{pp.preposition}"
+                if pp.noun_phrase is not None:
+                    if hasattr(pp.noun_phrase, 'get_description'):
+                        np_desc = pp.noun_phrase.get_description()
+                    else:
+                        np_desc = str(pp.noun_phrase)
+                    spatial_relationship += f" {np_desc}"
+                
+                # Initialize spatial chain on target token if needed
+                if not hasattr(target_token, '_spatial_chain'):
+                    target_token._spatial_chain = []
+                target_token._spatial_chain.append(spatial_relationship)
+                
+                # Update target token's word representation to include spatial chain
+                if hasattr(target_token, 'word') and target_token.word:
+                    if target_token.word.startswith('NP(') and target_token.word.endswith(')'):
+                        # Extract original NP content
+                        original_content = target_token.word[3:-1]  # Remove 'NP(' and ')'
+                        # Add spatial relationship
+                        new_content = f"{original_content} {spatial_relationship}"
+                        target_token.word = f"NP({new_content})"
+                
+                print(f"🔗 Merged spatial relationship: {spatial_relationship}")
+                
+        except Exception as e:
+            print(f"❌ Error merging PPSO: {e}")

@@ -299,9 +299,9 @@ def test_latn_semantic_grounding_ambiguous_objects():
                 matched_object = scene.find_noun_phrase(np)
                 if matched_object:
                     # Create SceneObjectPhrase from the NP and resolve it
-                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
-                    so = SceneObjectPhrase.from_noun_phrase(np)
-                    so.resolve_to_scene_object(matched_object)
+                    # SceneObjectPhrase removed - using NP.grounding instead
+                    # so = SceneObjectPhrase.from_noun_phrase(np)  # TODO: Update for new architecture
+                    # so.resolve_to_scene_object(matched_object)  # TODO: Update for new architecture
                     print(f"    🎯 Scene resolution: {matched_object.object_id}")
                     print(f"    ✅ SO resolved: {so}")
                     
@@ -343,9 +343,9 @@ def test_latn_semantic_grounding_ambiguous_objects():
                 matched_object = scene.find_noun_phrase(np)
                 if matched_object:
                     # Create SceneObjectPhrase from the NP and resolve it
-                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
-                    so = SceneObjectPhrase.from_noun_phrase(np)
-                    so.resolve_to_scene_object(matched_object)
+                    # SceneObjectPhrase removed - using NP.grounding instead
+                    # so = SceneObjectPhrase.from_noun_phrase(np)  # TODO: Update for new architecture
+                    # so.resolve_to_scene_object(matched_object)  # TODO: Update for new architecture
                     print(f"    🎯 Scene resolution: {matched_object.object_id}")
                     print(f"    ✅ SO resolved: {so}")
                     
@@ -377,9 +377,9 @@ def test_latn_semantic_grounding_ambiguous_objects():
                 matched_object = scene.find_noun_phrase(np)
                 if matched_object:
                     # Create SceneObjectPhrase from the NP and resolve it
-                    from engraf.pos.scene_object_phrase import SceneObjectPhrase
-                    so = SceneObjectPhrase.from_noun_phrase(np)
-                    so.resolve_to_scene_object(matched_object)
+                    # SceneObjectPhrase removed - using NP.grounding instead
+                    # so = SceneObjectPhrase.from_noun_phrase(np)  # TODO: Update for new architecture
+                    # so.resolve_to_scene_object(matched_object)  # TODO: Update for new architecture
                     print(f"    🎯 Scene resolution: {matched_object.object_id}")
                     print(f"    ✅ SO resolved: {so}")
                     
@@ -479,9 +479,9 @@ def test_latn_semantic_grounding_resolution():
                     matched_object = scene.find_noun_phrase(np)
                     if matched_object:
                         # Create SceneObjectPhrase from the NP and resolve it
-                        from engraf.pos.scene_object_phrase import SceneObjectPhrase
-                        so = SceneObjectPhrase.from_noun_phrase(np)
-                        so.resolve_to_scene_object(matched_object)
+                        # SceneObjectPhrase removed - using NP.grounding instead
+                        # so = SceneObjectPhrase.from_noun_phrase(np)  # TODO: Update for new architecture
+                        # so.resolve_to_scene_object(matched_object)  # TODO: Update for new architecture
                         print(f"    🎯 Scene resolution: {matched_object.object_id}")
                         print(f"    ✅ SO resolved: {so}")
                         

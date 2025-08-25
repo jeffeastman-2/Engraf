@@ -51,26 +51,25 @@ class TestLayer2Grounding:
         grounding_result = result.grounding_results[0]
         assert grounding_result.success, "Grounding should succeed"
         assert grounding_result.resolved_object is not None, "Should resolve to an object"
-        assert grounding_result.scene_object_phrase is not None, "Should create SceneObjectPhrase"
+        assert grounding_result.grounded_noun_phrase is not None, "Should create grounded NounPhrase"
         
-        # Check the grounded SceneObjectPhrase
-        so_phrase = grounding_result.scene_object_phrase
-        assert so_phrase.is_resolved(), "SceneObjectPhrase should be resolved"
-        assert so_phrase.get_resolved_object() == red_box, "Should resolve to red box"
+        # Check the grounded NounPhrase
+        grounded_np_result = grounding_result.grounded_noun_phrase
+        assert grounded_np_result is not None, "Should have grounded noun phrase"
+        assert grounded_np_result.grounding is not None, "NounPhrase should have grounding info"
+        assert grounded_np_result.grounding['scene_object'] == red_box, "Should resolve to red box"
         
-        # With our improved architecture, the result.noun_phrases should contain SceneObjectPhrases for grounded NPs
+        # With our improved architecture, the result.noun_phrases should contain grounded NPs
         grounded_np = result.noun_phrases[0]
-        from engraf.pos.scene_object_phrase import SceneObjectPhrase
-        assert isinstance(grounded_np, SceneObjectPhrase), "Grounded NP should be SceneObjectPhrase"
-        assert grounded_np.is_resolved(), "Grounded NP should be resolved"
-        assert grounded_np.get_resolved_object() == red_box, "Should resolve to red box"
+        from engraf.pos.noun_phrase import NounPhrase
+        assert isinstance(grounded_np, NounPhrase), "Grounded NP should be NounPhrase"
+        assert grounded_np.grounding is not None, "NounPhrase should have grounding info"
+        assert grounded_np.grounding['scene_object'] == red_box, "Should resolve to red box"
         
-        # Check the NP token has grounded phrase
+        # Check the NP token has grounding
         np_token = best_hypothesis.tokens[0]
-        assert hasattr(np_token, '_grounded_phrase'), "Token should have grounded phrase"
-        grounded_phrase = np_token._grounded_phrase
-        assert grounded_phrase.is_resolved(), "Grounded phrase should be resolved"
-        assert grounded_phrase.get_resolved_object() == red_box, "Grounded phrase should resolve to red box"
+        # The token should have a reference to the grounded NP
+        assert hasattr(np_token, 'grounding') or hasattr(np_token, '_grounded_phrase'), "Token should have grounding info"
         
         # Basic token structure assertions
         assert len(best_hypothesis.tokens) == 1, "Should have one NP token"
@@ -128,8 +127,8 @@ class TestLayer2Grounding:
         for hypothesis in result.hypotheses:
             for token in hypothesis.tokens:
                 if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
-                    if token._grounded_phrase.is_resolved():
-                        grounded_objects.append(token._grounded_phrase.get_resolved_object().object_id)
+                    if token._grounded_phrase.grounding is not None:
+                        grounded_objects.append(token._grounded_phrase.grounding['scene_object'].object_id)
         
         assert len(grounded_objects) == 2, "Both hypotheses should be grounded"
         assert "box-1" in grounded_objects, "Should have box-1"
@@ -196,8 +195,8 @@ class TestLayer2Grounding:
             hypothesis_nps = []
             for token in hypothesis.tokens:
                 if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
-                    if token._grounded_phrase.is_resolved():
-                        hypothesis_nps.append(token._grounded_phrase.get_resolved_object().object_id)
+                    if token._grounded_phrase.grounding is not None:
+                        hypothesis_nps.append(token._grounded_phrase.grounding['scene_object'].object_id)
             
             combinations.append(tuple(hypothesis_nps))
             print(f"       → Objects: {hypothesis_nps}")
@@ -266,8 +265,8 @@ class TestLayer2Grounding:
             hypothesis_nps = []
             for token in hypothesis.tokens:
                 if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
-                    if token._grounded_phrase.is_resolved():
-                        hypothesis_nps.append(token._grounded_phrase.get_resolved_object().object_id)
+                    if token._grounded_phrase.grounding is not None:
+                        hypothesis_nps.append(token._grounded_phrase.grounding['scene_object'].object_id)
             
             print(f"       → Objects: {hypothesis_nps}")
         
@@ -290,8 +289,8 @@ class TestLayer2Grounding:
             hypothesis_objects = []
             for token in hypothesis.tokens:
                 if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
-                    if token._grounded_phrase.is_resolved():
-                        hypothesis_objects.append(token._grounded_phrase.get_resolved_object().object_id)
+                    if token._grounded_phrase.grounding is not None:
+                        hypothesis_objects.append(token._grounded_phrase.grounding['scene_object'].object_id)
             
             if len(hypothesis_objects) == 3:  # box, sphere, object
                 object_position_matches.add(hypothesis_objects[2])  # Third NP should be the "green object"

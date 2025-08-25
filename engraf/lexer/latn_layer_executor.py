@@ -229,15 +229,15 @@ class LATNLayerExecutor:
             # Extract PrepositionalPhrase objects
             prepositional_phrases = self.layer3_grounder.extract_prepositional_phrases(layer3_hypotheses) if self.layer3_grounder else []
             
-            # Two-pass PP attachment resolution
+            # Layer 3 grounding - separate from tokenization
             if enable_semantic_grounding and self.layer3_grounder:
-                # Use Layer 3 grounder for 2-pass PP attachment processing
-                layer3_hypotheses = self.layer3_grounder.process_pp_attachments(layer3_hypotheses, return_all_matches)
-                
-                # Ground the validated prepositional phrases
+                # Ground the prepositional phrases (spatial validation happens here)
                 grounding_results = self.layer3_grounder.ground_multiple(
                     prepositional_phrases, return_all_matches=return_all_matches
                 )
+                
+                # Note: PP attachment resolution is part of grounding, not tokenization
+                # The tokenization already created PP and PPSO tokens appropriately
             else:
                 # No grounding - use original hypotheses
                 grounding_results = []

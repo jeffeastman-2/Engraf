@@ -67,7 +67,7 @@ class TestLayer3SemanticGrounding:
         np = NounPhrase("table")
         np.determiner = "the"
         np.vector = vector_from_features("noun")
-        np.scene_object = self.table  # Connect to scene object via our static field
+        np.grounding = {"scene_object": self.table, "confidence": 1.0}  # Connect to scene object via our static field
         
         # Create PP "on the table"
         pp = PrepositionalPhrase()
@@ -123,7 +123,7 @@ class TestLayer3SemanticGrounding:
         np = NounPhrase("table")
         np.determiner = "the"
         np.vector = vector_from_features("noun")
-        np.scene_object = self.table  # Connect to scene object via our static field
+        np.grounding = {"scene_object": self.table, "confidence": 1.0}  # Connect to scene object via our static field
         
         pp2 = PrepositionalPhrase()
         pp2.preposition = "above"

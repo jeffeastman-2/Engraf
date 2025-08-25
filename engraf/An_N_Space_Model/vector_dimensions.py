@@ -14,7 +14,6 @@ VECTOR_DIMENSIONS = [
     "assembly",  # assembly/compound objects (house, car, table_setting)
     "unknown",   # unrecognized tokens that don't match vocabulary
     "NP",        # noun phrase tokens (Layer 2 composite tokens)
-    "SO",        # scene object tokens are bound NPs to existing scene objects (Layer 2 composite tokens)
     "PP",        # prepositional phrase tokens (Layer 3 composite tokens)
     "VP",        # verb phrase tokens (Layer 4 composite tokens)
     
