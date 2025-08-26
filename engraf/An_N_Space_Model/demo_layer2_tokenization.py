@@ -57,17 +57,19 @@ def demo_basic_noun_phrase_formation():
                 token_words = [t.word for t in hyp.tokens]
                 print(f"  {i}. Tokens: {token_words}")
                 print(f"     Confidence: {hyp.confidence:.3f}")
-                
+                # Print all tokens using the new method
+                hyp.print_tokens()
+
                 # Show noun phrase replacements
-                if hyp.np_replacements:
-                    print(f"     NP Replacements: {len(hyp.np_replacements)}")
-                    for j, np_replacement in enumerate(hyp.np_replacements, 1):
-                        print(f"       {j}. {np_replacement}")
+                #if hyp.replacements:
+                #    print(f"     NP Replacements: {len(hyp.replacements)}")
+                #    for j, np_replacement in enumerate(hyp.replacements, 1):
+                #        print(f"       {j}. {np_replacement}")
                 
                 # Show any NP tokens found
-                np_tokens = [tok for tok in hyp.tokens if tok.isa("NP")]
-                if np_tokens:
-                    print(f"     NP Tokens: {[tok.word for tok in np_tokens]}")
+                #np_tokens = [tok for tok in hyp.tokens if tok.isa("NP")]
+                #if np_tokens:
+                #    print(f"     NP Tokens: {[tok.word for tok in np_tokens]}")
         else:
             print("❌ Layer 2 processing failed")
 
@@ -101,8 +103,8 @@ def demo_adjective_ordering():
             print(f"Tokens: {token_words}")
             
             # Show noun phrase structure
-            if best_hyp.np_replacements:
-                for j, np_replacement in enumerate(best_hyp.np_replacements, 1):
+            if best_hyp.replacements:
+                for j, np_replacement in enumerate(best_hyp.replacements, 1):
                     print(f"NP {j}: {np_replacement}")
                     
                     # Show adjective ordering if available
@@ -142,8 +144,8 @@ def demo_determiner_handling():
             print(f"Result: {[t.word for t in best_hyp.tokens]}")
             
             # Show determiner analysis
-            if best_hyp.np_replacements:
-                for j, np_replacement in enumerate(best_hyp.np_replacements, 1):
+            if best_hyp.replacements:
+                for j, np_replacement in enumerate(best_hyp.replacements, 1):
                     print(f"NP {j}: {np_replacement}")
                     
                     # Show determiner information
@@ -184,10 +186,12 @@ def demo_multi_hypothesis_noun_phrases():
             for i, hyp in enumerate(result.hypotheses, 1):
                 token_words = [t.word for t in hyp.tokens]
                 print(f"  {i}. {token_words} (confidence: {hyp.confidence:.3f})")
-                
+                # Print all tokens using the new method
+                hyp.print_tokens()
+
                 # Show the interpretation
-                if hyp.np_replacements:
-                    for j, np_replacement in enumerate(hyp.np_replacements, 1):
+                if hyp.replacements:
+                    for j, np_replacement in enumerate(hyp.replacements, 1):
                         print(f"     → NP {j}: {np_replacement}")
         else:
             print("❌ Processing failed")
@@ -233,9 +237,9 @@ def main():
     
     # Run the demonstrations
     demo_basic_noun_phrase_formation()
-    demo_adjective_ordering()
-    demo_determiner_handling()
-    demo_multi_hypothesis_noun_phrases()
+    #demo_adjective_ordering()
+    #demo_determiner_handling()
+    #demo_multi_hypothesis_noun_phrases()
     
     print("\n" + "=" * 60)
     print("Demo complete! Layer 2 successfully demonstrated:")

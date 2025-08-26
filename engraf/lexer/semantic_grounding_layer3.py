@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
-from engraf.lexer.latn_tokenizer_layer3 import PPTokenizationHypothesis
+from engraf.lexer.hypothesis import TokenizationHypothesis
 
 
 @dataclass
@@ -56,9 +56,10 @@ class Layer3SemanticGrounder:
         
         # Pass 3: Semantic grounding for validated attachments
         if validated_hypotheses:
-            grounded_hypotheses = self._ground_validated_attachments(validated_hypotheses)
-            print(f"🎯 Pass 3: Semantic grounding complete")
-            return grounded_hypotheses
+            # For now, return the validated hypotheses since PP merging already happened in validation
+            # The _merge_ppso_into_np method in _validate_spatial_attachments already did the work
+            print(f"🎯 Pass 3: Returning validated hypotheses with merged PPs")
+            return validated_hypotheses
         
         return layer3_hypotheses
     
@@ -277,37 +278,43 @@ class Layer3SemanticGrounder:
                     pp_validations.append((i, target_idx, spatial_score, should_merge))
                     
                     if not should_merge and spatial_score < 0.3:
-                        print(f"❌ Filtering out combination due to low spatial score: {spatial_score:.2f}")
+                        print(f"❌ PP attachment failed spatial validation: {spatial_score:.2f} - leaving in hypothesis")
             
-            # Check if all PP attachments are valid
-            all_valid = all(validation[3] for validation in pp_validations)  # Check should_merge for all
-            
-            if all_valid and pp_validations:
-                # Second pass: perform merges and collect tokens to remove
+            # Process valid PP attachments (don't require all to be valid)
+            if pp_validations:
+                # Second pass: perform merges for valid attachments only
                 tokens_to_remove = set()
+                valid_attachments = 0
                 
                 for pp_idx, target_idx, spatial_score, should_merge in pp_validations:
                     if should_merge:
                         pp_token = hypothesis.tokens[pp_idx]
                         target_token = hypothesis.tokens[target_idx]
                         
-                        # Merge PPSO into target NP
+                        # Merge PP into target NP
                         self._merge_ppso_into_np(target_token, pp_token)
                         tokens_to_remove.add(pp_idx)
-                        print(f"✅ Merged and removing PPSO: {pp_token.word}")
+                        valid_attachments += 1
+                        print(f"✅ Merged and removing PP: {pp_token.word}")
                 
-                # Third pass: create new token list without consumed PPSOs
+                # Third pass: create new token list without consumed PPs
                 new_tokens = [token for i, token in enumerate(hypothesis.tokens) if i not in tokens_to_remove]
                 hypothesis.tokens = new_tokens
-                print(f"🔧 Removed {len(tokens_to_remove)} PPSO tokens, {len(new_tokens)} tokens remain")
                 
-                # Update hypothesis confidence based on spatial validation
-                spatial_scores = [validation[2] for validation in pp_validations]
-                avg_spatial_score = sum(spatial_scores) / len(spatial_scores)
-                hypothesis.confidence = hypothesis.confidence * avg_spatial_score
+                if valid_attachments > 0:
+                    print(f"🔧 Processed {valid_attachments} valid PP attachments, {len(new_tokens)} tokens remain")
+                    # Update hypothesis confidence based on valid spatial validations only
+                    valid_scores = [validation[2] for validation in pp_validations if validation[3]]
+                    if valid_scores:
+                        avg_spatial_score = sum(valid_scores) / len(valid_scores)
+                        hypothesis.confidence = hypothesis.confidence * avg_spatial_score
+                else:
+                    print(f"🔧 No valid PP attachments found, keeping original hypothesis")
+                
                 validated.append(hypothesis)
             else:
-                print(f"❌ Hypothesis rejected: not all PP attachments are spatially valid")
+                # No PP validations to process - keep original hypothesis
+                validated.append(hypothesis)
         
         # Sort by confidence (best first)
         validated.sort(key=lambda h: h.confidence, reverse=True)
@@ -316,99 +323,22 @@ class Layer3SemanticGrounder:
     def _ground_validated_attachments(self, validated_hypotheses):
         """Ground validated PP attachments by enhancing existing SceneObjectPhrases.
         
+        NOTE: This method is currently disabled as we're using the new NP.preps approach
+        instead of the SceneObjectPhrase approach.
+        
         Args:
             validated_hypotheses: List of hypotheses with validated PP attachments
             
         Returns:
             List of hypotheses with enhanced SceneObjectPhrases
         """
-        grounded_hypotheses = []
+        # TODO: Update this method to work with the new NP.preps approach
+        # For now, just return the input hypotheses since PP merging already happened
+        return validated_hypotheses
         
-        for hypothesis in validated_hypotheses:
-            grounded_tokens = []
-            pp_attachments = []  # Track PP tokens that need to be embedded
-            
-            # First pass: collect attachment information
-            for i, token in enumerate(hypothesis.tokens):
-                if (token._attachment_info is not None and 
-                    hasattr(token, 'word') and token.word and token.word.startswith('PP(')):
-                    
-                    target_idx = token._attachment_info.get('attaches_to')
-                    if target_idx is not None:
-                        pp_attachments.append((i, target_idx, token))
-                        print(f"[Layer3] Found PP attachment: token[{i}] '{token}' -> target[{target_idx}]")
-            
-            # Second pass: create grounded tokens
-            consumed_indices = set()  # Track PP tokens that have been consumed
-            
-            for i, token in enumerate(hypothesis.tokens):
-                if i in consumed_indices:
-                    continue  # Skip PP tokens that have been consumed
-                
-                # Check if this token is a target for PP attachments
-                attachments_for_this_token = [
-                    (pp_idx, pp_token) for pp_idx, target_idx, pp_token in pp_attachments 
-                    if target_idx == i
-                ]
-                
-                if attachments_for_this_token:
-                    # Get or create SceneObjectPhrase for this token
-                    if token._grounded_phrase is not None and isinstance(token._grounded_phrase, SceneObjectPhrase):
-                        # Token was grounded in Layer 2 - enhance existing SceneObjectPhrase
-                        scene_obj_phrase = token._grounded_phrase
-                        print(f"[Layer3] Found existing SceneObjectPhrase from Layer 2: {scene_obj_phrase}")
-                    else:
-                        # Token not grounded in Layer 2 - create new SceneObjectPhrase
-                        if hasattr(token, 'word') and token.word and token.word.startswith('NP('):
-                            object_name = token.word[3:-1]  # Remove 'NP(' and ')'
-                        else:
-                            object_name = str(token)
-                        
-                        scene_obj_phrase = SceneObjectPhrase(head_noun=object_name)
-                        print(f"[Layer3] Created new SceneObjectPhrase: {scene_obj_phrase}")
-                    
-                    # Add spatial relationships to the SceneObjectPhrase
-                    for pp_idx, pp_token in attachments_for_this_token:
-                        # Extract preposition and object from PP token
-                        pp_content = pp_token.word[3:-1]  # Remove 'PP(' and ')'
-                        prep, np_part = pp_content.split(' ', 1) if ' ' in pp_content else (pp_content, '')
-                        
-                        # Create PrepositionalPhrase for the spatial relationship
-                        prep_phrase = PrepositionalPhrase()
-                        prep_phrase.preposition = prep
-                        prep_phrase.noun_phrase = np_part
-                        prep_phrase.spatial_vector = getattr(pp_token, 'spatial_vector', None)
-                        
-                        # Add to spatial relationships (initialize if needed)
-                        if scene_obj_phrase.spatial_relationships is None:
-                            scene_obj_phrase.spatial_relationships = []
-                        scene_obj_phrase.spatial_relationships.append(prep_phrase)
-                        consumed_indices.add(pp_idx)  # Mark PP token as consumed
-                        
-                        print(f"[Layer3] Added PrepositionalPhrase: {prep} {np_part}")
-                    
-                    # Keep the original VectorSpace token but enhance its _grounded_phrase
-                    enhanced_token = token  # Keep the VectorSpace token
-                    enhanced_token._grounded_phrase = scene_obj_phrase  # Enhance with spatial relationships
-                    grounded_tokens.append(enhanced_token)
-                    print(f"[Layer3] Enhanced VectorSpace token with SceneObjectPhrase: {scene_obj_phrase}")
-                    
-                else:
-                    # Token is not a target for PP attachment - keep original VectorSpace token
-                    grounded_tokens.append(token)
-                    print(f"[Layer3] Kept original token: {type(token).__name__}: {token}")
-            
-            # Create new hypothesis with grounded tokens
-            from copy import deepcopy
-            grounded_hypothesis = deepcopy(hypothesis)
-            grounded_hypothesis.tokens = grounded_tokens
-            grounded_hypotheses.append(grounded_hypothesis)
-            
-            print(f"[Layer3] Grounded hypothesis: {len(grounded_tokens)} tokens (was {len(hypothesis.tokens)})")
-            for i, token in enumerate(grounded_tokens):
-                print(f"  [{i}] {type(token).__name__}: {token}")
-        
-        return grounded_hypotheses
+        # Old SceneObjectPhrase code commented out:
+        # grounded_hypotheses = []
+        # ... (rest of old code)
     
     def _validate_prep_spatial_relationship(self, pp_token, target_idx, hypothesis) -> float:
         """Validate a specific prepositional relationship using Layer 3 tokenization structure."""
@@ -494,7 +424,7 @@ class Layer3SemanticGrounder:
                 return self._extract_object_name_from_np(content)
         return None
     
-    def extract_prepositional_phrases(self, layer3_hypotheses: List[PPTokenizationHypothesis]) -> List[PrepositionalPhrase]:
+    def extract_prepositional_phrases(self, layer3_hypotheses: List[TokenizationHypothesis]) -> List[PrepositionalPhrase]:
         """Extract PrepositionalPhrase objects from Layer 3 hypotheses.
         
         Args:
@@ -513,34 +443,51 @@ class Layer3SemanticGrounder:
         return prepositional_phrases
     
     def _merge_ppso_into_np(self, target_token, ppso_token):
-        """Merge a validated PPSO into its target NP, creating spatial chain."""
+        """Merge a validated PP into its target NP using proper NounPhrase.apply_pp method."""
         try:
-            # Extract spatial relationship from PPSO
+            # Get the original PrepositionalPhrase from the PP token
             pp = ppso_token._original_pp
-            if pp is not None and pp.preposition is not None:
-                spatial_relationship = f"{pp.preposition}"
-                if pp.noun_phrase is not None:
-                    if hasattr(pp.noun_phrase, 'get_description'):
-                        np_desc = pp.noun_phrase.get_description()
-                    else:
-                        np_desc = str(pp.noun_phrase)
-                    spatial_relationship += f" {np_desc}"
+            if pp is None:
+                print(f"❌ No original PP found in PP token: {ppso_token.word}")
+                return
                 
-                # Initialize spatial chain on target token if needed
-                if not hasattr(target_token, '_spatial_chain'):
-                    target_token._spatial_chain = []
-                target_token._spatial_chain.append(spatial_relationship)
+            # Get the original NounPhrase from the target NP token
+            if not hasattr(target_token, '_original_np') or target_token._original_np is None:
+                print(f"❌ No original NP found in target token: {target_token.word}")
+                return
                 
-                # Update target token's word representation to include spatial chain
-                if hasattr(target_token, 'word') and target_token.word:
-                    if target_token.word.startswith('NP(') and target_token.word.endswith(')'):
-                        # Extract original NP content
-                        original_content = target_token.word[3:-1]  # Remove 'NP(' and ')'
-                        # Add spatial relationship
-                        new_content = f"{original_content} {spatial_relationship}"
-                        target_token.word = f"NP({new_content})"
-                
-                print(f"🔗 Merged spatial relationship: {spatial_relationship}")
+            target_np = target_token._original_np
+            
+            # Use the proper NounPhrase.apply_pp method to integrate the PP
+            target_np.apply_pp(pp)
+            
+            # Update the target token's word representation to show the integrated PP
+            if hasattr(target_token, 'word') and target_token.word:
+                if target_token.word.startswith('NP(') and target_token.word.endswith(')'):
+                    # Extract original NP content
+                    original_content = target_token.word[3:-1]  # Remove 'NP(' and ')'
+                    # Add PP description
+                    pp_desc = f"{pp.preposition}"
+                    if pp.noun_phrase:
+                        if hasattr(pp.noun_phrase, 'get_original_text'):
+                            pp_desc += f" {pp.noun_phrase.get_original_text()}"
+                        else:
+                            pp_desc += f" {str(pp.noun_phrase)}"
+                    
+                    new_content = f"{original_content} PP({pp_desc})"
+                    target_token.word = f"NP({new_content})"
+            
+            # Update the target token's vector to reflect the integrated PP
+            # The apply_pp method already updated the NounPhrase vector, so sync it
+            target_token.clear()  # Clear existing vector data
+            new_vector = target_np.to_vector()
+            for dim, value in new_vector.items():
+                if value != 0.0:
+                    target_token[dim] = value
+                    
+            print(f"🔗 Properly merged PP into NP: {pp.preposition} -> {target_token.word}")
                 
         except Exception as e:
-            print(f"❌ Error merging PPSO: {e}")
+            print(f"❌ Error merging PP into NP: {e}")
+            import traceback
+            traceback.print_exc()

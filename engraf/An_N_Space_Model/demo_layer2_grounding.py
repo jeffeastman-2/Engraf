@@ -79,28 +79,17 @@ def demo_specific_object_grounding():
             print(f"  ❌ Tokenization failed: {result.description}")
             continue
             
-        # Show the tokenization result
-        hypothesis = result.hypotheses[0]
-        print(f"  Tokens: {[tok.word for tok in hypothesis.tokens]}")
-        
-        # Check for grounded Scene Objects
-        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, 'grounding') and tok.grounding]
-        
-        if grounded_nps:
-            print(f"  → Grounded to {len(grounded_nps)} scene object(s):")
-            for np_token in grounded_nps:
-                obj = np_token.grounding['scene_object']
-                confidence = np_token.grounding['confidence']
-                print(f"    • {np_token.word} → {obj.object_id} (confidence: {confidence:.3f})")
-        else:
-            # Check for ungrounded NP tokens
-            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
-            if np_tokens:
-                print(f"  → Found {len(np_tokens)} ungrounded NP token(s):")
-                for np_token in np_tokens:
-                    print(f"    • {np_token.word} (not grounded)")
-            else:
-                print("  → No noun phrases or scene objects found")
+        # Show the tokenization result - let the __repr__ methods handle grounding display
+        print(f"  Results: {len(result.hypotheses)} hypothesis(es)")
+        for i, hypothesis in enumerate(result.hypotheses):
+            print(f"    Hypothesis {i+1} (confidence: {hypothesis.confidence:.3f}):")
+            print(f"      Tokens: {[tok.word for tok in hypothesis.tokens]}")
+            # Print all tokens using the new method
+            hypothesis.print_tokens()
+
+            #for j, token in enumerate(hypothesis.tokens):
+            #    if token.isa("NP"):
+            #        print(f"        [{j}] {token._original_np if hasattr(token, '_original_np') else 'No original NP'}")
         print()
 
 
@@ -111,7 +100,6 @@ def demo_ambiguous_grounding():
     print()
     
     scene = setup_demo_scene()
-    grounder = Layer2SemanticGrounder(scene)
     executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
@@ -123,31 +111,19 @@ def demo_ambiguous_grounding():
     for phrase in test_phrases:
         print(f"Phrase: '{phrase}'")
         
-        # Get Layer 2 tokenization with semantic grounding enabled
-        result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
+        # Get Layer 2 tokenization with semantic grounding enabled and return_all_matches=True
+        result = executor.execute_layer2(phrase, enable_semantic_grounding=True, return_all_matches=True)
         if not result.success:
-            print(f"  ❌ Tokenization failed")
+            print(f"  ❌ Tokenization failed: {result.description}")
             continue
             
-        # Check for grounded Scene Objects
-        hypothesis = result.hypotheses[0]
-        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, "grounding") and tok.grounding]
-        
-        if grounded_nps:
-            print(f"  → Found {len(grounded_nps)} grounded scene object(s):")
-            for np_token in grounded_nps:
-                obj = np_token.grounding['scene_object']
-                confidence = np_token.grounding['confidence']
-                print(f"    • {np_token.word} → {obj.object_id} (confidence: {confidence:.3f})")
-        else:
-            # Fall back to checking NP tokens (if grounding didn't convert them to SOs)
-            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
-            if np_tokens:
-                print(f"  → Found {len(np_tokens)} ungrounded NP token(s):")
-                for np_token in np_tokens:
-                    print(f"    • {np_token.word} (not grounded to scene objects)")
-            else:
-                print("  → No noun phrases or scene objects found")
+        # Show the tokenization result - should have multiple hypotheses for ambiguous phrases
+        print(f"  Results: {len(result.hypotheses)} hypothesis(es)")
+        for i, hypothesis in enumerate(result.hypotheses):
+            print(f"    Hypothesis {i+1} (confidence: {hypothesis.confidence:.3f}):")
+            print(f"      Tokens: {[tok.word for tok in hypothesis.tokens]}")
+            # Print all tokens using the new method that shows grounding info
+            hypothesis.print_tokens()
         print()
 
 
@@ -158,7 +134,6 @@ def demo_no_match_grounding():
     print()
     
     scene = setup_demo_scene()
-    grounder = Layer2SemanticGrounder(scene)
     executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
@@ -173,26 +148,16 @@ def demo_no_match_grounding():
         # Get Layer 2 tokenization with semantic grounding enabled
         result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
         if not result.success:
-            print(f"  ❌ Tokenization failed")
+            print(f"  ❌ Tokenization failed: {result.description}")
             continue
             
-        # Check for grounded Scene Objects
-        hypothesis = result.hypotheses[0]
-        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, "grounding") and tok.grounding]
-        
-        if grounded_nps:
-            print(f"  → Found {len(grounded_nps)} grounded scene object(s) (unexpected!)")
-            for np_token in grounded_nps:
-                print(f"    • {np_token.word}")
-        else:
-            # Check NP tokens to confirm they weren't grounded
-            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
-            if np_tokens:
-                print(f"  → Found {len(np_tokens)} ungrounded NP token(s) (as expected)")
-                for np_token in np_tokens:
-                    print(f"    • {np_token.word} (no matching objects in scene)")
-            else:
-                print("  → No noun phrases found")
+        # Show the tokenization result
+        print(f"  Results: {len(result.hypotheses)} hypothesis(es)")
+        for i, hypothesis in enumerate(result.hypotheses):
+            print(f"    Hypothesis {i+1} (confidence: {hypothesis.confidence:.3f}):")
+            print(f"      Tokens: {[tok.word for tok in hypothesis.tokens]}")
+            # Print all tokens using the new method that shows grounding info
+            hypothesis.print_tokens()
         print()
 
 
@@ -203,7 +168,6 @@ def demo_complex_grounding():
     print()
     
     scene = setup_demo_scene()
-    grounder = Layer2SemanticGrounder(scene)
     executor = LATNLayerExecutor(scene_model=scene)
     
     test_phrases = [
@@ -218,31 +182,16 @@ def demo_complex_grounding():
         # Get Layer 2 tokenization with semantic grounding enabled
         result = executor.execute_layer2(phrase, enable_semantic_grounding=True)
         if not result.success:
-            print(f"  ❌ Tokenization failed")
+            print(f"  ❌ Tokenization failed: {result.description}")
             continue
             
         # Show the tokenization result
-        hypothesis = result.hypotheses[0]
-        print(f"  Tokens: {[tok.word for tok in hypothesis.tokens]}")
-        
-        # Check for grounded Scene Objects
-        grounded_nps = [tok for tok in hypothesis.tokens if tok.isa("NP") and hasattr(tok, "grounding") and tok.grounding]
-        
-        if grounded_nps:
-            print(f"  → Grounded to {len(grounded_nps)} scene object(s):")
-            for np_token in grounded_nps:
-                obj = np_token.grounding['scene_object']
-                confidence = np_token.grounding['confidence']
-                print(f"    • {np_token.word} → {obj.object_id} (confidence: {confidence:.3f})")
-        else:
-            # Check for ungrounded NP tokens
-            np_tokens = [tok for tok in hypothesis.tokens if tok.isa("NP")]
-            if np_tokens:
-                print(f"  → Found {len(np_tokens)} ungrounded NP token(s):")
-                for np_token in np_tokens:
-                    print(f"    • {np_token.word} (not grounded)")
-            else:
-                print("  → No noun phrases or scene objects found")
+        print(f"  Results: {len(result.hypotheses)} hypothesis(es)")
+        for i, hypothesis in enumerate(result.hypotheses):
+            print(f"    Hypothesis {i+1} (confidence: {hypothesis.confidence:.3f}):")
+            print(f"      Tokens: {[tok.word for tok in hypothesis.tokens]}")
+            # Print all tokens using the new method that shows grounding info
+            hypothesis.print_tokens()
         print()
 
 

@@ -19,8 +19,7 @@ from typing import List, Optional
 from dataclasses import dataclass
 import copy
 
-from engraf.lexer.latn_tokenizer import TokenizationHypothesis  
-from engraf.lexer.latn_tokenizer_layer3 import PPTokenizationHypothesis
+from engraf.lexer.hypothesis import TokenizationHypothesis
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.vp import build_vp_atn
 from engraf.pos.verb_phrase import VerbPhrase
@@ -29,20 +28,7 @@ from engraf.utils.predicates import is_verb
 from engraf.utils.debug import debug_print
 
 
-@dataclass
-class VPTokenizationHypothesis:
-    """Extended tokenization hypothesis that includes VP token replacement."""
-    tokens: List[VectorSpace]
-    confidence: float
-    description: str
-    vp_replacements: List[tuple] = None  # List of (start_idx, end_idx, vp_token) tuples
-    
-    def __post_init__(self):
-        if self.vp_replacements is None:
-            self.vp_replacements = []
-
-
-def latn_tokenize_layer4(layer3_hypotheses: List[PPTokenizationHypothesis]) -> List[VPTokenizationHypothesis]:
+def latn_tokenize_layer4(layer3_hypotheses: List[TokenizationHypothesis]) -> List[TokenizationHypothesis]:
     """
     Apply Layer 4 VP tokenization to Layer 3 hypotheses.
     
@@ -79,7 +65,7 @@ def latn_tokenize_layer4(layer3_hypotheses: List[PPTokenizationHypothesis]) -> L
     return layer4_hypotheses
 
 
-def _find_verb_phrases_in_hypothesis(hyp: PPTokenizationHypothesis) -> List[VPTokenizationHypothesis]:
+def _find_verb_phrases_in_hypothesis(hyp: TokenizationHypothesis) -> List[TokenizationHypothesis]:
     """Find and replace verb phrases in a single hypothesis using greedy left-to-right parsing."""
     tokens = hyp.tokens[:]  # Copy tokens
     vp_replacements = []
@@ -111,11 +97,11 @@ def _find_verb_phrases_in_hypothesis(hyp: PPTokenizationHypothesis) -> List[VPTo
             i += 1
     
     # Create a single hypothesis with all VP replacements applied
-    vp_hyp = VPTokenizationHypothesis(
+    vp_hyp = TokenizationHypothesis(
         tokens=tokens,
         confidence=hyp.confidence * (0.9 ** len(vp_replacements)),  # Confidence penalty per VP
         description=f"VP parsing: {len(vp_replacements)} verb phrase(s) found",
-        vp_replacements=vp_replacements
+        replacements=vp_replacements
     )
     
     return [vp_hyp]
@@ -302,7 +288,7 @@ def _build_vp_vector(vp: VerbPhrase, vp_text: str) -> VectorSpace:
 
 
 # Utility function for extracting verb phrases from hypotheses
-def extract_verb_phrases(vp_hypotheses: List[VPTokenizationHypothesis]) -> List[VerbPhrase]:
+def extract_verb_phrases(vp_hypotheses: List[TokenizationHypothesis]) -> List[VerbPhrase]:
     """Extract VerbPhrase objects from VP tokenization hypotheses."""
     verb_phrases = []
     

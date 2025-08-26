@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.latn_tokenizer_layer4 import VPTokenizationHypothesis
+from engraf.lexer.hypothesis import TokenizationHypothesis
 
 
 @dataclass
@@ -33,7 +33,7 @@ class Layer4SemanticGrounder:
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
     
-    def extract_verb_phrases(self, layer4_hypotheses: List[VPTokenizationHypothesis]) -> List[VerbPhrase]:
+    def extract_verb_phrases(self, layer4_hypotheses: List[TokenizationHypothesis]) -> List[VerbPhrase]:
         """Extract VerbPhrase objects from Layer 4 hypotheses.
         
         Args:

@@ -14,7 +14,7 @@ from itertools import product
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.latn_tokenizer_layer2 import NPTokenizationHypothesis
+from engraf.lexer.hypothesis import TokenizationHypothesis
 
 
 @dataclass
@@ -132,7 +132,7 @@ class Layer2SemanticGrounder:
         
         return results
     
-    def extract_noun_phrases(self, layer2_hypotheses: List[NPTokenizationHypothesis]) -> List[NounPhrase]:
+    def extract_noun_phrases(self, layer2_hypotheses: List[TokenizationHypothesis]) -> List[NounPhrase]:
         """Extract NounPhrase objects from Layer 2 processing.
         
         The token stream is the single source of truth - NP tokens are already
@@ -158,8 +158,8 @@ class Layer2SemanticGrounder:
         
         return noun_phrases
     
-    def multiply_hypotheses_with_grounding(self, layer2_hypotheses: List[NPTokenizationHypothesis], 
-                                         return_all_matches: bool = False) -> Tuple[List[NPTokenizationHypothesis], List[Layer2GroundingResult]]:
+    def multiply_hypotheses_with_grounding(self, layer2_hypotheses: List[TokenizationHypothesis], 
+                                         return_all_matches: bool = False) -> Tuple[List[TokenizationHypothesis], List[Layer2GroundingResult]]:
         """Multiply hypotheses based on grounding results using two-pass algorithm.
         
         Pass 1: Collect all scene object matches for each NP in each hypothesis
@@ -229,8 +229,10 @@ class Layer2SemanticGrounder:
                             token.vector = grounded_phrase.vector.copy()
                             
                             # Preserve the NP dimension to maintain token type
-                            if "NP" in original_vector and original_vector["NP"] > 0:
-                                token.vector["NP"] = original_vector["NP"]
+                            from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+                            np_index = VECTOR_DIMENSIONS.index('NP')
+                            if original_vector[np_index] > 0:  # If original token was an NP
+                                token.vector[np_index] = original_vector[np_index]  # Preserve NP dimension
                         
                         # Update confidence
                         combo_confidence *= conf

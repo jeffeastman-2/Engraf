@@ -15,10 +15,10 @@ Refactored for clean separation of concerns:
 from typing import List, Optional, Tuple, Dict, Any
 from dataclasses import dataclass
 
-from engraf.lexer.latn_tokenizer import latn_tokenize, TokenizationHypothesis
-from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2, NPTokenizationHypothesis
-from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3, PPTokenizationHypothesis
-from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4, VPTokenizationHypothesis
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize, TokenizationHypothesis
+from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
+from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
+from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4
 from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder, Layer2GroundingResult
 from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer3GroundingResult
 from engraf.lexer.semantic_grounding_layer4 import Layer4SemanticGrounder, Layer4GroundingResult
@@ -41,7 +41,7 @@ class Layer1Result:
 class Layer2Result:
     """Result of Layer 2 execution (NP tokenization + grounding)."""
     layer1_result: Layer1Result
-    hypotheses: List[NPTokenizationHypothesis]
+    hypotheses: List[TokenizationHypothesis]
     noun_phrases: List[NounPhrase]
     grounding_results: List[Layer2GroundingResult]
     success: bool
@@ -53,7 +53,7 @@ class Layer2Result:
 class Layer3Result:
     """Result of Layer 3 execution (PP tokenization + grounding)."""
     layer2_result: Layer2Result
-    hypotheses: List[PPTokenizationHypothesis]
+    hypotheses: List[TokenizationHypothesis]
     prepositional_phrases: List[PrepositionalPhrase]
     grounding_results: List[Layer3GroundingResult]
     success: bool
@@ -65,7 +65,7 @@ class Layer3Result:
 class Layer4Result:
     """Result of Layer 4 execution (VP tokenization + execution)."""
     layer3_result: Layer3Result
-    hypotheses: List[VPTokenizationHypothesis]
+    hypotheses: List[TokenizationHypothesis]
     verb_phrases: List[VerbPhrase]
     success: bool
     confidence: float
@@ -208,8 +208,9 @@ class LATNLayerExecutor:
         Returns:
             Layer3Result with complete LATN processing results
         """
-        # First execute Layer 2 (which includes Layer 1)
-        layer2_result = self.execute_layer2(sentence, enable_semantic_grounding, return_all_matches)
+        # First execute Layer 2 (which includes Layer 1) - always enable grounding for Layer 2
+        # Layer 3 spatial validation requires grounded NP tokens from Layer 2
+        layer2_result = self.execute_layer2(sentence, enable_semantic_grounding=True, return_all_matches=return_all_matches)
         
         if not layer2_result.success:
             return Layer3Result(
@@ -229,26 +230,30 @@ class LATNLayerExecutor:
             # Extract PrepositionalPhrase objects
             prepositional_phrases = self.layer3_grounder.extract_prepositional_phrases(layer3_hypotheses) if self.layer3_grounder else []
             
-            # Layer 3 grounding - separate from tokenization
+            # Layer 3 grounding - process PP attachments with spatial validation
             if enable_semantic_grounding and self.layer3_grounder:
-                # Ground the prepositional phrases (spatial validation happens here)
-                grounding_results = self.layer3_grounder.ground_multiple(
-                    prepositional_phrases, return_all_matches=return_all_matches
+                # Process PP attachment combinations with spatial validation
+                grounded_hypotheses = self.layer3_grounder.process_pp_attachments(
+                    layer3_hypotheses, return_all_matches=return_all_matches
                 )
                 
-                # Note: PP attachment resolution is part of grounding, not tokenization
-                # The tokenization already created PP and PPSO tokens appropriately
+                # Use the grounded hypotheses as the final result
+                final_hypotheses = grounded_hypotheses
+                
+                # Create grounding results for compatibility (could be empty list)
+                grounding_results = []
             else:
                 # No grounding - use original hypotheses
+                final_hypotheses = layer3_hypotheses
                 grounding_results = []
             
             # Calculate confidence
-            layer3_confidence = layer3_hypotheses[0].confidence if layer3_hypotheses else layer2_result.confidence
+            layer3_confidence = final_hypotheses[0].confidence if final_hypotheses else layer2_result.confidence
             overall_confidence = (layer2_result.confidence + layer3_confidence) / 2
             
             return Layer3Result(
                 layer2_result=layer2_result,
-                hypotheses=layer3_hypotheses,
+                hypotheses=final_hypotheses,
                 prepositional_phrases=prepositional_phrases,
                 grounding_results=grounding_results,
                 success=True,

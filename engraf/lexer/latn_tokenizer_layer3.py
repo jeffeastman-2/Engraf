@@ -18,8 +18,7 @@ from typing import List, Optional
 from dataclasses import dataclass
 import copy
 
-from engraf.lexer.latn_tokenizer import TokenizationHypothesis  
-from engraf.lexer.latn_tokenizer_layer2 import NPTokenizationHypothesis
+from engraf.lexer.hypothesis import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_pp import run_pp
 from engraf.atn.pp import build_pp_atn
@@ -28,19 +27,6 @@ from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.utils.predicates import is_preposition
-
-
-@dataclass
-class PPTokenizationHypothesis:
-    """Extended tokenization hypothesis that includes PP token replacement."""
-    tokens: List[VectorSpace]
-    confidence: float
-    description: str
-    pp_replacements: List[tuple] = None  # List of (start_idx, end_idx, pp_token) tuples
-    
-    def __post_init__(self):
-        if self.pp_replacements is None:
-            self.pp_replacements = []
 
 
 def create_pp_token(pp: PrepositionalPhrase) -> VectorSpace:
@@ -163,7 +149,7 @@ def replace_pp_sequences(tokens: List[VectorSpace], pp_sequences: List[tuple]) -
     return new_tokens
 
 
-def latn_tokenize_layer3(layer2_hypotheses: List[NPTokenizationHypothesis]) -> List[PPTokenizationHypothesis]:
+def latn_tokenize_layer3(layer2_hypotheses: List[TokenizationHypothesis]) -> List[TokenizationHypothesis]:
     """LATN Layer 3: Generate tokenization hypotheses with PP token replacement.
     
     This function:
@@ -195,20 +181,20 @@ def latn_tokenize_layer3(layer2_hypotheses: List[NPTokenizationHypothesis]) -> L
             pp_count = len(pp_sequences)
             description = f"{base_hyp.description} + {pp_count} PP token(s)"
             
-            layer3_hyp = PPTokenizationHypothesis(
+            layer3_hyp = TokenizationHypothesis(
                 tokens=new_tokens,
                 confidence=new_confidence,
                 description=description,
-                pp_replacements=[(start, end, pp) for start, end, pp in pp_sequences]
+                replacements=[(start, end, pp) for start, end, pp in pp_sequences]
             )
             layer3_hypotheses.append(layer3_hyp)
         else:
             # No PP replacements, but still include as Layer 3 hypothesis
-            layer3_hyp = PPTokenizationHypothesis(
+            layer3_hyp = TokenizationHypothesis(
                 tokens=base_hyp.tokens,
                 confidence=base_hyp.confidence,
                 description=base_hyp.description,
-                pp_replacements=[]
+                replacements=[]
             )
             layer3_hypotheses.append(layer3_hyp)
     

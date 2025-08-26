@@ -8,23 +8,11 @@ instead of committing early to a single tokenization.
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vocabulary_builder import vector_from_word
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
+from engraf.lexer.hypothesis import TokenizationHypothesis
 from engraf.utils.noun_inflector import singularize_noun
 from engraf.utils.verb_inflector import find_root_verb
 import re
 from typing import List, Tuple
-
-
-class TokenizationHypothesis:
-    """Represents a single tokenization hypothesis with confidence score."""
-    
-    def __init__(self, tokens: List[VectorSpace], confidence: float, description: str = ""):
-        self.tokens = tokens
-        self.confidence = confidence
-        self.description = description
-    
-    def __repr__(self):
-        token_words = [t.word for t in self.tokens]
-        return f"TokenizationHypothesis(conf={self.confidence:.2f}, tokens={token_words}, desc='{self.description}')"
 
 
 def latn_tokenize(sentence: str) -> List[TokenizationHypothesis]:

@@ -16,7 +16,7 @@ from typing import List, Optional
 from dataclasses import dataclass
 import copy
 
-from engraf.lexer.latn_tokenizer import TokenizationHypothesis  
+from engraf.lexer.hypothesis import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_np import run_np
 from engraf.atn.np import build_np_atn
@@ -24,19 +24,6 @@ from engraf.atn.core import run_atn
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.utils.predicates import is_determiner, is_adjective, is_noun, is_vector
-
-
-@dataclass
-class NPTokenizationHypothesis:
-    """Extended tokenization hypothesis that includes NP token replacement."""
-    tokens: List[VectorSpace]
-    confidence: float
-    description: str
-    np_replacements: List[tuple] = None  # List of (start_idx, end_idx, np_token) tuples
-    
-    def __post_init__(self):
-        if self.np_replacements is None:
-            self.np_replacements = []
 
 
 def create_np_token(np: NounPhrase) -> VectorSpace:
@@ -157,7 +144,7 @@ def replace_np_sequences(tokens: List[VectorSpace], np_sequences: List[tuple]) -
     return new_tokens
 
 
-def latn_tokenize_layer2(layer1_hypotheses: List[TokenizationHypothesis]) -> List[NPTokenizationHypothesis]:
+def latn_tokenize_layer2(layer1_hypotheses: List[TokenizationHypothesis]) -> List[TokenizationHypothesis]:
     """LATN Layer 2: Replace noun phrase sequences with NounPhrase tokens.
     
     This is the main entry point for Layer 2 tokenization. It takes Layer 1 
@@ -183,20 +170,20 @@ def latn_tokenize_layer2(layer1_hypotheses: List[TokenizationHypothesis]) -> Lis
             # Calculate confidence (slight boost for successful NP identification)
             new_confidence = base_hyp.confidence * 1.05
             
-            layer2_hyp = NPTokenizationHypothesis(
+            layer2_hyp = TokenizationHypothesis(
                 tokens=new_tokens,
                 confidence=new_confidence,
                 description=f"Layer 2: {len(np_sequences)} NP tokens from '{base_hyp.description}'",
-                np_replacements=[(start, end, create_np_token(np)) for start, end, np in np_sequences]
+                replacements=[(start, end, create_np_token(np)) for start, end, np in np_sequences]
             )
             layer2_hypotheses.append(layer2_hyp)
         else:
             # No NP sequences found, convert base hypothesis
-            layer2_hyp = NPTokenizationHypothesis(
+            layer2_hyp = TokenizationHypothesis(
                 tokens=base_hyp.tokens,
                 confidence=base_hyp.confidence,
                 description=f"Layer 2: No NPs from '{base_hyp.description}'",
-                np_replacements=[]
+                replacements=[]
             )
             layer2_hypotheses.append(layer2_hyp)
     

@@ -17,7 +17,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.latn_tokenizer import latn_tokenize
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import vector_from_features
 
@@ -53,6 +53,9 @@ def demo_basic_tokenization():
                 print(f"  {i}. {tokens}")
                 print(f"     Confidence: {hyp.confidence:.3f}")
                 print(f"     Description: {hyp.description}")
+                
+                # Print all tokens using the new method
+                hyp.print_tokens()
                 
                 # Show token details
                 for j, token in enumerate(hyp.tokens):
@@ -146,8 +149,10 @@ def demo_multi_hypothesis_generation(compounds):
             print(f"\n  Hypothesis {i}: {tokens}")
             print(f"    Confidence: {hyp.confidence:.3f}")
             print(f"    Strategy: {hyp.description}")
-            for t in hyp.tokens:
-                print(f"      {t}")
+            
+            # Print all tokens using the new method
+            hyp.print_tokens()
+            
             # Show what makes this hypothesis unique
             compound_tokens = [t.word for t in hyp.tokens if ' ' in t.word]
             if compound_tokens:
