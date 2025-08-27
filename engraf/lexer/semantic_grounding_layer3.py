@@ -13,6 +13,7 @@ from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.hypothesis import TokenizationHypothesis
+from engraf.utils.debug import debug_print
 
 
 @dataclass
@@ -48,17 +49,17 @@ class Layer3SemanticGrounder:
         """
         # Pass 1: Generate all possible PP attachment combinations
         attachment_hypotheses = self._generate_pp_attachment_combinations(layer3_hypotheses)
-        print(f"🔀 Pass 1: Generated {len(attachment_hypotheses)} PP attachment combinations")
+        debug_print(f"🔀 Pass 1: Generated {len(attachment_hypotheses)} PP attachment combinations")
         
         # Pass 2: Spatial validation filter
         validated_hypotheses = self._validate_spatial_attachments(attachment_hypotheses)
-        print(f"✅ Pass 2: {len(validated_hypotheses)} spatially valid combinations")
+        debug_print(f"✅ Pass 2: {len(validated_hypotheses)} spatially valid combinations")
         
         # Pass 3: Semantic grounding for validated attachments
         if validated_hypotheses:
             # For now, return the validated hypotheses since PP merging already happened in validation
             # The _merge_ppso_into_np method in _validate_spatial_attachments already did the work
-            print(f"🎯 Pass 3: Returning validated hypotheses with merged PPs")
+            debug_print(f"🎯 Pass 3: Returning validated hypotheses with merged PPs")
             return validated_hypotheses
         
         return layer3_hypotheses
@@ -272,13 +273,13 @@ class Layer3SemanticGrounder:
                     
                     # Apply prep-specific spatial validation using the PP token
                     spatial_score = self._validate_prep_spatial_relationship(token, target_idx, hypothesis)
-                    print(f"🔍 Spatial validation: PP '{token.word}' → score {spatial_score:.2f}")
+                    debug_print(f"🔍 Spatial validation: PP '{token.word}' → score {spatial_score:.2f}")
                     
                     should_merge = spatial_score >= 0.3 and target_idx is not None
                     pp_validations.append((i, target_idx, spatial_score, should_merge))
                     
                     if not should_merge and spatial_score < 0.3:
-                        print(f"❌ PP attachment failed spatial validation: {spatial_score:.2f} - leaving in hypothesis")
+                        debug_print(f"❌ PP attachment failed spatial validation: {spatial_score:.2f} - leaving in hypothesis")
             
             # Process valid PP attachments (don't require all to be valid)
             if pp_validations:
@@ -295,21 +296,21 @@ class Layer3SemanticGrounder:
                         self._merge_ppso_into_np(target_token, pp_token)
                         tokens_to_remove.add(pp_idx)
                         valid_attachments += 1
-                        print(f"✅ Merged and removing PP: {pp_token.word}")
+                        debug_print(f"✅ Merged and removing PP: {pp_token.word}")
                 
                 # Third pass: create new token list without consumed PPs
                 new_tokens = [token for i, token in enumerate(hypothesis.tokens) if i not in tokens_to_remove]
                 hypothesis.tokens = new_tokens
                 
                 if valid_attachments > 0:
-                    print(f"🔧 Processed {valid_attachments} valid PP attachments, {len(new_tokens)} tokens remain")
+                    debug_print(f"🔧 Processed {valid_attachments} valid PP attachments, {len(new_tokens)} tokens remain")
                     # Update hypothesis confidence based on valid spatial validations only
                     valid_scores = [validation[2] for validation in pp_validations if validation[3]]
                     if valid_scores:
                         avg_spatial_score = sum(valid_scores) / len(valid_scores)
                         hypothesis.confidence = hypothesis.confidence * avg_spatial_score
                 else:
-                    print(f"🔧 No valid PP attachments found, keeping original hypothesis")
+                    debug_print(f"🔧 No valid PP attachments found, keeping original hypothesis")
                 
                 validated.append(hypothesis)
             else:
@@ -343,7 +344,7 @@ class Layer3SemanticGrounder:
     def _validate_prep_spatial_relationship(self, pp_token, target_idx, hypothesis) -> float:
         """Validate a specific prepositional relationship using Layer 3 tokenization structure."""
         if target_idx is None:
-            print(f"🔍 No target index for spatial validation")
+            debug_print(f"🔍 No target index for spatial validation")
             return 0.5  # Neutral score if no attachment
         
         # Get the target token that the PP should attach to
@@ -373,22 +374,22 @@ class Layer3SemanticGrounder:
             pass
         
         if not target_obj or not pp_obj:
-            print(f"🔍 Missing grounded objects: target_obj={bool(target_obj)}, pp_obj={bool(pp_obj)}")
+            debug_print(f"🔍 Missing grounded objects: target_obj={bool(target_obj)}, pp_obj={bool(pp_obj)}")
             # PP grounding should only be attempted with Scene Objects, not NPs
             return 0.0  # No spatial validation possible without grounded scene objects
         
-        print(f"🔍 Found grounded objects for spatial validation")
+        debug_print(f"🔍 Found grounded objects for spatial validation")
         if hasattr(target_obj, 'position'):
-            print(f"🔍 Target object position: {target_obj.position}")
+            debug_print(f"🔍 Target object position: {target_obj.position}")
         if hasattr(pp_obj, 'position'):
-            print(f"🔍 PP object position: {pp_obj.position}")
+            debug_print(f"🔍 PP object position: {pp_obj.position}")
         
         # Apply prep-specific spatial tests using grounded objects
         try:
             score = self._apply_prep_spatial_test(pp_token, target_obj, pp_obj)
-            print(f"🔍 Final spatial score: {score}")
+            debug_print(f"🔍 Final spatial score: {score}")
         except Exception as e:
-            print(f"🔍 Error in spatial test: {e}")
+            debug_print(f"🔍 Error in spatial test: {e}")
             score = 0.0
         return score
     
@@ -448,12 +449,12 @@ class Layer3SemanticGrounder:
             # Get the original PrepositionalPhrase from the PP token
             pp = ppso_token._original_pp
             if pp is None:
-                print(f"❌ No original PP found in PP token: {ppso_token.word}")
+                debug_print(f"❌ No original PP found in PP token: {ppso_token.word}")
                 return
                 
             # Get the original NounPhrase from the target NP token
             if not hasattr(target_token, '_original_np') or target_token._original_np is None:
-                print(f"❌ No original NP found in target token: {target_token.word}")
+                debug_print(f"❌ No original NP found in target token: {target_token.word}")
                 return
                 
             target_np = target_token._original_np
@@ -485,9 +486,11 @@ class Layer3SemanticGrounder:
                 if value != 0.0:
                     target_token[dim] = value
                     
-            print(f"🔗 Properly merged PP into NP: {pp.preposition} -> {target_token.word}")
+            debug_print(f"🔗 Properly merged PP into NP: {pp.preposition} -> {target_token.word}")
                 
         except Exception as e:
-            print(f"❌ Error merging PP into NP: {e}")
-            import traceback
-            traceback.print_exc()
+            debug_print(f"❌ Error merging PP into NP: {e}")
+            from engraf.utils.debug import debug_enabled
+            if debug_enabled:
+                import traceback
+                traceback.print_exc()

@@ -272,11 +272,12 @@ class LATNLayerExecutor:
                 description=f"Layer 3 failed: {e}"
             )
     
-    def execute_layer4(self, sentence: str) -> Layer4Result:
+    def execute_layer4(self, sentence: str, enable_semantic_grounding: bool = True) -> Layer4Result:
         """Execute Layer 4: VP tokenization and semantic grounding (requires Layer 1-3).
         
         Args:
             sentence: Input sentence to process
+            enable_semantic_grounding: Whether to perform semantic grounding
             
         Returns:
             Layer4Result with complete LATN processing results including verb phrase grounding
@@ -399,7 +400,8 @@ def execute_layer3(sentence: str, scene_model: Optional[SceneModel] = None,
     return executor.execute_layer3(sentence, enable_semantic_grounding, return_all_matches)
 
 
-def execute_layer4(sentence: str, scene_model: Optional[SceneModel] = None) -> Layer4Result:
+def execute_layer4(sentence: str, scene_model: Optional[SceneModel] = None, 
+                  enable_semantic_grounding: bool = True) -> Layer4Result:
     """Convenience function to execute Layer 4 (includes Layers 1-3)."""
     executor = LATNLayerExecutor(scene_model)
-    return executor.execute_layer4(sentence)
+    return executor.execute_layer4(sentence, enable_semantic_grounding=enable_semantic_grounding)

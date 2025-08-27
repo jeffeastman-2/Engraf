@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Demo: LATN Layer 2 - Semantic Grounding
+Demo: LATN Layer 4 - Verb Phrase Grounding
 
-This demo showcases Layer 2 semantic grounding which resolves noun phrases
-to actual objects in a 3D scene. Unlike the tokenization demo which forms
-grammatical structures, this demo shows how those structures map to real objects.
+This demo showcases Layer 4 semantic grounding which validates action commands
+and grounds verb phrases to executable operations in a 3D scene.
 
 Key concepts demonstrated:
-1. Scene object creation and management
-2. Noun phrase resolution to scene objects
-3. Handling ambiguous references
-4. Multiple object resolution
+1. Verb phrase grounding to scene operations
+2. Action command validation and parameter extraction
+3. VP semantic resolution for object manipulation
+4. Command structure validation with confidence scoring
 """
 
 import sys
@@ -19,12 +18,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info, get_common_test_phrases, process_test_phrase_category
+from engraf.utils.debug import set_debug
 
 
 def main():
     """Main demo function using standardized scene and test phrases."""
-    print("🔗 LATN Layer 2: Semantic Grounding Demo")
-    print("=" * 50)
+    # Suppress debug output for clean demo
+    set_debug(False)
+    
+    print("🔗 LATN Layer 4: Verb Phrase Grounding Demo")
+    print("=" * 60)
     
     # Setup standardized demo scene
     scene = setup_demo_scene()
@@ -37,7 +40,7 @@ def main():
     executor = LATNLayerExecutor(scene_model=scene)
     
     # Process test phrases with grounding enabled
-    process_test_phrase_category(executor.execute_layer2, test_phrases_dict, enable_grounding=True)
+    process_test_phrase_category(executor.execute_layer4, test_phrases_dict, enable_grounding=True)
 
 
 if __name__ == "__main__":

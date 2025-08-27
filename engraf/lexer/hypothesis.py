@@ -53,23 +53,33 @@ class TokenizationHypothesis:
     def print_tokens(self):
         """Print all tokens, each on a new line. Useful for demo examples."""
         for i, token in enumerate(self.tokens):
-            print(f"  [{i}] {token}")
-            
-            # Show grounding information if available
             if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
                 grounded_phrase = token._grounded_phrase
-                if hasattr(grounded_phrase, 'grounding') and grounded_phrase.grounding:
-                    grounding_info = grounded_phrase.grounding
+                grounding_info = grounded_phrase.grounding
+                if grounding_info is not None:
                     if 'scene_object' in grounding_info:
                         scene_obj = grounding_info['scene_object']
                         confidence = grounding_info.get('confidence', 'unknown')
-                        print(f"      → GROUNDED to {scene_obj.object_id} (confidence: {confidence:.3f})")
+                        print(f"  [{i}] GNP({scene_obj.object_id} ( @conf={confidence:.3f}))")
                     else:
-                        print(f"      → GROUNDED: {grounding_info}")
+                        print(f"  [{i}]  → GROUNDED: {grounding_info}")
                 else:
-                    print(f"      → Ungrounded NP")
-            elif token.isa("NP"):
-                print(f"      → Ungrounded NP")
+                    print(f"  [{i}] {token}")
+            elif hasattr(token, '_original_pp') and token._original_pp:
+                # Handle PP tokens - show grounding status of contained NP
+                pp = token._original_pp
+                if pp.noun_phrase and hasattr(pp.noun_phrase, 'grounding') and pp.noun_phrase.grounding:
+                    grounding_info = pp.noun_phrase.grounding
+                    if 'scene_object' in grounding_info:
+                        scene_obj = grounding_info['scene_object']
+                        confidence = grounding_info.get('confidence', 'unknown')
+                        print(f"  [{i}] GPP({token.word} → {scene_obj.object_id} @{confidence:.3f})")
+                    else:
+                        print(f"  [{i}] GPP({token.word} → grounded)")
+                else:
+                    print(f"  [{i}] {token.word}")
+            else:
+                print(f"  [{i}] {token}")
     
     def __repr__(self):
         """Standard representation showing tokens and confidence."""

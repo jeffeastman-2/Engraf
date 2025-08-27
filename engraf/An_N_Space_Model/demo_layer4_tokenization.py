@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Demo: LATN Layer 2 - Noun Phrase Formation
+Demo: LATN Layer 4 - Verb Phrase Formation
 
-This demo showcases Layer 2 of the LATN (Layered Augmented Transition Network) system,
-which processes tokens from Layer 1 and forms noun phrases with proper grammatical structure.
+This demo showcases Layer 4 of the LATN (Layered Augmented Transition Network) system,
+which processes prepositional phrases from Layer 3 and forms verb phrases for action commands.
 
-Layer 2 demonstrates:
-- Noun phrase formation from individual tokens
-- Adjective-noun combinations with proper ordering
-- Determiner handling and agreement
-- Multi-hypothesis noun phrase alternatives
-- Grammatical validation and confidence scoring
+Layer 4 demonstrates:
+- Verb phrase formation from verbs, NPs, and PPs
+- Action command tokenization
+- VP attachment and resolution
+- Multi-hypothesis VP alternatives
+- Command structure validation and confidence scoring
 """
 
 import sys
@@ -23,8 +23,8 @@ from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_sce
 
 def main():
     """Main demo function using standardized scene and test phrases."""
-    print("🔤 LATN Layer 2: Noun Phrase Formation Demo")
-    print("=" * 55)
+    print("🔗 LATN Layer 4: Verb Phrase Formation Demo")
+    print("=" * 60)
     
     # Setup standardized demo scene
     scene = setup_demo_scene()
@@ -37,7 +37,7 @@ def main():
     executor = LATNLayerExecutor()
     
     # Process test phrases with tokenization only (no grounding)
-    process_test_phrase_category(executor.execute_layer2, test_phrases_dict, enable_grounding=False)
+    process_test_phrase_category(executor.execute_layer4, test_phrases_dict, enable_grounding=False)
 
 
 if __name__ == "__main__":

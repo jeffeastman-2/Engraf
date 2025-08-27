@@ -60,5 +60,90 @@ def print_scene_info(scene):
     print(f"- {len(scene.objects)} objects positioned for spatial testing")
     for obj in scene.objects:
         pos = [obj.vector['locX'], obj.vector['locY'], obj.vector['locZ']]
-        print(f"  • {obj.object_id}: {obj.noun} at {pos}")
+        print(f"  • {obj.object_id}: {obj.name} at {pos}")
     print()
+
+
+def get_common_test_phrases():
+    """Return common test phrases used across layer demos for consistency.
+    
+    Returns:
+        dict: Categories of test phrases used across different layer demos
+    """
+    return {
+        'spatial_validation': [
+            "the cube above the table",
+            "the sphere right of the cube", 
+            "the cylinder behind the table",
+            "the table above the cube",  # Should fail validation
+            "the cube left of the sphere"
+        ],
+        
+        'vector_coordinates': [
+            "move the cube to [5, 0, 0]",
+            "place the sphere at [1, 2, 3]", 
+            "position the cylinder to [-1, -1, -1]",
+            "put the table at the origin [0, 0, 0]"
+        ],
+        
+        'complex_spatial_chains': [
+            "move the cube above the table right of the sphere",
+            "place the sphere below the cube behind the cylinder", 
+            "position the cylinder left of the table above the sphere",
+            "put the cube above the table below the sphere to [2, 2, 2]"
+        ],
+        
+        'simple_grounding': [
+            "the blue sphere",
+            "the red cube",
+            "the green cylinder",
+            "the table"
+        ],
+        
+        'layer4_verb_phrases': [
+            "create a red sphere",
+            "move the cube to [5, 0, 0]",
+            "delete the blue sphere",
+            "rotate the cylinder 45 degrees"
+        ]
+    }
+
+
+def get_all_test_phrases():
+    """Return all test phrases as a flat list for comprehensive testing."""
+    phrases = get_common_test_phrases()
+    all_phrases = []
+    for category in phrases.values():
+        all_phrases.extend(category)
+    return all_phrases
+
+
+def process_test_phrase_category(executor_method, test_phrases_dict, enable_grounding=False):
+    """Process all categories of test phrases and display the results.
+    
+    Args:
+        executor_method: The specific layer executor method to call (e.g., executor.execute_layer1)
+        test_phrases_dict: Dictionary of test phrase categories
+    """
+    # Process each category separately
+    for category_name, phrases in test_phrases_dict.items():
+        print(f"\n=== {category_name.replace('_', ' ').title()} ===")
+        
+        for phrase in phrases:
+            print(f"\n📝 Input: \"{phrase}\"")
+            print("-" * 30)
+            
+            # Call the passed executor method
+            result = executor_method(phrase, enable_semantic_grounding=enable_grounding)
+            
+            if result.success:
+                print(f"✅ Generated {len(result.hypotheses)} tokenization hypothesis(es)")
+                
+                for i, hyp in enumerate(result.hypotheses[:3], 1):  # Show top 3
+                    tokens = [t.word for t in hyp.tokens]
+                    print(f"  {i}. {tokens}")
+                    print(f"     Confidence: {hyp.confidence:.3f}")
+                    hyp.print_tokens()
+                    
+            else:
+                print("❌ Tokenization failed")
