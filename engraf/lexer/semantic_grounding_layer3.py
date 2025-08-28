@@ -64,7 +64,7 @@ class Layer3SemanticGrounder:
         
         return layer3_hypotheses
     
-    def ground(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
+    def ground(self, layer3_hypotheses):
         """Ground a PrepositionalPhrase to spatial locations or object relationships.
         
         Args:
@@ -202,6 +202,13 @@ class Layer3SemanticGrounder:
         
         return results
     
+    def _is_vector_destination_pp(self, pp_token) -> bool:
+        """Check if a PP token has a vector destination (should go to Layer 4)."""
+        return (hasattr(pp_token, '_original_pp') and pp_token._original_pp and 
+                hasattr(pp_token._original_pp, 'noun_phrase') and pp_token._original_pp.noun_phrase and
+                hasattr(pp_token._original_pp.noun_phrase, 'vector') and 
+                pp_token._original_pp.noun_phrase.vector.isa("vector"))
+
     def _generate_pp_attachment_combinations(self, layer3_hypotheses):
         """Pass 1: Generate all possible PP attachment combinations."""
         from copy import deepcopy
@@ -215,16 +222,23 @@ class Layer3SemanticGrounder:
             attachment_options = []
             
             for i, token in enumerate(hypothesis.tokens):
-                if hasattr(token, 'word') and token.word and token.word.startswith('PP('):
+                if token.isa("PP"):
+                    # Skip PPs with vector destinations - they should go to Layer 4
+                    if self._is_vector_destination_pp(token):
+                        continue  # Skip vector destination PPs
+                        
                     pp_positions.append(i)
                     
                     # Find all preceding NP/PP tokens as potential attachment targets
                     targets = []
                     for j in range(i):
                         prev_token = hypothesis.tokens[j]
-                        if (hasattr(prev_token, 'word') and prev_token.word and 
-                            (prev_token.word.startswith('NP(') or prev_token.word.startswith('PP('))):
+                        if prev_token.isa("NP"):
                             targets.append(j)
+                        elif prev_token.isa("PP"):
+                            # Only include PPs that don't have vector destinations
+                            if not self._is_vector_destination_pp(prev_token):
+                                targets.append(j)
                     
                     attachment_options.append(targets if targets else [None])  # None = no attachment
             
@@ -238,15 +252,38 @@ class Layer3SemanticGrounder:
                 # Create new hypothesis with this attachment combination
                 new_hypothesis = deepcopy(hypothesis)
                 
-                # Add attachment metadata to PP tokens
+                # Add attachment metadata to PP tokens and update target NP tokens
+                tokens_to_remove = set()
                 for pp_idx, target_idx in zip(pp_positions, combination):
                     pp_token = new_hypothesis.tokens[pp_idx]
                     
-                    # Add attachment information
+                    # Add attachment information to PP token
                     if pp_token._attachment_info is None:
                         pp_token._attachment_info = {}
                     pp_token._attachment_info['attaches_to'] = target_idx
                     pp_token._attachment_info['combination_id'] = str(combination)
+                    
+                    # Also update the target NP token to know about this PP attachment
+                    if target_idx is not None:
+                        target_token = new_hypothesis.tokens[target_idx]
+                        if not hasattr(target_token, '_attached_pps'):
+                            target_token._attached_pps = []
+                        target_token._attached_pps.append(pp_idx)
+                        
+                        # Update the NP's preps list if it has an original NP
+                        if hasattr(target_token, '_original_np') and target_token._original_np:
+                            if not hasattr(target_token._original_np, 'preps'):
+                                target_token._original_np.preps = []
+                            if hasattr(pp_token, '_original_pp') and pp_token._original_pp:
+                                target_token._original_np.preps.append(pp_token._original_pp)
+                        
+                        # Mark this PP for removal since it's being attached
+                        tokens_to_remove.add(pp_idx)
+                
+                # Remove attached PP tokens from the hypothesis
+                if tokens_to_remove:
+                    new_hypothesis.tokens = [token for i, token in enumerate(new_hypothesis.tokens) 
+                                           if i not in tokens_to_remove]
                 
                 # Update confidence based on attachment complexity
                 attachment_penalty = len([t for t in combination if t is not None]) * 0.05

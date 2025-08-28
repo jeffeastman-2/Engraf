@@ -81,7 +81,7 @@ class LATNLayerExecutor:
         self.layer3_grounder = Layer3SemanticGrounder()  # Layer 3 doesn't use SceneModel
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
     
-    def execute_layer1(self, sentence: str) -> Layer1Result:
+    def execute_layer1(self, sentence: str, enable_semantic_grounding=False) -> Layer1Result:
         """Execute Layer 1: Multi-hypothesis lexical tokenization.
         
         Args:
@@ -120,7 +120,7 @@ class LATNLayerExecutor:
             )
     
     def execute_layer2(self, sentence: str, enable_semantic_grounding: bool = True,
-                      return_all_matches: bool = False) -> Layer2Result:
+                      return_all_matches: bool = True) -> Layer2Result:
         """Execute Layer 2: NP tokenization (requires Layer 1).
         
         Args:
@@ -197,7 +197,7 @@ class LATNLayerExecutor:
             )
     
     def execute_layer3(self, sentence: str, enable_semantic_grounding: bool = True,
-                      return_all_matches: bool = False) -> Layer3Result:
+                      return_all_matches: bool = True) -> Layer3Result:
         """Execute Layer 3: PP tokenization (requires Layer 1-2).
         
         Args:
@@ -272,7 +272,8 @@ class LATNLayerExecutor:
                 description=f"Layer 3 failed: {e}"
             )
     
-    def execute_layer4(self, sentence: str, enable_semantic_grounding: bool = True) -> Layer4Result:
+    def execute_layer4(self, sentence: str, enable_semantic_grounding: bool = True,
+                      return_all_matches: bool = True) -> Layer4Result:
         """Execute Layer 4: VP tokenization and semantic grounding (requires Layer 1-3).
         
         Args:
@@ -284,7 +285,8 @@ class LATNLayerExecutor:
         """
         try:
             # Execute Layer 3 first (which includes Layer 1 and 2)
-            layer3_result = self.execute_layer3(sentence, enable_semantic_grounding=True)
+            # Layer 4 should always start from Layer 3 grounding results, not tokenization
+            layer3_result = self.execute_layer3(sentence, enable_semantic_grounding=True, return_all_matches=return_all_matches)
             
             if not layer3_result.success:
                 return Layer4Result(

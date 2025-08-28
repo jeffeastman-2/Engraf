@@ -90,6 +90,8 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     noun.add_arc(is_conjunction, noop, end)
     # NOUN → END (when verb, tobe, adjective, or preposition is encountered - don't consume)
     noun.add_arc(any_of(is_verb, is_tobe, is_adjective, is_preposition), noop, end)
+    # NOUN → END (when determiner is encountered - don't consume, starts new NP)
+    noun.add_arc(is_determiner, noop, end)
     # Terminate on unknown tokens after nouns - this is the key fix
     noun.add_arc(is_unknown, noop, end)
 

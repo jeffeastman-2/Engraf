@@ -60,9 +60,26 @@ class TokenizationHypothesis:
                     if 'scene_object' in grounding_info:
                         scene_obj = grounding_info['scene_object']
                         confidence = grounding_info.get('confidence', 'unknown')
-                        print(f"  [{i}] GNP({scene_obj.object_id} ( @conf={confidence:.3f}))")
+                        
+                        # Check if this NP has attached preps to display
+                        preps_info = ""
+                        if hasattr(token, '_original_np') and token._original_np:
+                            np = token._original_np
+                            if hasattr(np, 'preps') and np.preps:
+                                prep_descs = []
+                                for prep in np.preps:
+                                    if hasattr(prep, 'preposition') and prep.preposition:
+                                        prep_desc = prep.preposition
+                                        if hasattr(prep, 'noun_phrase') and prep.noun_phrase:
+                                            if hasattr(prep.noun_phrase, 'get_original_text'):
+                                                prep_desc += f" {prep.noun_phrase.get_original_text()}"
+                                        prep_descs.append(prep_desc)
+                                if prep_descs:
+                                    preps_info = f" +PP({', '.join(prep_descs)})"
+                        
+                        print(f"      [{i}] GNP({scene_obj.object_id} ( @conf={confidence:.3f}){preps_info})")
                     else:
-                        print(f"  [{i}]  → GROUNDED: {grounding_info}")
+                        print(f"      [{i}]  → GROUNDED: {grounding_info}")
                 else:
                     print(f"  [{i}] {token}")
             elif hasattr(token, '_original_pp') and token._original_pp:
@@ -73,13 +90,13 @@ class TokenizationHypothesis:
                     if 'scene_object' in grounding_info:
                         scene_obj = grounding_info['scene_object']
                         confidence = grounding_info.get('confidence', 'unknown')
-                        print(f"  [{i}] GPP({token.word} → {scene_obj.object_id} @{confidence:.3f})")
+                        print(f"      [{i}] GPP({token.word} → {scene_obj.object_id} @{confidence:.3f})")
                     else:
-                        print(f"  [{i}] GPP({token.word} → grounded)")
+                        print(f"      [{i}] GPP({token.word} → grounded)")
                 else:
-                    print(f"  [{i}] {token.word}")
+                    print(f"      [{i}] {token.word}")
             else:
-                print(f"  [{i}] {token}")
+                print(f"      [{i}] {token}")
     
     def __repr__(self):
         """Standard representation showing tokens and confidence."""
