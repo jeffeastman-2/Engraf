@@ -55,6 +55,14 @@ class Layer2SemanticGrounder:
                 description=f"Expected NounPhrase, got {type(np).__name__}"
             )
         
+        # Skip grounding for pronoun NPs - they should be handled by pronoun resolution
+        if hasattr(np, 'pronoun') and np.pronoun:
+            return Layer2GroundingResult(
+                success=False,
+                confidence=0.0,
+                description=f"Skipping grounding for pronoun NP: {np.pronoun} (use pronoun resolution instead)"
+            )
+        
         # Use SceneModel's find_noun_phrase method
         if return_all_matches:
             # Get all matching candidates with confidence scores

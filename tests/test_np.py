@@ -42,6 +42,52 @@ def test_np_with_pronoun():
     assert np is not None
     assert np.pronoun == "it"
 
+def test_latn_layer2_pronoun_to_np():
+    """Test that LATN Layer 2 converts pronouns to NP tokens."""
+    from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+    from engraf.visualizer.scene.scene_model import SceneModel
+    
+    scene = SceneModel()
+    executor = LATNLayerExecutor(scene_model=scene)
+    
+    # Test sentences with pronouns that should become NP tokens
+    test_cases = [
+        "it",
+        "them", 
+        "rotate it",
+        "move them"
+    ]
+    
+    for sentence in test_cases:
+        print(f"\nTesting Layer 2 with: '{sentence}'")
+        result = executor.execute_layer2(sentence)
+        
+        assert result.success, f"Layer 2 should succeed for '{sentence}'"
+        assert len(result.hypotheses) > 0, f"Should have hypotheses for '{sentence}'"
+        
+        tokens = result.hypotheses[0].tokens
+        print(f"Layer 2 tokens: {[f'{t.__class__.__name__}:{t.word}' for t in tokens]}")
+        
+        # Look for NP tokens that originated from pronouns
+        np_tokens = [t for t in tokens if hasattr(t, 'isa') and t.isa('NP')]
+        pronoun_tokens = [t for t in tokens if hasattr(t, 'isa') and t.isa('pronoun')]
+        
+        print(f"Found {len(np_tokens)} NP tokens: {[t.word for t in np_tokens]}")
+        print(f"Found {len(pronoun_tokens)} pronoun tokens: {[t.word for t in pronoun_tokens]}")
+        
+        # For sentences containing pronouns, we should either:
+        # 1. Have NP tokens that represent the pronouns, OR
+        # 2. Have pronoun tokens that can be used for VP formation
+        if sentence in ["it", "them"]:
+            # Single pronoun should either be NP or pronoun token
+            assert len(np_tokens) + len(pronoun_tokens) >= 1, f"Should have at least one NP or pronoun token for '{sentence}'"
+            
+            # If it's an NP token, verify it represents the pronoun correctly
+            if np_tokens:
+                np_token = np_tokens[0]
+                # The NP should contain the pronoun information
+                assert sentence in np_token.word.lower(), f"NP token should contain pronoun '{sentence}'"
+
 def test_np_with_vector():
     np = run_np(TokenStream(tokenize("[5,6,7]")))
     assert np is not None

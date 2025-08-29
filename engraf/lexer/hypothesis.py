@@ -81,7 +81,7 @@ class TokenizationHypothesis:
                     else:
                         print(f"      [{i}]  → GROUNDED: {grounding_info}")
                 else:
-                    print(f"  [{i}] {token}")
+                    print(f"      [{i}] {token}")
             elif hasattr(token, '_original_pp') and token._original_pp:
                 # Handle PP tokens - show grounding status of contained NP
                 pp = token._original_pp

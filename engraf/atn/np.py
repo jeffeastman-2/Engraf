@@ -73,6 +73,10 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # End on various boundary conditions but don't consume tokens
     adj_after_pronoun.add_arc(any_of(is_verb, is_tobe, is_conjunction, is_adjective), noop, end)
     adj_after_pronoun.add_arc(is_none, noop, end)
+    # Terminate on unknown tokens after pronouns - this ensures pronouns can end properly
+    adj_after_pronoun.add_arc(is_unknown, noop, end)
+    # Also end on prepositions and numbers that might follow pronouns
+    adj_after_pronoun.add_arc(any_of(is_preposition, is_number), noop, end)
 
     # ADJ or DET → NOUN
     for state in [det, adj, adj_conj]:
