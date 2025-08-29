@@ -101,10 +101,19 @@ def get_common_test_phrases():
         ],
         
         'layer4_verb_phrases': [
-            "create a red sphere",
-            "move the cube to [5, 0, 0]",
-            "delete the blue sphere",
-            "rotate the cylinder 45 degrees"
+            "draw a very tall box at [-1, 0, 0]",
+            "draw a very tall box at [1, 0, 0]",
+            "draw a very tall box at [0,1,0] and rotate it by 90 degrees",
+            "group them",
+            "move it to [5,5,5]",
+            "draw a red cube at [0, 0, 0]",
+            "move it to [2, 3, 4]",
+            "make it bigger",
+            "color it blue",
+            "draw a big blue sphere at [3, 0, 0]",
+            "move it above the cube",
+            "draw a green cylinder at [-3, 0, 0]",
+            "rotate it by 90 degrees"
         ]
     }
 

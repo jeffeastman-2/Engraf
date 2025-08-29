@@ -8,6 +8,7 @@ It bridges between parsed PrepositionalPhrase structures and spatial locations/r
 
 from typing import List, Optional, Tuple, Union
 from dataclasses import dataclass
+import numpy as np
 
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
@@ -64,7 +65,7 @@ class Layer3SemanticGrounder:
         
         return layer3_hypotheses
     
-    def ground(self, layer3_hypotheses):
+    def ground(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
         """Ground a PrepositionalPhrase to spatial locations or object relationships.
         
         Args:
@@ -262,28 +263,13 @@ class Layer3SemanticGrounder:
                         pp_token._attachment_info = {}
                     pp_token._attachment_info['attaches_to'] = target_idx
                     pp_token._attachment_info['combination_id'] = str(combination)
-                    
-                    # Also update the target NP token to know about this PP attachment
-                    if target_idx is not None:
-                        target_token = new_hypothesis.tokens[target_idx]
-                        if not hasattr(target_token, '_attached_pps'):
-                            target_token._attached_pps = []
-                        target_token._attached_pps.append(pp_idx)
                         
-                        # Update the NP's preps list if it has an original NP
-                        if hasattr(target_token, '_original_np') and target_token._original_np:
-                            if not hasattr(target_token._original_np, 'preps'):
-                                target_token._original_np.preps = []
-                            if hasattr(pp_token, '_original_pp') and pp_token._original_pp:
-                                target_token._original_np.preps.append(pp_token._original_pp)
-                        
-                        # Mark this PP for removal since it's being attached
-                        tokens_to_remove.add(pp_idx)
+                        # Don't remove PP tokens yet - they need to be validated first
                 
-                # Remove attached PP tokens from the hypothesis
-                if tokens_to_remove:
-                    new_hypothesis.tokens = [token for i, token in enumerate(new_hypothesis.tokens) 
-                                           if i not in tokens_to_remove]
+                # Don't remove PP tokens here - they'll be removed after successful validation
+                # if tokens_to_remove:
+                #     new_hypothesis.tokens = [token for i, token in enumerate(new_hypothesis.tokens) 
+                #                            if i not in tokens_to_remove]
                 
                 # Update confidence based on attachment complexity
                 attachment_penalty = len([t for t in combination if t is not None]) * 0.05
@@ -303,7 +289,7 @@ class Layer3SemanticGrounder:
             
             for i, token in enumerate(hypothesis.tokens):
                 if (hasattr(token, '_attachment_info') and token._attachment_info is not None and 
-                    hasattr(token, 'word') and token.word and token.word.startswith('PP(')):
+                    token.isa("PP")):
                     
                     # Get attachment target
                     target_idx = token._attachment_info.get('attaches_to')
@@ -329,11 +315,24 @@ class Layer3SemanticGrounder:
                         pp_token = hypothesis.tokens[pp_idx]
                         target_token = hypothesis.tokens[target_idx]
                         
+                        # NOW add the PP to the NP's preps (back-link) since validation passed
+                        if hasattr(target_token, '_original_np') and target_token._original_np:
+                            if not hasattr(target_token._original_np, 'preps'):
+                                target_token._original_np.preps = []
+                            if hasattr(pp_token, '_original_pp') and pp_token._original_pp:
+                                target_token._original_np.preps.append(pp_token._original_pp)
+                        
                         # Merge PP into target NP
                         self._merge_ppso_into_np(target_token, pp_token)
                         tokens_to_remove.add(pp_idx)
                         valid_attachments += 1
                         debug_print(f"✅ Merged and removing PP: {pp_token.word}")
+                    else:
+                        # Validation failed - remove the PP→NP link but keep PP in hypothesis
+                        pp_token = hypothesis.tokens[pp_idx]
+                        if hasattr(pp_token, '_attachment_info'):
+                            pp_token._attachment_info['attaches_to'] = None
+                        debug_print(f"❌ Spatial validation failed - unlinking PP: {pp_token.word}")
                 
                 # Third pass: create new token list without consumed PPs
                 new_tokens = [token for i, token in enumerate(hypothesis.tokens) if i not in tokens_to_remove]
@@ -391,8 +390,8 @@ class Layer3SemanticGrounder:
         target_obj = None
         try:
             grounded_phrase = target_token._grounded_phrase
-            if grounded_phrase is not None and hasattr(grounded_phrase, 'get_resolved_object'):
-                target_obj = grounded_phrase.get_resolved_object()
+            if grounded_phrase is not None and hasattr(grounded_phrase, 'grounding'):
+                target_obj = grounded_phrase.grounding.get('scene_object')
         except AttributeError:
             pass
         
@@ -403,8 +402,8 @@ class Layer3SemanticGrounder:
             if pp is not None:
                 try:
                     noun_phrase = pp.noun_phrase
-                    if noun_phrase is not None and hasattr(noun_phrase, 'get_resolved_object'):
-                        pp_obj = noun_phrase.get_resolved_object()
+                    if noun_phrase is not None and hasattr(noun_phrase, 'grounding'):
+                        pp_obj = noun_phrase.grounding.get('scene_object')
                 except AttributeError:
                     pass
         except AttributeError:
@@ -442,8 +441,9 @@ class Layer3SemanticGrounder:
         """
         from engraf.utils.spatial_validation import SpatialValidator
                 
-        # Use the correct SpatialValidator interface
-        return SpatialValidator.validate_spatial_relationship(pp_token, obj2, obj1)
+        # Use the correct SpatialValidator interface  
+        # obj1 (target object) should be positioned relative to obj2 (PP object)
+        return SpatialValidator.validate_spatial_relationship(pp_token, obj1, obj2)
     
     def _extract_object_name_from_np(self, np_part: str):
         """Extract object name from noun phrase text."""
@@ -457,7 +457,7 @@ class Layer3SemanticGrounder:
     def _extract_object_name_from_token(self, token):
         """Extract object name from a token."""
         if hasattr(token, 'word') and token.word:
-            if token.word.startswith('NP(') or token.word.startswith('PP('):
+            if token.isa("NP") or token.isa("PP"):
                 content = token.word[3:-1]  # Remove prefix and parentheses
                 return self._extract_object_name_from_np(content)
         return None
@@ -516,12 +516,8 @@ class Layer3SemanticGrounder:
                     target_token.word = f"NP({new_content})"
             
             # Update the target token's vector to reflect the integrated PP
-            # The apply_pp method already updated the NounPhrase vector, so sync it
-            target_token.clear()  # Clear existing vector data
-            new_vector = target_np.to_vector()
-            for dim, value in new_vector.items():
-                if value != 0.0:
-                    target_token[dim] = value
+            # TODO: Fix vector synchronization later
+            # For now, just complete the merge without vector update
                     
             debug_print(f"🔗 Properly merged PP into NP: {pp.preposition} -> {target_token.word}")
                 

@@ -144,7 +144,7 @@ class SpatialValidator:
             pos1 = obj1.position                
             pos2 = obj2.position
             
-            dx, dy, dz = pos1[0] - pos2[0], pos1[1] - pos2[1], pos1[2] - pos2[2]
+            dx, dy, dz = pos1['x'] - pos2['x'], pos1['y'] - pos2['y'], pos1['z'] - pos2['z']
             px = pp_token['locX']
             py = pp_token['locY']  
             pz = pp_token['locZ']
