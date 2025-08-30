@@ -57,7 +57,23 @@ class TokenizationHypothesis:
                 grounded_phrase = token._grounded_phrase
                 grounding_info = grounded_phrase.grounding
                 if grounding_info is not None:
-                    if 'scene_object' in grounding_info:
+                    # Check for multiple objects first (new approach)
+                    if 'scene_objects' in grounding_info and grounding_info['scene_objects']:
+                        scene_objects = grounding_info['scene_objects']
+                        confidence = grounding_info.get('confidence', 'unknown')
+                        
+                        # Display multiple objects if more than one
+                        if len(scene_objects) > 1:
+                            object_ids = [obj.object_id for obj in scene_objects]
+                            object_display = f"[{', '.join(object_ids)}]"
+                            print(f"      [{i}] GNP({object_display} @conf={confidence:.3f}) [PLURAL: {len(scene_objects)} objects]")
+                        else:
+                            # Single object
+                            scene_obj = scene_objects[0]
+                            print(f"      [{i}] GNP({scene_obj.object_id} @conf={confidence:.3f})")
+                    
+                    # Fallback to old single object approach for backward compatibility
+                    elif 'scene_object' in grounding_info:
                         scene_obj = grounding_info['scene_object']
                         confidence = grounding_info.get('confidence', 'unknown')
                         
@@ -77,7 +93,7 @@ class TokenizationHypothesis:
                                 if prep_descs:
                                     preps_info = f" +PP({', '.join(prep_descs)})"
                         
-                        print(f"      [{i}] GNP({scene_obj.object_id} ( @conf={confidence:.3f}){preps_info})")
+                        print(f"      [{i}] GNP({scene_obj.object_id} @conf={confidence:.3f}){preps_info})")
                     else:
                         print(f"      [{i}]  → GROUNDED: {grounding_info}")
                 else:
