@@ -66,6 +66,8 @@ def main():
             run_layer_and_summarize(executor.execute_layer3, "3G", phrase, enable_semantic_grounding=True)
             run_layer_and_summarize(executor.execute_layer4, "4T", phrase, enable_semantic_grounding=False)
             run_layer_and_summarize(executor.execute_layer4, "4G", phrase, enable_semantic_grounding=True)
+            run_layer_and_summarize(executor.execute_layer5, "5T", phrase, enable_semantic_grounding=False)
+            run_layer_and_summarize(executor.execute_layer5, "5G", phrase, enable_semantic_grounding=True)
         print("========")
             
 

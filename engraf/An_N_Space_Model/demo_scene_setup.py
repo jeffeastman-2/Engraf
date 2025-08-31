@@ -101,8 +101,7 @@ def get_common_test_phrases():
         ],
         
         'layer4_verb_phrases': [
-            "draw a very tall box at [-1, 0, 0]",
-            "draw a very tall box at [1, 0, 0]",
+            "draw a very tall box at [-1, 0, 0] and a very tall box at [1, 0, 0]",
             "draw a very tall box at [0,1,0] and rotate it by 90 degrees",
             "group them",
             "move it to [5,5,5]",

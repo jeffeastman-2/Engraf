@@ -19,13 +19,16 @@ from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize, TokenizationHypoth
 from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
 from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
 from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4
+from engraf.lexer.latn_tokenizer_layer5 import latn_tokenize_layer5, extract_sentence_phrases
 from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder, Layer2GroundingResult
 from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer3GroundingResult
 from engraf.lexer.semantic_grounding_layer4 import Layer4SemanticGrounder, Layer4GroundingResult
+from engraf.lexer.semantic_grounding_layer5 import Layer5SemanticGrounder, Layer5GroundingResult
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.verb_phrase import VerbPhrase
+from engraf.pos.sentence_phrase import SentencePhrase
 
 
 @dataclass
@@ -72,6 +75,18 @@ class Layer4Result:
     description: str = ""
 
 
+@dataclass
+class Layer5Result:
+    """Result of Layer 5 execution (sentence tokenization + execution)."""
+    layer4_result: Layer4Result
+    hypotheses: List[TokenizationHypothesis]
+    sentence_phrases: List[SentencePhrase]
+    grounding_results: List[Layer5GroundingResult]
+    success: bool
+    confidence: float
+    description: str = ""
+
+
 class LATNLayerExecutor:
     """Coordinates execution across all LATN layers with clean delegation to grounders."""
     
@@ -80,6 +95,7 @@ class LATNLayerExecutor:
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
         self.layer3_grounder = Layer3SemanticGrounder()  # Layer 3 doesn't use SceneModel
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
+        self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
     
     def execute_layer1(self, sentence: str, enable_semantic_grounding=False) -> Layer1Result:
         """Execute Layer 1: Multi-hypothesis lexical tokenization.
@@ -329,6 +345,78 @@ class LATNLayerExecutor:
                 description=f"Layer 4 failed: {e}"
             )
 
+    def execute_layer5(self, sentence: str, enable_semantic_grounding: bool = True,
+                      return_all_matches: bool = True) -> Layer5Result:
+        """Execute Layer 5: Sentence tokenization + execution (requires Layer 1-4).
+        
+        Args:
+            sentence: Input sentence to process
+            enable_semantic_grounding: Whether to perform semantic grounding/execution
+            return_all_matches: Whether to return all matches
+            
+        Returns:
+            Layer5Result with complete sentence parsing and execution results
+        """
+        try:
+            # Execute Layer 4 first (which includes Layers 1-3)
+            layer4_result = self.execute_layer4(sentence, enable_semantic_grounding, return_all_matches)
+            
+            if not layer4_result.success:
+                return Layer5Result(
+                    layer4_result=layer4_result,
+                    hypotheses=[],
+                    sentence_phrases=[],
+                    grounding_results=[],
+                    success=False,
+                    confidence=0.0,
+                    description=f"Layer 5 failed due to Layer 4 failure: {layer4_result.description}"
+                )
+            
+            # Execute Layer 5 sentence tokenization
+            layer5_hypotheses = latn_tokenize_layer5(layer4_result.hypotheses)
+            
+            # Semantic grounding/execution (if enabled)
+            if enable_semantic_grounding and self.layer5_grounder:
+                grounded_hypotheses, grounding_results = self.layer5_grounder.multiply_hypotheses_with_grounding(
+                    layer5_hypotheses, return_all_matches
+                )
+            else:
+                # No grounding - keep original hypotheses
+                grounded_hypotheses = layer5_hypotheses
+                grounding_results = []
+            
+            # Extract sentence phrases from grounded hypotheses
+            sentence_phrases = extract_sentence_phrases(grounded_hypotheses)
+            
+            layer5_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer4_result.confidence
+            overall_confidence = (layer4_result.confidence + layer5_confidence) / 2
+            
+            description = f"Layer 5 processed {len(sentence_phrases)} sentences"
+            if enable_semantic_grounding and grounding_results:
+                executed_count = sum(1 for gr in grounding_results if gr.success)
+                description += f" and executed {executed_count} command(s)"
+            
+            return Layer5Result(
+                layer4_result=layer4_result,
+                hypotheses=grounded_hypotheses,
+                sentence_phrases=sentence_phrases,
+                grounding_results=grounding_results,
+                success=True,
+                confidence=overall_confidence,
+                description=description
+            )
+            
+        except Exception as e:
+            return Layer5Result(
+                layer4_result=layer4_result if 'layer4_result' in locals() else None,
+                hypotheses=[],
+                sentence_phrases=[],
+                grounding_results=[],
+                success=False,
+                confidence=0.0,
+                description=f"Layer 5 failed: {e}"
+            )
+
     @property
     def scene_model(self):
         """Compatibility property for tests that expect scene_model attribute."""
@@ -340,6 +428,7 @@ class LATNLayerExecutor:
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
         self.layer3_grounder = Layer3SemanticGrounder() if scene_model else None
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
+        self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
     
     def get_layer_analysis(self, sentence: str, target_layer: int = 3) -> dict:
         """Get detailed analysis of layer execution for debugging/testing."""

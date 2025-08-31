@@ -1,6 +1,7 @@
 import numpy as np
 from engraf.lexer.vector_space import VectorSpace
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from engraf.utils.debug import debug_print
 
 class SentencePhrase():
     def __init__(self):
@@ -24,31 +25,31 @@ class SentencePhrase():
         self.vector = tok  # Store the vector representation of the quoted word
 
     def apply_subject_conjunction(self, tok):
-        print(f"✅ => Applying subject conjunction '{tok.word}'")
+        debug_print(f"✅ => Applying subject conjunction '{tok.word}'")
         if isinstance(self.subject, ConjunctionPhrase):
             tail = self.subject.get_last()   
             if tail.right is None: 
                 tail.right = ConjunctionPhrase(tok)
-                print(f"✅ => setting tail.right in {self}")
+                debug_print(f"✅ => setting tail.right in {self}")
             else: 
                 tail.right = ConjunctionPhrase(tok, left=tail.right)
         else:
             self.subject = ConjunctionPhrase(tok, left=self.subject)
             
     def apply_predicate_conjunction(self, tok):
-        print(f"✅ => Applying predicate conjunction '{tok.word}'")
+        debug_print(f"✅ => Applying predicate conjunction '{tok.word}'")
         if isinstance(self.predicate, ConjunctionPhrase):
             tail = self.predicate.get_last()    
             if tail.right is None:
                 tail.right = ConjunctionPhrase(tok)
-                print(f"✅ => setting tail.right in {self}")
+                debug_print(f"✅ => setting tail.right in {self}")
             else: 
                 tail.right = ConjunctionPhrase(tok, left=tail.right)
         else:
             self.predicate = ConjunctionPhrase(tok, left=self.predicate)
 
     def apply_subject(self, subj):
-        print(f"✅ => Applying sentence subject {subj} \n      to {self}")
+        debug_print(f"✅ => Applying sentence subject {subj} \n      to {self}")
         if self.subject is None:
             self.subject = subj
         elif self.subject == subj:
@@ -59,10 +60,10 @@ class SentencePhrase():
                 tail.right = subj
             elif tail.right == subj:
                 return
-            else: print(f"⚠️ ERROR: tail.right is not None {self}")
+            else: debug_print(f"⚠️ ERROR: tail.right is not None {self}")
  
     def apply_predicate(self, pred):
-        print(f"✅ => Applying sentence predicate {pred} \n      to {self}")
+        debug_print(f"✅ => Applying sentence predicate {pred} \n      to {self}")
         if self.predicate is None:
             self.predicate = pred
         elif pred == self.predicate:
@@ -75,18 +76,24 @@ class SentencePhrase():
             elif tail.right == pred:
                 return
             else:
-                print(f"⚠️ ERROR: tail.right not None {self}")
+                debug_print(f"⚠️ ERROR: tail.right not None {self}")
 
+    def apply_prepositional_phrase(self, pp_token):
+        """Apply a PP token to the sentence structure."""
+        if not hasattr(self, 'prepositional_phrases'):
+            self.prepositional_phrases = []
+        self.prepositional_phrases.append(pp_token)
+        return True
 
     def apply_tobe(self, tok):
-        print(f"✅ => Applying sentence tobe {tok}")
+        debug_print(f"✅ => Applying sentence tobe {tok}")
         self.tobe = tok.word
         self.vector += tok
 
     def apply_adverb(self, tok):
         """Store the adverb vector for use in scaling the next adjective."""
         self.scale_vector = getattr(self, "scale_vector", VectorSpace())
-        print(f"Scale_vector is {self.scale_vector} for token {tok}")
+        debug_print(f"Scale_vector is {self.scale_vector} for token {tok}")
         self.scale_vector += tok  # Combine adverbs if needed (e.g., "very extremely")
 
     def apply_adjective(self, tok):
@@ -94,8 +101,8 @@ class SentencePhrase():
         scale = getattr(self, "scale_vector", None)
         if scale:
             strength = scale.scalar_projection("adv")
-            print(f"Scaling adjective {tok.word} by {strength}")
-            print(f"Adjective vector before scale: {tok}")
+            debug_print(f"Scaling adjective {tok.word} by {strength}")
+            debug_print(f"Adjective vector before scale: {tok}")
             self.vector += tok * strength
             self.scale_vector = None
         else:
