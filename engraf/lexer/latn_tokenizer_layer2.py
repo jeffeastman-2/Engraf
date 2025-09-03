@@ -20,54 +20,78 @@ from engraf.lexer.hypothesis import TokenizationHypothesis
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_np import run_np
 from engraf.atn.np import build_np_atn
+from engraf.atn.coordinated_np import build_coordinated_np_atn
 from engraf.atn.core import run_atn
 from engraf.pos.noun_phrase import NounPhrase
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.utils.predicates import is_determiner, is_adjective, is_noun, is_vector
 
 
-def create_np_token(np: NounPhrase) -> VectorSpace:
-    """Create a NounPhrase token from a parsed NounPhrase object.
+def create_np_token(np_or_conj) -> VectorSpace:
+    """Create a token from a parsed NounPhrase or ConjunctionPhrase object.
     
-    This creates a single token that represents the entire noun phrase.
+    This creates a single token that represents the entire noun phrase or 
+    coordinated noun phrase construction.
     """
-    # Create a new token with the NP's semantic vector
-    np_token = VectorSpace()
+    # Create a new token with the semantic vector
+    token = VectorSpace()
     
-    # Copy the semantic content from the NounPhrase
-    if hasattr(np, 'vector') and np.vector:
-        # Copy the vector data from all dimensions
-        from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
-        for dim in VECTOR_DIMENSIONS:
-            value = np.vector[dim]
-            if value != 0.0:  # Only copy non-zero values
-                np_token[dim] = value
-    
-    # Mark this as a NounPhrase token
-    np_token["NP"] = 1.0
-    
-    # Create a descriptive word for the token
-    if hasattr(np, 'get_original_text'):
-        np_token.word = f"NP({np.get_original_text()})"
-    else:
-        # Fallback: construct description from components
-        parts = []
-        if hasattr(np, 'determiner') and np.determiner:
-            parts.append(np.determiner)
-        if hasattr(np, 'adjectives') and np.adjectives:
-            parts.extend(np.adjectives)
-        if hasattr(np, 'noun') and np.noun:
-            parts.append(np.noun)
-        if np.vector_text is not None and np.vector_text:
-            parts.append(np.vector_text)
+    # Handle ConjunctionPhrase (coordinated NPs)
+    if isinstance(np_or_conj, ConjunctionPhrase):
+        # Copy the semantic content from the ConjunctionPhrase
+        if hasattr(np_or_conj, 'vector') and np_or_conj.vector:
+            from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+            for dim in VECTOR_DIMENSIONS:
+                value = np_or_conj.vector[dim]
+                if value != 0.0:
+                    token[dim] = value
         
-        text = " ".join(parts) if parts else "NP"
-        np_token.word = f"NP({text})"
+        # Mark this as a ConjunctionPhrase token
+        token["conj"] = 1.0
+        token["NP"] = 1.0  # Also mark as NP since it functions as one
+        
+        # Create descriptive word
+        if hasattr(np_or_conj, 'get_original_text'):
+            token.word = f"CONJ-NP({np_or_conj.get_original_text()})"
+        else:
+            token.word = "CONJ-NP"
     
-    # Store reference to original NP for Layer 3
-    np_token._original_np = np
+    # Handle regular NounPhrase
+    else:
+        # Copy the semantic content from the NounPhrase
+        if hasattr(np_or_conj, 'vector') and np_or_conj.vector:
+            from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+            for dim in VECTOR_DIMENSIONS:
+                value = np_or_conj.vector[dim]
+                if value != 0.0:
+                    token[dim] = value
+        
+        # Mark this as a NounPhrase token
+        token["NP"] = 1.0
+        
+        # Create descriptive word
+        if hasattr(np_or_conj, 'get_original_text'):
+            token.word = f"NP({np_or_conj.get_original_text()})"
+        else:
+            # Fallback: construct description from components
+            parts = []
+            if hasattr(np_or_conj, 'determiner') and np_or_conj.determiner:
+                parts.append(np_or_conj.determiner)
+            if hasattr(np_or_conj, 'adjectives') and np_or_conj.adjectives:
+                parts.extend(np_or_conj.adjectives)
+            if hasattr(np_or_conj, 'noun') and np_or_conj.noun:
+                parts.append(np_or_conj.noun)
+            if hasattr(np_or_conj, 'vector_text') and np_or_conj.vector_text:
+                parts.append(np_or_conj.vector_text)
+            
+            text = " ".join(parts) if parts else "NP"
+            token.word = f"NP({text})"
     
-    return np_token
+    # Store reference to original object for Layer 3
+    token._original_np = np_or_conj
+    
+    return token
 
 
 def find_np_sequences(tokens: List[VectorSpace]) -> List[tuple]:
@@ -81,28 +105,53 @@ def find_np_sequences(tokens: List[VectorSpace]) -> List[tuple]:
     i = 0
     
     while i < len(tokens):
-        # Try to parse NP starting at position i
+        # Try to parse coordinated NP first, then fall back to simple NP
         # Use TokenStream position tracking to determine how many tokens were consumed
         subsequence = tokens[i:]  # Use all remaining tokens
+        best_np = None
+        best_end = i
+        
+        # First, try to parse a simple NP
         try:
             ts = TokenStream(subsequence)
             np = NounPhrase()
             np_start, np_end = build_np_atn(np, ts)
-            initial_pos = ts.position
             result = run_atn(np_start, np_end, ts, np)
             
             if result is not None:
-                # Found a valid NP - use actual consumed token count
-                tokens_consumed = ts.position - initial_pos
+                # Found a valid simple NP
                 best_np = result
-                best_end = i + tokens_consumed - 1  # Convert to absolute index
-            else:
-                best_np = None
-                best_end = i
+                best_end = i + ts.position - 1
+                
+                # Check for conjunctions to build coordinated NPs
+                while ts.peek() and ts.peek().isa("conj"):
+                    # There's a conjunction! Try to parse another NP
+                    conj_token = ts.next()  # consume the conjunction
+                    np2 = NounPhrase()
+                    np2_start, np2_end = build_np_atn(np2, ts)
+                    np2_result = run_atn(np2_start, np2_end, ts, np2)
+                    
+                    if np2_result is not None:
+                        # Successfully parsed another NP - create/extend coordination
+                        if isinstance(best_np, NounPhrase):
+                            # Convert to ConjunctionPhrase
+                            coord_np = ConjunctionPhrase(conj_token, left=best_np, right=np2_result)
+                            best_np = coord_np
+                        elif isinstance(best_np, ConjunctionPhrase):
+                            # Extend existing coordination by chaining
+                            new_coord = ConjunctionPhrase(conj_token, left=best_np, right=np2_result)
+                            best_np = new_coord
+                        
+                        # Update best_end to include the newly parsed NP
+                        best_end = i + ts.position - 1
+                    else:
+                        # Failed to parse second NP - break out of coordination loop
+                        # Put the conjunction token back by rewinding
+                        ts.position -= 1
+                        break
         except Exception:
-            # NP parsing failed
-            best_np = None
-            best_end = i
+                # Simple NP parsing also failed
+                pass
         
         if best_np is not None:
             # Found an NP, add it and skip past it

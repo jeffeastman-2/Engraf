@@ -111,6 +111,24 @@ class TokenizationHypothesis:
                         print(f"      [{i}] GPP({token.word} → grounded)")
                 else:
                     print(f"      [{i}] {token.word}")
+            elif hasattr(token, '_original_np') and token._original_np:
+                # Check if this is a ConjunctionPhrase (CONJ-NP)
+                from engraf.pos.conjunction_phrase import ConjunctionPhrase
+                if isinstance(token._original_np, ConjunctionPhrase):
+                    # Show the coordination structure with individual NP contents
+                    conj_phrase = token._original_np
+                    np_parts = []
+                    for np in conj_phrase.flatten():
+                        if hasattr(np, 'get_original_text'):
+                            np_parts.append(f'"{np.get_original_text()}"')
+                        else:
+                            np_parts.append(str(np))
+                    
+                    coordination_text = f" {conj_phrase.conjunction} ".join(np_parts)
+                    print(f"      [{i}] VectorSpace(word='CONJ-NP', {{ NP=1.00, conj=1.00 }}) → [{coordination_text}]")
+                else:
+                    # Regular NP token
+                    print(f"      [{i}] {token}")
             else:
                 print(f"      [{i}] {token}")
     

@@ -96,13 +96,21 @@ class LATNLayerExecutor:
         self.layer3_grounder = Layer3SemanticGrounder()  # Layer 3 doesn't use SceneModel
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
         self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
-    
-    def execute_layer1(self, sentence: str, enable_semantic_grounding=False) -> Layer1Result:
+
+    def enumerate_hypotheses(self, hypotheses: List[TokenizationHypothesis]):
+        """Enumerate and print tokenization hypotheses."""
+        for i, hyp in enumerate(hypotheses, 1):
+            tokens = [t.word for t in hyp.tokens]
+            print(f"  {i}. Tokens: {tokens} | Confidence: {hyp.confidence:.3f}")
+            hyp.print_tokens()
+
+    def execute_layer1(self, sentence: str, report=False) -> Layer1Result:
         """Execute Layer 1: Multi-hypothesis lexical tokenization.
         
         Args:
             sentence: Input sentence to tokenize
-            
+            report: Whether to generate a report
+
         Returns:
             Layer1Result with tokenization hypotheses
         """
@@ -119,7 +127,9 @@ class LATNLayerExecutor:
             
             # Use confidence from best hypothesis
             best_confidence = hypotheses[0].confidence if hypotheses else 0.0
-            
+            if(report):
+                print(f"Layer 1 tokenization produced {len(hypotheses)} hypotheses for: '{sentence}'")
+                self.enumerate_hypotheses(hypotheses)
             return Layer1Result(
                 hypotheses=hypotheses,
                 success=True,
@@ -135,20 +145,18 @@ class LATNLayerExecutor:
                 description=f"Layer 1 failed: {e}"
             )
     
-    def execute_layer2(self, sentence: str, enable_semantic_grounding: bool = True,
-                      return_all_matches: bool = True) -> Layer2Result:
+    def execute_layer2(self, sentence: str, report = False) -> Layer2Result:
         """Execute Layer 2: NP tokenization (requires Layer 1).
         
         Args:
             sentence: Input sentence to process
-            enable_semantic_grounding: Whether to perform semantic grounding
-            return_all_matches: Whether to return all grounding matches
-            
+            report: Whether to generate a report
+
         Returns:
             Layer2Result with NP processing results
         """
         # First execute Layer 1
-        layer1_result = self.execute_layer1(sentence)
+        layer1_result = self.execute_layer1(sentence, report=report)
         
         if not layer1_result.success:
             return Layer2Result(
@@ -160,15 +168,18 @@ class LATNLayerExecutor:
                 confidence=0.0,
                 description=f"Layer 2 failed due to Layer 1 failure: {layer1_result.description}"
             )
-        
         try:
             # Execute Layer 2 NP tokenization
             layer2_hypotheses = latn_tokenize_layer2(layer1_result.hypotheses)
-            
+
+            if(report):
+                print(f"Layer 2 tokenization produced {len(layer2_hypotheses)} hypotheses")
+                self.enumerate_hypotheses(layer2_hypotheses)
+
             # Semantic grounding with hypothesis multiplication (if enabled)
-            if enable_semantic_grounding and self.layer2_grounder:
+            if self.layer2_grounder:
                 grounded_hypotheses, all_grounding_results = self.layer2_grounder.multiply_hypotheses_with_grounding(
-                    layer2_hypotheses, return_all_matches
+                    layer2_hypotheses, return_all_matches=True
                 )
             else:
                 # No grounding - keep original hypotheses
@@ -190,6 +201,10 @@ class LATNLayerExecutor:
             # Calculate confidence based on best hypothesis
             layer2_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer1_result.confidence
             overall_confidence = (layer1_result.confidence + layer2_confidence) / 2
+
+            if(report):
+                print(f"Layer 2 grounding produced {len(grounded_hypotheses)} hypotheses")
+                self.enumerate_hypotheses(grounded_hypotheses)
             
             return Layer2Result(
                 layer1_result=layer1_result,
@@ -212,22 +227,20 @@ class LATNLayerExecutor:
                 description=f"Layer 2 failed: {e}"
             )
     
-    def execute_layer3(self, sentence: str, enable_semantic_grounding: bool = True,
-                      return_all_matches: bool = True) -> Layer3Result:
-        """Execute Layer 3: PP tokenization (requires Layer 1-2).
+    def execute_layer3(self, sentence: str, report = False) -> Layer3Result:
+        """Execute Layer 3: PP tokenization (requires Layer 1-2c).
         
         Args:
             sentence: Input sentence to process
-            enable_semantic_grounding: Whether to perform semantic grounding
-            return_all_matches: Whether to return all grounding matches
-            
+            report: Whether to generate a report
+
         Returns:
             Layer3Result with complete LATN processing results
         """
-        # First execute Layer 2 (which includes Layer 1) - always enable grounding for Layer 2
+        # First execute Layer 2 (which includes Layer 1-2)
         # Layer 3 spatial validation requires grounded NP tokens from Layer 2
-        layer2_result = self.execute_layer2(sentence, enable_semantic_grounding=True, return_all_matches=return_all_matches)
-        
+        layer2_result = self.execute_layer2(sentence, report=report)
+
         if not layer2_result.success:
             return Layer3Result(
                 layer2_result=layer2_result,
@@ -236,23 +249,29 @@ class LATNLayerExecutor:
                 grounding_results=[],
                 success=False,
                 confidence=0.0,
-                description=f"Layer 3 failed due to Layer 2 failure: {layer2_result.description}"
+                description=f"Layer 3 failed due to Layer 2c failure: {layer2_result.description}"
             )
         
         try:
             # Execute Layer 3 PP tokenization
             layer3_hypotheses = latn_tokenize_layer3(layer2_result.hypotheses)
-            
+            if report:
+                print(f"Layer 3 tokenization produced {len(layer3_hypotheses)} hypotheses")
+                self.enumerate_hypotheses(layer3_hypotheses)
+
             # Extract PrepositionalPhrase objects
             prepositional_phrases = self.layer3_grounder.extract_prepositional_phrases(layer3_hypotheses) if self.layer3_grounder else []
             
             # Layer 3 grounding - process PP attachments with spatial validation
-            if enable_semantic_grounding and self.layer3_grounder:
+            if self.layer3_grounder:
                 # Process PP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer3_grounder.process_pp_attachments(
-                    layer3_hypotheses, return_all_matches=return_all_matches
+                    layer3_hypotheses, return_all_matches=True
                 )
-                
+                if report:
+                    print(f"Layer 3 grounding produced {len(grounded_hypotheses)} hypotheses")
+                    self.enumerate_hypotheses(grounded_hypotheses)
+
                 # Use the grounded hypotheses as the final result
                 final_hypotheses = grounded_hypotheses
                 
@@ -287,14 +306,13 @@ class LATNLayerExecutor:
                 confidence=0.0,
                 description=f"Layer 3 failed: {e}"
             )
-    
-    def execute_layer4(self, sentence: str, enable_semantic_grounding: bool = True,
-                      return_all_matches: bool = True) -> Layer4Result:
+
+    def execute_layer4(self, sentence: str, report: bool = False) -> Layer4Result:
         """Execute Layer 4: VP tokenization and semantic grounding (requires Layer 1-3).
         
         Args:
             sentence: Input sentence to process
-            enable_semantic_grounding: Whether to perform semantic grounding
+            report: Whether to generate a report
             
         Returns:
             Layer4Result with complete LATN processing results including verb phrase grounding
@@ -302,7 +320,7 @@ class LATNLayerExecutor:
         try:
             # Execute Layer 3 first (which includes Layer 1 and 2)
             # Layer 4 should always start from Layer 3 grounding results, not tokenization
-            layer3_result = self.execute_layer3(sentence, enable_semantic_grounding=True, return_all_matches=return_all_matches)
+            layer3_result = self.execute_layer3(sentence, report=report)
             
             if not layer3_result.success:
                 return Layer4Result(
@@ -316,12 +334,19 @@ class LATNLayerExecutor:
             
             # Execute Layer 4 VP tokenization
             layer4_hypotheses = latn_tokenize_layer4(layer3_result.hypotheses)
+
+            if report:
+                print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses")
+                self.enumerate_hypotheses(layer4_hypotheses)
             
             # Extract verb phrases
-            verb_phrases = self.layer4_grounder.extract_verb_phrases(layer4_hypotheses) if self.layer4_grounder else []
-            
-            # Layer 4 does semantic grounding of verb phrases but does NOT execute actions
-            # Action execution should be handled by a separate system that consumes Layer 4 output
+            if self.layer4_grounder:
+                verb_phrases = self.layer4_grounder.extract_verb_phrases(layer4_hypotheses)
+                if report:
+                    print(f"Layer 4 grounding produced {len(verb_phrases)} verb phrases")
+                    self.enumerate_hypotheses(verb_phrases)
+            else:
+                verb_phrases = []
             
             layer4_confidence = layer4_hypotheses[0].confidence if layer4_hypotheses else layer3_result.confidence
             overall_confidence = (layer3_result.confidence + layer4_confidence) / 2
@@ -345,22 +370,20 @@ class LATNLayerExecutor:
                 description=f"Layer 4 failed: {e}"
             )
 
-    def execute_layer5(self, sentence: str, enable_semantic_grounding: bool = True,
-                      return_all_matches: bool = True) -> Layer5Result:
+    def execute_layer5(self, sentence: str, report: bool = False) -> Layer5Result:
         """Execute Layer 5: Sentence tokenization + execution (requires Layer 1-4).
         
         Args:
             sentence: Input sentence to process
-            enable_semantic_grounding: Whether to perform semantic grounding/execution
-            return_all_matches: Whether to return all matches
+            report: Whether to generate a report
             
         Returns:
             Layer5Result with complete sentence parsing and execution results
         """
         try:
             # Execute Layer 4 first (which includes Layers 1-3)
-            layer4_result = self.execute_layer4(sentence, enable_semantic_grounding, return_all_matches)
-            
+            layer4_result = self.execute_layer4(sentence, report=report)
+
             if not layer4_result.success:
                 return Layer5Result(
                     layer4_result=layer4_result,
@@ -374,12 +397,17 @@ class LATNLayerExecutor:
             
             # Execute Layer 5 sentence tokenization
             layer5_hypotheses = latn_tokenize_layer5(layer4_result.hypotheses)
-            
+            if report:
+                print(f"Layer 5 tokenization produced {len(layer5_hypotheses)} hypotheses")
+                self.enumerate_hypotheses(layer5_hypotheses)
+
             # Semantic grounding/execution (if enabled)
-            if enable_semantic_grounding and self.layer5_grounder:
+            if self.layer5_grounder:
                 grounded_hypotheses, grounding_results = self.layer5_grounder.multiply_hypotheses_with_grounding(
-                    layer5_hypotheses, return_all_matches
-                )
+                    report=report)
+                if report:
+                    print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
+                    self.enumerate_hypotheses(grounded_hypotheses)
             else:
                 # No grounding - keep original hypotheses
                 grounded_hypotheses = layer5_hypotheses
@@ -392,7 +420,7 @@ class LATNLayerExecutor:
             overall_confidence = (layer4_result.confidence + layer5_confidence) / 2
             
             description = f"Layer 5 processed {len(sentence_phrases)} sentences"
-            if enable_semantic_grounding and grounding_results:
+            if self.layer5_grounder and grounding_results:
                 executed_count = sum(1 for gr in grounding_results if gr.success)
                 description += f" and executed {executed_count} command(s)"
             
@@ -468,31 +496,3 @@ class LATNLayerExecutor:
             }
         
         return analysis
-
-
-# Convenience functions for direct layer execution
-def execute_layer1(sentence: str) -> Layer1Result:
-    """Convenience function to execute Layer 1 only."""
-    executor = LATNLayerExecutor()
-    return executor.execute_layer1(sentence)
-
-
-def execute_layer2(sentence: str, scene_model: Optional[SceneModel] = None,
-                  enable_semantic_grounding: bool = True, return_all_matches: bool = False) -> Layer2Result:
-    """Convenience function to execute Layer 2 (includes Layer 1)."""
-    executor = LATNLayerExecutor(scene_model)
-    return executor.execute_layer2(sentence, enable_semantic_grounding, return_all_matches)
-
-
-def execute_layer3(sentence: str, scene_model: Optional[SceneModel] = None,
-                  enable_semantic_grounding: bool = True, return_all_matches: bool = False) -> Layer3Result:
-    """Convenience function to execute Layer 3 (includes Layers 1 & 2)."""
-    executor = LATNLayerExecutor(scene_model)
-    return executor.execute_layer3(sentence, enable_semantic_grounding, return_all_matches)
-
-
-def execute_layer4(sentence: str, scene_model: Optional[SceneModel] = None, 
-                  enable_semantic_grounding: bool = True) -> Layer4Result:
-    """Convenience function to execute Layer 4 (includes Layers 1-3)."""
-    executor = LATNLayerExecutor(scene_model)
-    return executor.execute_layer4(sentence, enable_semantic_grounding=enable_semantic_grounding)
