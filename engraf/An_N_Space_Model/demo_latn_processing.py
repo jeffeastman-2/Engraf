@@ -15,6 +15,7 @@ Layer 4 demonstrates:
 
 import sys
 import os
+from engraf.utils.debug import set_debug
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
@@ -39,7 +40,8 @@ def main():
     """Main demo function using standardized scene and test phrases."""
     print("🔗 LATN Overall Demo")
     print("=" * 60)
-    
+   # set_debug(True)
+
     # Setup standardized demo scene
     scene = setup_demo_scene()
     print_scene_info(scene)
@@ -50,24 +52,14 @@ def main():
     # Create executor
     executor = LATNLayerExecutor(scene)
     
-    # Process each category separately
+    # Process each category separately  
     for category_name, phrases in test_phrases_dict.items():
         print(f"\n=== {category_name.replace('_', ' ').title()} ===")
         
         for phrase in phrases:
             print(f"\n📝 Input: \"{phrase}\"")
             print("-" * 30)
-            
-            # Call the executor method
-            run_layer_and_summarize(executor.execute_layer1, "1", phrase, enable_semantic_grounding=False)
-            run_layer_and_summarize(executor.execute_layer2, "2T", phrase, enable_semantic_grounding=False)
-            run_layer_and_summarize(executor.execute_layer2, "2G", phrase, enable_semantic_grounding=True)
-            run_layer_and_summarize(executor.execute_layer3, "3T", phrase, enable_semantic_grounding=False)
-            run_layer_and_summarize(executor.execute_layer3, "3G", phrase, enable_semantic_grounding=True)
-            run_layer_and_summarize(executor.execute_layer4, "4T", phrase, enable_semantic_grounding=False)
-            run_layer_and_summarize(executor.execute_layer4, "4G", phrase, enable_semantic_grounding=True)
-            run_layer_and_summarize(executor.execute_layer5, "5T", phrase, enable_semantic_grounding=False)
-            run_layer_and_summarize(executor.execute_layer5, "5G", phrase, enable_semantic_grounding=True)
+            executor.execute_layer5(phrase, report=True)
         print("========")
             
 

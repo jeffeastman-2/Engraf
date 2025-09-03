@@ -113,6 +113,14 @@ def get_common_test_phrases():
             "move it above the cube",
             "draw a green cylinder at [-3, 0, 0]",
             "rotate it by 90 degrees"
+        ],
+
+        'conjunction_phrases': [
+            "delete the red cube and the blue sphere",
+            "draw a box above the red cube and the blue sphere",
+            "draw a box at [3,4,5] and a blue sphere at [4,5,6]",
+            "color the red cube above the table and the blue sphere below the cylinder green",
+            "draw a very tall box at [0,1,0] and rotate it by 90 degrees"
         ]
     }
 
