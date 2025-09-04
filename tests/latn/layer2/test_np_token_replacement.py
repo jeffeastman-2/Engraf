@@ -25,7 +25,7 @@ class TestLATNLayer2Basic:
     def test_simple_np_replacement(self):
         """Test basic NP replacement: 'the red box' -> single NP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("the red box", enable_semantic_grounding=False)
+        result = executor.execute_layer2("the red box")
         assert result.success, "Layer 2 should process successfully"
         assert len(result.hypotheses) > 0, "Should generate hypotheses"
         
@@ -34,12 +34,12 @@ class TestLATNLayer2Basic:
         assert best.tokens[0].word == "NP(the red box)", "Should create NP token"
         assert best.tokens[0].isa("NP"), "Token should have NP dimension"
         assert hasattr(best.tokens[0], '_original_np'), "Should have original NP reference"
-        assert len(best.np_replacements) == 1, "Should record NP replacement"
+        assert len(best.replacements) == 1, "Should record NP replacement"
     
     def test_vector_np_replacement(self):
         """Test NP replacement with vector: '[1,2,3]' -> single NP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("[1,2,3]", enable_semantic_grounding=False)
+        result = executor.execute_layer2("[1,2,3]")
         assert result.success, "Layer 2 should process successfully"
         assert len(result.hypotheses) > 0, "Should generate hypotheses"
         
@@ -52,7 +52,7 @@ class TestLATNLayer2Basic:
     def test_complex_np_replacement(self):
         """Test complex NP: 'a very large red sphere' -> single NP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("a very large red sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer2("a very large red sphere")
         assert result.success, "Layer 2 should succeed"
         
         best = result.hypotheses[0]
@@ -65,24 +65,24 @@ class TestLATNLayer2Basic:
     def test_multiple_nps(self):
         """Test sentence with multiple NPs: 'the red box and the blue sphere'."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("the red box and the blue sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer2("the red box and the blue sphere")
         assert result.success, "Layer 2 should succeed"
         
         best = result.hypotheses[0]
         np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
         assert len(np_tokens) >= 1, "Should have at least one NP token"
-        assert len(best.np_replacements) >= 1, "Should record NP replacements"
+        assert len(best.replacements) >= 1, "Should record NP replacements"
     
     def test_no_np_sentence(self):
         """Test sentence with no noun phrases: 'hello'."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("hello", enable_semantic_grounding=False)
+        result = executor.execute_layer2("hello")
         assert result.success, "Layer 2 should succeed"
         
         best = result.hypotheses[0]
         np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
         assert len(np_tokens) == 0, "Should have no NP tokens"
-        assert len(best.np_replacements) == 0, "Should record no NP replacements"
+        assert len(best.replacements) == 0, "Should record no NP replacements"
 
 
 class TestLATNLayer2NounPhraseDetection:
@@ -187,7 +187,7 @@ class TestLATNLayer2Integration:
     def test_layer2_with_executor(self):
         """Test Layer 2 using the proper layer executor."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("the red box", enable_semantic_grounding=False)
+        result = executor.execute_layer2("the red box")
         assert result.success, "Layer 2 should succeed"
         assert len(result.hypotheses) > 0, "Should generate hypotheses"
         assert len(result.hypotheses[0].tokens) == 1, "Should return single NP token"
@@ -196,7 +196,7 @@ class TestLATNLayer2Integration:
     def test_layer2_best_hypothesis(self):
         """Test accessing the best Layer 2 hypothesis."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("a blue sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer2("a blue sphere")
         assert result.success, "Should succeed"
         hypothesis = result.hypotheses[0]  # Best hypothesis
         assert hypothesis is not None, "Should return hypothesis"
@@ -206,7 +206,7 @@ class TestLATNLayer2Integration:
     def test_layer2_hypothesis_metadata(self):
         """Test that Layer 2 hypotheses have proper metadata."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("the green cube", enable_semantic_grounding=False)
+        result = executor.execute_layer2("the green cube")
         assert result.success, "Should succeed"
         hypotheses = result.hypotheses
         assert len(hypotheses) > 0, "Should generate hypotheses"
@@ -214,7 +214,7 @@ class TestLATNLayer2Integration:
         best = hypotheses[0]
         assert hasattr(best, 'confidence'), "Should have confidence score"
         assert hasattr(best, 'description'), "Should have description"
-        assert hasattr(best, 'np_replacements'), "Should track NP replacements"
+        assert hasattr(best, 'replacements'), "Should track NP replacements"
         assert "Layer 2" in best.description, "Description should mention Layer 2"
 
 
@@ -224,14 +224,14 @@ class TestLATNLayer2EdgeCases:
     def test_empty_string(self):
         """Test Layer 2 with empty string."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("", enable_semantic_grounding=False)
+        result = executor.execute_layer2("")
         # Empty string handling may return success=False, which is fine
         assert result is not None, "Should handle empty string gracefully"
     
     def test_single_word(self):
         """Test Layer 2 with single noun."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer2("sphere")
         assert result.success, "Should handle single noun"
         
         best = result.hypotheses[0]
@@ -245,7 +245,7 @@ class TestLATNLayer2EdgeCases:
     def test_preposition_not_converted(self):
         """Test that prepositions alone are not converted to NPs."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("on", enable_semantic_grounding=False)
+        result = executor.execute_layer2("on")
         assert result.success, "Should handle preposition"
         
         best = result.hypotheses[0]

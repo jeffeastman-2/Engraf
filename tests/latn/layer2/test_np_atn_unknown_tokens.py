@@ -58,10 +58,10 @@ def test_layer2_np_identification_with_unknown_tokens():
     executor = LATNLayerExecutor()
     
     # Test case that currently fails: "a box next to a sphere"
-    result_with_unknown = executor.execute_layer2("a box next to a sphere", enable_semantic_grounding=False)
+    result_with_unknown = executor.execute_layer2("a box next to a sphere")
     
     # Test case that works: "a box above a sphere" 
-    result_without_unknown = executor.execute_layer2("a box above a sphere", enable_semantic_grounding=False)
+    result_without_unknown = executor.execute_layer2("a box above a sphere")
     
     print(f"\nDEBUG: With unknown token 'next':")
     print(f"  Noun phrases: {len(result_with_unknown.noun_phrases)}")

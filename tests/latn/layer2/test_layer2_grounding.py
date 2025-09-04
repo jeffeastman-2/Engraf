@@ -31,7 +31,7 @@ class TestLayer2Grounding:
         
         # Execute Layer 2 with grounding enabled
         executor = LATNLayerExecutor(scene_model=scene)
-        result = executor.execute_layer2("the red box", enable_semantic_grounding=True)
+        result = executor.execute_layer2("the red box")
         
         # Verify basic success
         assert result.success, "Layer 2 should process successfully"
@@ -44,7 +44,7 @@ class TestLayer2Grounding:
         print(f"\nDEBUG: Result confidence: {best_hypothesis.confidence}")
         print(f"DEBUG: Number of hypotheses: {len(result.hypotheses)}")
         print(f"DEBUG: Hypothesis tokens: {[token.word for token in best_hypothesis.tokens]}")
-        print(f"DEBUG: NP replacements: {best_hypothesis.np_replacements}")
+        print(f"DEBUG: NP replacements: {best_hypothesis.replacements}")
         
         # Check grounding results
         assert len(result.grounding_results) > 0, "Should have grounding results"
@@ -100,7 +100,7 @@ class TestLayer2Grounding:
         
         # Execute Layer 2 with ambiguous query "the box"
         executor = LATNLayerExecutor(scene_model=scene)
-        result = executor.execute_layer2("the box", enable_semantic_grounding=True, return_all_matches=True)
+        result = executor.execute_layer2("the box")
         
         # Verify basic success
         assert result.success, "Layer 2 should process successfully"
@@ -168,9 +168,9 @@ class TestLayer2Grounding:
         scene.add_object(green_sphere)
         scene.add_object(tall_sphere)
         
-        # Test query with 2 ambiguous NPs: "a box under a sphere"
+        # Test query with 2 ambiguous NPs: "the box under the sphere"
         executor = LATNLayerExecutor(scene_model=scene)
-        result = executor.execute_layer2("a box under a sphere", enable_semantic_grounding=True, return_all_matches=True)
+        result = executor.execute_layer2("the box under the sphere")
         
         # Verify basic success
         assert result.success, "Layer 2 should process successfully"
@@ -247,8 +247,8 @@ class TestLayer2Grounding:
         # - "sphere" matches: green-sphere, tall-sphere (2 options)  
         # - "green object" matches: green-box, green-sphere (2 options)
         executor = LATNLayerExecutor(scene_model=scene)
-        result = executor.execute_layer2("a box under a sphere above a green object", enable_semantic_grounding=True, return_all_matches=True)
-        
+        result = executor.execute_layer2("the box under the sphere above the green object")
+
         # Verify basic success
         assert result.success, "Layer 2 should process successfully"
         

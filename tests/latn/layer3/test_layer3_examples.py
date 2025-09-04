@@ -16,7 +16,7 @@ class TestLATNLayer3ComplexExamples:
     def test_at_vector_coordinates(self):
         """Test: 'at [1,2,3]' -> single PP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("at [1,2,3]", enable_semantic_grounding=False)
+        result = executor.execute_layer3("at [1,2,3]",)
         assert result.success, "Layer 3 should succeed"
         
         print(f"Generated {len(result.hypotheses)} Layer 3 hypotheses")
@@ -32,7 +32,7 @@ class TestLATNLayer3ComplexExamples:
     def test_above_complex_np(self):
         """Test: 'above the table' -> single PP token with NP inside."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("above the table", enable_semantic_grounding=False)
+        result = executor.execute_layer3("above the table")
         assert result.success, "Layer 3 should succeed"
         
         best = result.hypotheses[0]
@@ -47,7 +47,7 @@ class TestLATNLayer3ComplexExamples:
     def test_on_complex_np(self):
         """Test: 'on the red sphere' -> single PP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("on the red sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer3("on the red sphere")
         assert result.success, "Layer 3 should succeed"
         
         best = result.hypotheses[0]
@@ -61,7 +61,7 @@ class TestLATNLayer3ComplexExamples:
     def test_multiple_prep_phrases(self):
         """Test: 'from the table to the sphere' -> two PP tokens."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("from the table to the sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer3("from the table to the sphere")
         assert result.success, "Layer 3 should succeed"
         
         best = result.hypotheses[0]
@@ -79,7 +79,7 @@ class TestLATNLayer3SimpleExamples:
     def test_at_vector_only(self):
         """Test: 'at [1,2,3]' -> single PP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("at [1,2,3]", enable_semantic_grounding=False)
+        result = executor.execute_layer3("at [1,2,3]")
         assert result.success, "Layer 3 should succeed"
         
         best = result.hypotheses[0]
@@ -92,7 +92,7 @@ class TestLATNLayer3SimpleExamples:
     def test_on_the_table_only(self):
         """Test: 'on the table' -> single PP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("on the table", enable_semantic_grounding=False)
+        result = executor.execute_layer3("on the table")
         assert result.success, "Layer 3 should succeed"
         
         best = result.hypotheses[0]
@@ -104,7 +104,7 @@ class TestLATNLayer3SimpleExamples:
     def test_above_red_sphere_only(self):
         """Test: 'above the red sphere' -> single PP token."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer3("above the red sphere", enable_semantic_grounding=False)
+        result = executor.execute_layer3("above the red sphere")
         assert result.success, "Layer 3 should succeed"
         
         best = result.hypotheses[0]
@@ -133,12 +133,12 @@ class TestLATNLayer3LayerProgression:
         print(f"  Best: {[t.word for t in layer1_result.hypotheses[0].tokens]}")
         
         # Layer 2: NP token replacement
-        layer2_result = executor.execute_layer2(sentence, enable_semantic_grounding=False)
+        layer2_result = executor.execute_layer2(sentence)
         print(f"Layer 2: {len(layer2_result.hypotheses)} NP-enhanced hypotheses")
         print(f"  Best: {[t.word for t in layer2_result.hypotheses[0].tokens]}")
         
         # Layer 3: PP token replacement  
-        layer3_result = executor.execute_layer3(sentence, enable_semantic_grounding=False)
+        layer3_result = executor.execute_layer3(sentence)
         print(f"Layer 3: {len(layer3_result.hypotheses)} PP-enhanced hypotheses")
         print(f"  Best: {[t.word for t in layer3_result.hypotheses[0].tokens]}")
         

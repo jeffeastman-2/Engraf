@@ -230,7 +230,7 @@ class TestLayer4Integration:
         ]
         
         for phrase in grounding_phrases:
-            result = self.executor.execute_layer2(phrase, enable_semantic_grounding=True)
+            result = self.executor.execute_layer2(phrase)
             assert result.success, f"Layer 2 should succeed: {phrase}"
             
             # Should find grounding results

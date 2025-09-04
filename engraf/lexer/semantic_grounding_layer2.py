@@ -45,7 +45,7 @@ class Layer2SemanticGrounder:
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
     
-    def ground(self, np: NounPhrase, return_all_matches: bool = False) -> Layer2GroundingResult:
+    def ground(self, np: NounPhrase, return_all_matches: bool = True) -> Layer2GroundingResult:
         """Ground a NounPhrase to scene objects using SceneModel.
         
         Args:
@@ -63,7 +63,7 @@ class Layer2SemanticGrounder:
             )
         
         # Handle pronoun NPs using specialized pronoun resolution
-        if hasattr(np, 'pronoun') and np.pronoun:
+        if np.vector.isa("pronoun"):
             from engraf.visualizer.scene.scene_model import resolve_pronoun
             try:
                 resolved_objects = resolve_pronoun(np.pronoun, self.scene_model)
@@ -118,69 +118,65 @@ class Layer2SemanticGrounder:
                     alternative_matches=[]  # No alternatives needed with new approach
                 )
                 
-                return Layer2GroundingResult(
-                    success=True,
-                    confidence=confidence,
-                    resolved_object=best_object,
-                    grounded_noun_phrase=grounded_np,
-                    description=description,
-                    alternative_matches=[]  # No alternatives for pronouns
-                )
-                
             except ValueError as e:
                 return Layer2GroundingResult(
                     success=False,
                     confidence=0.0,
                     description=f"Pronoun resolution failed: {e}"
                 )
-        
-        # Handle regular NPs using SceneModel - get all matching objects
-        candidates = self.scene_model.find_noun_phrase(np, return_all_matches=True)
-        
-        if not candidates:
-            return Layer2GroundingResult(
-                success=False,
-                confidence=0.0,
-                description=f"No scene objects match NP: {np}"
-            )
-        
-        # Determine if this NP should ground to multiple objects
-        if np.vector.isa("plural"):
-            # Ground to ALL matching objects (e.g., "all the red objects", "the cubes")
-            resolved_object_list = [obj for conf, obj in candidates]
-            avg_confidence = sum(conf for conf, obj in candidates) / len(candidates)
-            object_ids = [obj.object_id for obj in resolved_object_list]
-            description = f"Grounded NP '{np}' to {len(resolved_object_list)} objects: {object_ids}"
         else:
-            # Ground to the best single match (e.g., "the cube", "a red object")
-            best_confidence, best_object = candidates[0]
-            resolved_object_list = [best_object]
-            avg_confidence = best_confidence
-            description = f"Grounded NP '{np}' to {best_object.object_id}"
-        
-        # Add grounding information directly to the NounPhrase
-        grounded_np = copy.deepcopy(np)
-        grounding_info = {
-            'scene_objects': resolved_object_list,  # Store all resolved objects
-            'confidence': avg_confidence,
-            'type': 'scene_object',
-            'multiple_objects': np.vector.isa("plural")
-        }
-        
-        # Keep backward compatibility with scene_object (singular)
-        if resolved_object_list:
-            grounding_info['scene_object'] = resolved_object_list[0]
-        
-        grounded_np.grounding = grounding_info
-        
-        return Layer2GroundingResult(
-            success=True,
-            confidence=avg_confidence,
-            resolved_objects=resolved_object_list,
-            grounded_noun_phrase=grounded_np,
-            description=description,
-            alternative_matches=[]  # No longer needed with new approach
-        )
+            # Handle regular NPs using SceneModel - get all matching objects
+            candidates = self.scene_model.find_noun_phrase(np, return_all_matches=True)
+            
+            if not candidates:
+                return Layer2GroundingResult(
+                    success=False,
+                    confidence=0.0,
+                    description=f"No scene objects match NP: {np}"
+                )
+            
+            alternative_matches = []
+            # Determine if this NP should ground to multiple objects
+            if np.vector.isa("plural"):
+                # Ground to ALL matching objects (e.g., "all the red objects", "the cubes,")
+                resolved_object_list = [obj for conf, obj in candidates]
+                avg_confidence = sum(conf for conf, obj in candidates) / len(candidates)
+                object_ids = [obj.object_id for obj in resolved_object_list]
+                description = f"Grounded NP '{np}' to {len(resolved_object_list)} objects: {object_ids}"
+            else:
+                # Ground to the best single match (e.g., "a cube", "a red object")
+                best_confidence, best_object = candidates[0]
+                resolved_object_list = [best_object]
+                avg_confidence = best_confidence
+                description = f"Grounded NP '{np}' to {best_object.object_id}"
+                # If this is a definite NP, store alternative matches
+                if np.vector.isa("def") and len(candidates) > 1 and return_all_matches:
+                    alternative_matches = candidates[1:]  # Store alternatives excluding best match
+
+            
+            # Add grounding information directly to the NounPhrase
+            grounded_np = copy.deepcopy(np)
+            grounding_info = {
+                'scene_objects': resolved_object_list,  # Store all resolved objects
+                'confidence': avg_confidence,
+                'type': 'scene_object',
+                'multiple_objects': np.vector.isa("plural")
+            }
+            
+            # Keep backward compatibility with scene_object (singular)
+            if resolved_object_list:
+                grounding_info['scene_object'] = resolved_object_list[0]
+            
+            grounded_np.grounding = grounding_info
+            
+            return Layer2GroundingResult(
+                success=True,
+                confidence=avg_confidence,
+                resolved_objects=resolved_object_list,
+                grounded_noun_phrase=grounded_np,
+                description=description,
+                alternative_matches=alternative_matches
+            )
     
     def ground_multiple(self, np_list: List[NounPhrase], return_all_matches: bool = False) -> List[Layer2GroundingResult]:
         """Ground multiple NounPhrase tokens.

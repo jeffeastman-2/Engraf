@@ -50,7 +50,7 @@ def test_simple_pp_grounding(scene_with_table_and_box):
     print(f"\n🔬 Testing sentence: '{sentence}'")
     
     # Execute Layer 3
-    result = executor.execute_layer3(sentence, enable_semantic_grounding=True)
+    result = executor.execute_layer3(sentence)
     
     print(f"\n✅ Layer 3 Result:")
     print(f"  Success: {result.success}")
@@ -179,7 +179,7 @@ def test_integrated_layer3_and_layer4(scene_with_table_and_box):
     sentence = "move the box above the table to [5,5,5]"
     
     # Execute Layer 3
-    layer3_result = executor.execute_layer3(sentence, enable_semantic_grounding=True)
+    layer3_result = executor.execute_layer3(sentence)
     assert layer3_result.success, "Layer 3 should succeed in integrated test"
     
     # Execute Layer 4  

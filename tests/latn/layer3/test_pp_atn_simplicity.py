@@ -204,12 +204,12 @@ class TestLATNLayerIntegration:
         print(f"  Best: {[t.word for t in layer1_result.hypotheses[0].tokens]}")
         
         # Layer 2: NP token replacement
-        layer2_result = executor.execute_layer2(sentence, enable_semantic_grounding=False)
+        layer2_result = executor.execute_layer2(sentence)
         print(f"Layer 2: {len(layer2_result.hypotheses)} NP-enhanced hypotheses")
         print(f"  Best: {[t.word for t in layer2_result.hypotheses[0].tokens]}")
         
         # Layer 3: PP token replacement  
-        layer3_result = executor.execute_layer3(sentence, enable_semantic_grounding=False)
+        layer3_result = executor.execute_layer3(sentence)
         print(f"Layer 3: {len(layer3_result.hypotheses)} PP-enhanced hypotheses")
         print(f"  Best: {[t.word for t in layer3_result.hypotheses[0].tokens]}")
         print(f"  PP replacements: {len(layer3_result.hypotheses[0].pp_replacements)}")

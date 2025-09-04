@@ -99,11 +99,8 @@ class TestLayer3SpatialValidation(unittest.TestCase):
         
         # Execute Layer 3 directly on the sentence
         print(f"\n🔬 Processing through Layer 3 executor...")
-        layer3_result = self.layer3_executor.execute_layer3(
-            self.sentence,
-            enable_semantic_grounding=True
-        )
-        
+        layer3_result = self.layer3_executor.execute_layer3(self.sentence)
+
         print(f"Layer 3 execution result:")
         print(f"  Success: {layer3_result.success}")
         print(f"  Hypotheses: {len(layer3_result.hypotheses) if hasattr(layer3_result, 'hypotheses') else 0}")

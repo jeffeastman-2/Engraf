@@ -26,7 +26,7 @@ class TestLayer3Grounding:
         executor = LATNLayerExecutor()
         
         # Layer 3: Focus on PP tokenization, not scene validation  
-        result = executor.execute_layer3("a box above a table", enable_semantic_grounding=False)
+        result = executor.execute_layer3("a box above a table")
         
         assert result.success, "Layer 3 should succeed"
         assert len(result.hypotheses) >= 1, "Should generate at least one hypothesis"
@@ -58,7 +58,7 @@ class TestLayer3Grounding:
         executor = LATNLayerExecutor()
         
         # Layer 3: Focus on PP tokenization
-        result = executor.execute_layer3("put the box above the shelf", enable_semantic_grounding=False)
+        result = executor.execute_layer3("put the box above the shelf")
         
         assert result.success, "Layer 3 should succeed"
         assert len(result.hypotheses) >= 1, "Should generate at least one hypothesis"
@@ -91,7 +91,7 @@ class TestLayer3Grounding:
         executor = LATNLayerExecutor()
         
         # Execute Layer 3 with basic PP tokenization
-        result = executor.execute_layer3("move the box above the table", enable_semantic_grounding=False)
+        result = executor.execute_layer3("move the box above the table")
         
         assert result.success, "Layer 3 should succeed"
         assert len(result.hypotheses) >= 1, "Should generate at least one hypothesis"
@@ -125,7 +125,7 @@ class TestLayer3Grounding:
         executor = LATNLayerExecutor()
         
         # Execute Layer 3 parsing
-        result = executor.execute_layer3("move the box under the table", enable_semantic_grounding=False)
+        result = executor.execute_layer3("move the box under the table")
         
         assert result.success, "Layer 3 parsing should succeed"
         assert len(result.hypotheses) >= 1, "Should generate at least one hypothesis"
@@ -159,7 +159,7 @@ class TestLayer3Grounding:
         executor = LATNLayerExecutor()
         
         # Execute Layer 3 parsing
-        result = executor.execute_layer3("delete the box under the table", enable_semantic_grounding=False)
+        result = executor.execute_layer3("delete the box under the table")
         
         assert result.success, "Layer 3 should succeed"
         assert len(result.hypotheses) >= 1, "Should generate at least one hypothesis"
