@@ -1,9 +1,11 @@
 import numpy as np
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 from engraf.lexer.latn_tokenizer import latn_tokenize, latn_tokenize_best
 from engraf.atn.subnet_np import run_np
 from engraf.lexer.vector_space import VectorSpace
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.noun_phrase import NounPhrase
 
  
@@ -666,3 +668,41 @@ def test_latn_three_way_ambiguity_with_np():
         for word, was_original in originals.items():
             if not was_original and word in SEMANTIC_VECTOR_SPACE:
                 del SEMANTIC_VECTOR_SPACE[word]
+
+def test_coordinated_np():
+    """Test Layer 2 NP tokenization with coordinated noun phrases """
+    executor = LATNLayerExecutor()
+
+    # Test coordinated NPs: "a red box and a blue circle and a octahedron"
+    result = executor.execute_layer2('a red box and a blue circle and a octahedron')
+
+    assert result.success, "Failed to tokenize coordinated NPs with adverb-adjective sequences"
+    assert len(result.hypotheses) == 2, "Should generate 2 hypotheses"
+
+    main_hyp = result.hypotheses[1]
+    # Should have exactly 2 NP tokens (one for each noun phrase)
+    assert len(main_hyp.tokens) == 5, f"Should have exactly 5 tokens, got {len(main_hyp.tokens)}"
+    main_np = main_hyp.tokens[0].word
+    assert main_np.startswith("NP("), "First token should be an NP"
+    conj_np = main_hyp.tokens[1].word
+    assert conj_np.startswith("and"), "Second token should be a conjunction"
+    other_np = main_hyp.tokens[2].word
+    assert other_np.startswith("NP("), "Third token should be an NP"
+    conj_np = main_hyp.tokens[3].word
+    assert conj_np.startswith("and"), "Fourth token should be a conjunction"
+    other_np = main_hyp.tokens[4].word
+    assert other_np.startswith("NP("), "Fifth token should be an NP"
+
+    conj_hyp = result.hypotheses[0]    
+    # Should have exactly 2 NP tokens (one for each noun phrase)
+    assert len(conj_hyp.tokens) == 1, f"Should have exactly 1 token, got {len(conj_hyp.tokens)}"
+    conj_np = conj_hyp.tokens[0].word
+    assert conj_np.startswith("CONJ-NP"), "First token should be a conjunction NP"
+    conj = conj_hyp.tokens[0]
+    assert conj is not None
+    original_np = conj._original_np
+    assert isinstance(original_np, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_np)}"
+    assert isinstance(original_np.right, NounPhrase), f"Expected NounPhrase, got {type(original_np.right)}"
+    assert isinstance(original_np.left, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_np.left)}"     
+    assert isinstance(original_np.left.left, NounPhrase), f"Expected NounPhrase, got {type(original_np.left.left)}" 
+    assert isinstance(original_np.left.right, NounPhrase), f"Expected NounPhrase, got {type(original_np.left.right)}"   
