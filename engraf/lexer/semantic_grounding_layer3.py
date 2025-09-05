@@ -15,6 +15,7 @@ from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.hypothesis import TokenizationHypothesis
 from engraf.utils.debug import debug_print
+from engraf.visualizer.scene.scene_model import SceneModel
 
 
 @dataclass
@@ -34,9 +35,8 @@ class Layer3GroundingResult:
 class Layer3SemanticGrounder:
     """Semantic grounding for LATN Layer 3 PrepositionalPhrase tokens."""
     
-    def __init__(self):
-        """Initialize Layer 3 grounding - no scene model needed, uses Layer 2 results."""
-        pass
+    def __init__(self, scene_model: SceneModel):
+        self.scene_model = scene_model
     
     def process_pp_attachments(self, layer3_hypotheses, return_all_matches: bool = False):
         """Two-pass PP attachment resolution with spatial validation and semantic grounding.

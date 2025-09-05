@@ -93,7 +93,7 @@ class LATNLayerExecutor:
     def __init__(self, scene_model: Optional[SceneModel] = None):
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
-        self.layer3_grounder = Layer3SemanticGrounder()  # Layer 3 doesn't use SceneModel
+        self.layer3_grounder = Layer3SemanticGrounder(scene_model)  if scene_model else None
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
         self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
 

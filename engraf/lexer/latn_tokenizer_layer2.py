@@ -18,9 +18,7 @@ import copy
 
 from engraf.lexer.hypothesis import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream
-from engraf.atn.subnet_np import run_np
 from engraf.atn.np import build_np_atn
-from engraf.atn.coordinated_np import build_coordinated_np_atn
 from engraf.atn.core import run_atn
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
@@ -107,7 +105,6 @@ def find_np_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
     i = 0
     
     while i < len(tokens):
-        # Try to parse coordinated NP first, then fall back to simple NP
         # Use TokenStream position tracking to determine how many tokens were consumed
         subsequence = tokens[i:]  # Use all remaining tokens
         best_np = None
