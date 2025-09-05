@@ -38,7 +38,7 @@ class TestLATNLayer3BasicPP:
         
         # Should have PP replacement
         assert any("PP(" in token for token in tokens), "Should have PP token"
-        assert len(hypothesis.pp_replacements) > 0, "Should have PP replacements"
+        assert len(hypothesis.replacements) > 0, "Should have PP replacements"
         
         # Check for PP tokens
         pp_tokens = [tok for tok in hypothesis.tokens if tok.isa("PP")]
@@ -54,7 +54,7 @@ class TestLATNLayer3BasicPP:
         
         # Should have PP replacement
         assert any("PP(" in token for token in tokens), "Should have PP token"
-        assert len(hypothesis.pp_replacements) > 0, "Should have PP replacements"
+        assert len(hypothesis.replacements) > 0, "Should have PP replacements"
         
         # Check for PP tokens
         pp_tokens = [tok for tok in hypothesis.tokens if tok.isa("PP")]
@@ -70,7 +70,7 @@ class TestLATNLayer3BasicPP:
         
         # Should have PP replacement
         assert any("PP(" in token for token in tokens), "Should have PP token"
-        assert len(hypothesis.pp_replacements) > 0, "Should have PP replacements"
+        assert len(hypothesis.replacements) > 0, "Should have PP replacements"
         
         # Check for PP tokens
         pp_tokens = [tok for tok in hypothesis.tokens if tok.isa("PP")]
@@ -99,7 +99,7 @@ class TestLATNLayer3Integration:
         
         # Should have PP replacement
         assert any("PP(" in token for token in tokens), "Should have PP token"
-        assert len(best_hyp.pp_replacements) > 0, "Should have PP replacements"
+        assert len(best_hyp.replacements) > 0, "Should have PP replacements"
         
         # Test using the Layer Executor
         from engraf.lexer.latn_layer_executor import LATNLayerExecutor
@@ -128,7 +128,7 @@ class TestLATNLayer3Integration:
         # Should have PP replacement
         pp_count = sum(1 for token in tokens if "PP(" in token)
         assert pp_count >= 1, f"Should have at least 1 PP token, got {pp_count}"
-        assert len(best_hyp.pp_replacements) >= 1, "Should have PP replacements"
+        assert len(best_hyp.replacements) >= 1, "Should have PP replacements"
 
 
 class TestLATNLayer3Ambiguity:
@@ -149,7 +149,7 @@ class TestLATNLayer3Ambiguity:
         for i, hyp in enumerate(hypotheses[:3], 1):  # Show first 3
             tokens = [tok.word for tok in hyp.tokens]
             print(f"  Hypothesis {i} (conf={hyp.confidence:.3f}): {tokens}")
-            print(f"    PP replacements: {len(hyp.pp_replacements)}")
+            print(f"    PP replacements: {len(hyp.replacements)}")
         
         # Check that we get PP tokens in hypotheses
         best_hyp = hypotheses[0]
@@ -187,7 +187,7 @@ class TestLATNLayer3Ambiguity:
             for i, hyp in enumerate(hypotheses[:3], 1):
                 tokens = [tok.word for tok in hyp.tokens]
                 print(f"  Hypothesis {i} (conf={hyp.confidence:.3f}): {tokens}")
-                print(f"    PP replacements: {len(hyp.pp_replacements)}")
+                print(f"    PP replacements: {len(hyp.replacements)}")
             
             # Should have different interpretations
             # Some with "light house" (compound) and some with "light" + "house"
@@ -215,7 +215,7 @@ class TestLATNLayer3Ambiguity:
         for i, hyp in enumerate(hypotheses[:3], 1):
             tokens = [tok.word for tok in hyp.tokens]
             print(f"  Hypothesis {i} (conf={hyp.confidence:.3f}): {tokens}")
-            print(f"    PP replacements: {len(hyp.pp_replacements)}")
+            print(f"    PP replacements: {len(hyp.replacements)}")
             
             # Count PP tokens
             pp_count = sum(1 for tok in hyp.tokens if tok.isa("PP"))

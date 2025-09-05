@@ -22,7 +22,6 @@ from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder
 from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.pos.scene_object_phrase import SceneObjectPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject

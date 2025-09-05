@@ -212,7 +212,7 @@ class TestLATNLayerIntegration:
         layer3_result = executor.execute_layer3(sentence)
         print(f"Layer 3: {len(layer3_result.hypotheses)} PP-enhanced hypotheses")
         print(f"  Best: {[t.word for t in layer3_result.hypotheses[0].tokens]}")
-        print(f"  PP replacements: {len(layer3_result.hypotheses[0].pp_replacements)}")
+        print(f"  PP replacements: {len(layer3_result.hypotheses[0].replacements)}")
         
         # Each layer should add value
         assert layer1_result.success

@@ -33,7 +33,7 @@ class VectorSpace:
         # Only show non-zero dimensions for cleaner output
         non_zero_dims = [f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS if self[k] != 0.0]
         vec_str = ', '.join(non_zero_dims)
-        return f"VectorSpace(word={self.word!r}, {{ {vec_str} }})"
+        return f"VS(word={self.word!r}, {{ {vec_str} }})"
 
     def to_array(self):
         return self.vector

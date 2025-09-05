@@ -101,16 +101,20 @@ class TokenizationHypothesis:
             elif hasattr(token, '_original_pp') and token._original_pp:
                 # Handle PP tokens - show grounding status of contained NP
                 pp = token._original_pp
-                if pp.noun_phrase and hasattr(pp.noun_phrase, 'grounding') and pp.noun_phrase.grounding:
-                    grounding_info = pp.noun_phrase.grounding
-                    if 'scene_object' in grounding_info:
-                        scene_obj = grounding_info['scene_object']
-                        confidence = grounding_info.get('confidence', 'unknown')
-                        print(f"      [{i}] GPP({token.word} → {scene_obj.object_id} @{confidence:.3f})")
+                np = pp.noun_phrase
+                if np:
+                    if hasattr(np, 'grounding') and np.grounding:
+                        grounding_info = np.grounding
+                        if 'scene_object' in grounding_info:
+                            scene_obj = grounding_info['scene_object']
+                            confidence = grounding_info.get('confidence', 'unknown')
+                            print(f"      [{i}] GPP({token.word} → {scene_obj.object_id} @{confidence:.3f})")
+                        else:
+                            print(f"      [{i}] GPP({token.word} → grounded)")
                     else:
-                        print(f"      [{i}] GPP({token.word} → grounded)")
+                        print(f"      [{i}] PP({pp.preposition} {np})")
                 else:
-                    print(f"      [{i}] {token.word}")
+                    print(f"      [{i}] {token.word}???")
             elif hasattr(token, '_original_np') and token._original_np:
                 # Check if this is a ConjunctionPhrase (CONJ-NP)
                 from engraf.pos.conjunction_phrase import ConjunctionPhrase
@@ -125,7 +129,7 @@ class TokenizationHypothesis:
                             np_parts.append(str(np))
                     
                     coordination_text = f" {conj_phrase.conjunction} ".join(np_parts)
-                    print(f"      [{i}] VectorSpace(word='CONJ-NP', {{ NP=1.00, conj=1.00 }}) → [{coordination_text}]")
+                    print(f"      [{i}] VS(word='CONJ-NP', {{ NP=1.00, conj=1.00 }}) → [{coordination_text}]")
                 else:
                     # Regular NP token
                     print(f"      [{i}] {token}")
