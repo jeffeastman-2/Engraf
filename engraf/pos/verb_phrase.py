@@ -2,6 +2,7 @@ import numpy as np
 from typing import Optional
 from engraf.lexer.vector_space import VectorSpace
 from engraf.pos.noun_phrase import NounPhrase
+from engraf.utils.debug import debug_print
 
 class VerbPhrase():
     def __init__(self, verb=None):
@@ -32,16 +33,16 @@ class VerbPhrase():
     def apply_amount(self, amount_np):
         """Apply an amount/measure noun phrase like '45 degrees'"""
         self.amount = amount_np
-        print(f"✅ VP applying amount: {amount_np}")
+        debug_print(f"✅ VP applying amount: {amount_np}")
 
     def apply_pp(self, pp_obj):
-        print(f"✅ VP applying PP: {pp_obj}")
+        debug_print(f"✅ VP applying PP: {pp_obj}")
         self.preps.append(pp_obj)
 
     def apply_adjective(self, tok):
         self.adjective_complement.append(tok.word)
-        print(f"✅ VP applying adjective complement: {tok.word}")
-        print(f"✅ Current adjective complements: {self.adjective_complement}")
+        debug_print(f"✅ VP applying adjective complement: {tok.word}")
+        debug_print(f"✅ Current adjective complements: {self.adjective_complement}")
 
     def is_imperative(self):
         return self.vector.scalar_projection("action") > 0.5

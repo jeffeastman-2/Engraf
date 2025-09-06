@@ -12,9 +12,7 @@ This layer identifies prepositional phrases like "in the red box", "on a very la
 and replaces them with single PrepositionalPhrase tokens containing the semantic meaning.
 """
 
-from typing import List, Optional
-from dataclasses import dataclass
-import copy
+from typing import List
 
 from engraf.lexer.hypothesis import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream

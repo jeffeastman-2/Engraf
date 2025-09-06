@@ -12,9 +12,7 @@ This layer identifies noun phrases like "the red box", "a very large sphere", "[
 and replaces them with single NounPhrase tokens containing the semantic meaning.
 """
 
-from typing import List, Optional
-from dataclasses import dataclass
-import copy
+from typing import List
 
 from engraf.lexer.hypothesis import TokenizationHypothesis  
 from engraf.lexer.token_stream import TokenStream
@@ -23,7 +21,6 @@ from engraf.atn.core import run_atn
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.lexer.vector_space import VectorSpace
-from engraf.utils.predicates import is_determiner, is_adjective, is_noun, is_vector
 
 
 def create_np_token(np_or_conj) -> VectorSpace:
