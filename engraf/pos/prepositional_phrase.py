@@ -23,3 +23,8 @@ class PrepositionalPhrase():
 
     def apply_np(self, np):
         self.noun_phrase = np
+
+    def printString(self):
+        if self.vector:
+            return f"{self.preposition} + {self.vector()}"
+        return f"{self.preposition} + {self.noun_phrase.printString() if self.noun_phrase else ''}"

@@ -26,3 +26,10 @@ class ConjunctionPhrase:
             current = current.right
         print(f"++ get_last returning {current}")
         return current
+
+    def printString(self):
+        """Print the string representation of the conjunction phrase."""
+        flattened = self.flatten()
+        parts = [f"{item.printString()}" for item in flattened]
+        str =  "(" + f" {self.conjunction} ".join(parts) + ")"
+        return str

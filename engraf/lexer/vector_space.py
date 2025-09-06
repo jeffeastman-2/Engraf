@@ -31,9 +31,8 @@ class VectorSpace:
     # Add optional __str__ override for easier debugging
     def __repr__(self):
         # Only show non-zero dimensions for cleaner output
-        non_zero_dims = [f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS if self[k] != 0.0]
-        vec_str = ', '.join(non_zero_dims)
-        return f"VS(word={self.word!r}, {{ {vec_str} }})"
+        non_zero_dims = self.non_zero_dims()
+        return f"VS(word={self.word!r}, {{ {non_zero_dims} }})"
 
     def to_array(self):
         return self.vector
@@ -78,6 +77,11 @@ class VectorSpace:
 
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
+    
+    def non_zero_dims(self) -> str:
+        non_zero_dims = [f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS if self[k] != 0.0]
+        vec_str = ', '.join(non_zero_dims)
+        return vec_str
 
     def isa(self, category: str) -> bool:
         """Returns True if the category is 'active' in this vector."""

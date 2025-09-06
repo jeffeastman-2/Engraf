@@ -50,4 +50,10 @@ class VerbPhrase():
     def verb_has_intent(self, intent: str, threshold=0.5) -> bool:
         return self.verb and self.verb.scalar_projection(intent) > threshold
 
-
+    def printString(self):
+        if self.adjective_complement:
+            adjectives = " ".join(self.adjective_complement)
+            str = f"{self.verb} {adjectives} + {(self.noun_phrase.printString() if self.noun_phrase else "")}"
+        else:
+            str = f"{self.verb} + {(self.noun_phrase.printString() if self.noun_phrase else "")}"
+        return str

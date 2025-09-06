@@ -156,3 +156,10 @@ class NounPhrase():
             return (0, 0)
         # Assuming tokens have position information (would need to be added to token structure)
         return (0, len(self.consumed_tokens))  # Placeholder - would use actual positions
+    
+    def printString(self):
+        if self.grounding and self.grounding.get('scene_object'):
+            scene_obj = self.grounding['scene_object']
+            return f"{self.noun} ({scene_obj.name})"
+        else:
+            return " ".join(self.get_consumed_words())

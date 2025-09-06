@@ -10,7 +10,10 @@ from typing import List, Optional, Any
 from dataclasses import dataclass, field
 
 # Import moved here to avoid circular imports
+from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
 from engraf.lexer.vector_space import VectorSpace
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from engraf.pos.noun_phrase import NounPhrase
 
 
 @dataclass
@@ -49,20 +52,41 @@ class TokenizationHypothesis:
     def token_words(self) -> List[str]:
         """Get the word strings for all tokens."""
         return [token.word for token in self.tokens]
-    
-    spaces = "      "
+
+    spaces = "        "
 
     def printNP(self, i, token):
         """Print a noun phrase token."""
-        print(f"{self.spaces}[{i}] [NP] {token.word}")
+        original_np = token._original_np
+        if token.isa("conj") and token._original_np:
+            str = original_np.printString()
+            print(f"{self.spaces}[{i}] [CONJ-NP] {str}")
+        else:
+            print(f"{self.spaces}[{i}] {token.word} = {token.non_zero_dims()}")
 
     def printPP(self, i, token):
-        """Print a prepositional phrase token."""
-        print(f"{self.spaces}[{i}] [PP] {token.word}")
+        if token.isa("conj") and token._original_pp:
+            str = token._original_pp.printString()
+            print(f"{self.spaces}[{i}] [CONJ-PP] {str}")
+        else:
+            print(f"{self.spaces}[{i}] {token.word} = {token.non_zero_dims()}")
 
     def printVP(self, i, token):
         """Print a verb phrase token."""
-        print(f"{self.spaces}[{i}] [VP] {token.word}")
+        original_vp = token._original_vp
+        if token.isa("conj") and token._original_vp:
+            str = original_vp.printString()
+            print(f"{self.spaces}[{i}] [CONJ-VP] {str}")
+        else:
+            original_vp_np = original_vp.noun_phrase
+            if isinstance(original_vp_np, ConjunctionPhrase):
+                str = original_vp_np.printString()
+                print(f"{self.spaces}[{i}] [CONJ-VP] {original_vp.verb} => {str}")
+            elif isinstance(original_vp_np, NounPhrase):
+                str = original_vp_np.printString()
+                print(f"{self.spaces}[{i}] [VP] {original_vp.verb} => {str}")
+            else:
+                print(f"{self.spaces}[{i}] {token.word}")
 
     def printSentence(self, i, token):
         """Print a sentence token."""

@@ -390,7 +390,7 @@ class Layer3SemanticGrounder:
         target_obj = None
         try:
             grounded_phrase = target_token._grounded_phrase
-            if grounded_phrase is not None and hasattr(grounded_phrase, 'grounding'):
+            if grounded_phrase is not None and hasattr(grounded_phrase, 'grounding') and grounded_phrase.grounding:
                 target_obj = grounded_phrase.grounding.get('scene_object')
         except AttributeError:
             pass
@@ -402,7 +402,7 @@ class Layer3SemanticGrounder:
             if pp is not None:
                 try:
                     noun_phrase = pp.noun_phrase
-                    if noun_phrase is not None and hasattr(noun_phrase, 'grounding'):
+                    if noun_phrase is not None and hasattr(noun_phrase, 'grounding') and noun_phrase.grounding:
                         pp_obj = noun_phrase.grounding.get('scene_object')
                 except AttributeError:
                     pass
