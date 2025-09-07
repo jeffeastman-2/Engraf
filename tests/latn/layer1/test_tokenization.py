@@ -9,7 +9,7 @@ Tests for:
 - Confidence scoring for tokenization
 """
 
-from engraf.lexer.latn_tokenizer import latn_tokenize, latn_tokenize_best
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1, latn_tokenize_best
 from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
 
 
@@ -17,8 +17,8 @@ def test_latn_layer1_morphological_inflection():
     """Test that LATN Layer 1 handles morphological inflections correctly."""
     
     # Test singular vs plural nouns
-    singular_result = latn_tokenize("sphere")
-    plural_result = latn_tokenize("spheres")
+    singular_result = latn_tokenize_layer1("sphere")
+    plural_result = latn_tokenize_layer1("spheres")
     
     # Should find tokenization for both
     assert len(singular_result) > 0
@@ -41,7 +41,7 @@ def test_latn_layer1_verb_inflection():
     """Test LATN Layer 1 verb inflection handling."""
     
     # Test past participle
-    past_part_result = latn_tokenize("called")
+    past_part_result = latn_tokenize_layer1("called")
     assert len(past_part_result) > 0
     tokens = past_part_result[0].tokens
     assert len(tokens) == 1
@@ -54,7 +54,7 @@ def test_latn_layer1_verb_inflection():
     assert tok["naming"] > 0.0
     
     # Test present participle  
-    present_part_result = latn_tokenize("calling")
+    present_part_result = latn_tokenize_layer1("calling")
     assert len(present_part_result) > 0
     tokens = present_part_result[0].tokens
     assert len(tokens) == 1
@@ -71,7 +71,7 @@ def test_latn_layer1_multi_hypothesis_generation():
     """Test that LATN Layer 1 generates multiple tokenization hypotheses."""
     
     # Simple case should still generate at least one hypothesis
-    result = latn_tokenize("red sphere")
+    result = latn_tokenize_layer1("red sphere")
     assert len(result) > 0
     
     # Each hypothesis should have confidence and tokens
@@ -107,7 +107,7 @@ def test_latn_layer1_adjective_inflection():
     
     # Test comparative and superlative forms would go here
     # For now, test basic adjective tokenization
-    result = latn_tokenize("bigger")
+    result = latn_tokenize_layer1("bigger")
     assert len(result) > 0
     
     # Should handle "bigger" -> "big" + comparative marking

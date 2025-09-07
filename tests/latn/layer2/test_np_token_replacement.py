@@ -13,7 +13,7 @@ from engraf.lexer.latn_tokenizer_layer2 import (
     find_np_sequences,
     replace_np_sequences
 )
-from engraf.lexer.latn_tokenizer import latn_tokenize
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.atn.subnet_np import run_np
 from engraf.pos.noun_phrase import NounPhrase
@@ -91,7 +91,7 @@ class TestLATNLayer2NounPhraseDetection:
     def test_find_np_sequences_simple(self):
         """Test finding NP sequences in token list."""
         # Get Layer 1 tokens for testing
-        layer1_hypotheses = latn_tokenize("the red box")
+        layer1_hypotheses = latn_tokenize_layer1("the red box")
         tokens = layer1_hypotheses[0].tokens
         
         np_sequences = find_np_sequences(tokens)
@@ -105,7 +105,7 @@ class TestLATNLayer2NounPhraseDetection:
     def test_find_np_sequences_vector(self):
         """Test finding NP sequences with vector coordinates."""
         # Get Layer 1 tokens for testing  
-        layer1_hypotheses = latn_tokenize("[5,10,15]")
+        layer1_hypotheses = latn_tokenize_layer1("[5,10,15]")
         tokens = layer1_hypotheses[0].tokens
         
         np_sequences = find_np_sequences(tokens)
@@ -118,13 +118,13 @@ class TestLATNLayer2NounPhraseDetection:
     def test_replace_np_sequences(self):
         """Test replacing NP sequences with NP tokens."""
         # Get Layer 1 tokens for testing
-        layer1_hypotheses = latn_tokenize("the red box")
+        layer1_hypotheses = latn_tokenize_layer1("the red box")
         tokens = layer1_hypotheses[0].tokens
     
     def test_find_np_sequences_vector(self):
         """Test finding vector NP sequences."""
         # Get Layer 1 tokens for testing
-        layer1_hypotheses = latn_tokenize("[5,10,15]")
+        layer1_hypotheses = latn_tokenize_layer1("[5,10,15]")
         tokens = layer1_hypotheses[0].tokens
         
         np_sequences = find_np_sequences(tokens)
@@ -137,7 +137,7 @@ class TestLATNLayer2NounPhraseDetection:
     def test_replace_np_sequences(self):
         """Test replacing NP sequences with NP tokens."""
         # Get Layer 1 tokens for testing
-        layer1_hypotheses = latn_tokenize("the red box")
+        layer1_hypotheses = latn_tokenize_layer1("the red box")
         tokens = layer1_hypotheses[0].tokens
         
         np_sequences = find_np_sequences(tokens)
@@ -154,7 +154,7 @@ class TestLATNLayer2TokenCreation:
     def test_create_np_token_structure(self):
         """Test NP token creation preserves structure."""
         # Get Layer 1 tokens for testing
-        layer1_hypotheses = latn_tokenize("the big red sphere")
+        layer1_hypotheses = latn_tokenize_layer1("the big red sphere")
         tokens = layer1_hypotheses[0].tokens
         
         np = run_np(tokens)
@@ -170,7 +170,7 @@ class TestLATNLayer2TokenCreation:
     def test_create_np_token_word_format(self):
         """Test NP token word formatting."""
         # Get Layer 1 tokens for testing
-        layer1_hypotheses = latn_tokenize("the table")
+        layer1_hypotheses = latn_tokenize_layer1("the table")
         tokens = layer1_hypotheses[0].tokens
         
         np = run_np(tokens)

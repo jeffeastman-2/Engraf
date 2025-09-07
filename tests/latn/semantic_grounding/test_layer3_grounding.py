@@ -27,7 +27,7 @@ class TestLayer3SemanticGrounding:
         self.table = SceneObject("table", table_vector, object_id="table_1")
         self.scene.add_object(self.table)
 
-        self.grounder = Layer3SemanticGrounder()  # Layer 3 doesn't take scene_model        # Ensure vocabulary has prepositions
+        self.grounder = Layer3SemanticGrounder(self.scene)         # Ensure vocabulary has prepositions
         self.original_vocab = {}
         test_words = {
             'on': vector_from_features("prep spatial_location", locY=0.5),

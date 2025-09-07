@@ -307,7 +307,7 @@ class Layer5SemanticGrounder:
             description=f"Successfully grouped {len(objects)} object(s)"
         )
     
-    def multiply_hypotheses_with_grounding(self, hypotheses: List[TokenizationHypothesis], return_all_matches: bool = True) -> tuple[List[TokenizationHypothesis], List[Layer5GroundingResult]]:
+    def ground_layer5(self, hypotheses: List[TokenizationHypothesis], return_all_matches: bool = True) -> tuple[List[TokenizationHypothesis], List[Layer5GroundingResult]]:
         """Apply grounding to hypotheses following the pattern of other layers.
         
         Args:

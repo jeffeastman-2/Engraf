@@ -10,7 +10,7 @@ import pytest
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.atn.np import run_np
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize, latn_tokenize_best
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1, latn_tokenize_best
 from engraf.pos.noun_phrase import NounPhrase
 
 
@@ -18,7 +18,7 @@ def test_unknown_token_after_noun_should_terminate_np():
     """Test that unknown token after noun properly terminates NP parsing."""
     
     # Get tokenized version of "box next" where "next" is unknown
-    hypotheses = latn_tokenize("box next")
+    hypotheses = latn_tokenize_layer1("box next")
     tokens = hypotheses[0].tokens  # Get first hypothesis
     
     # Verify that "next" is marked as unknown
@@ -84,7 +84,7 @@ def test_np_atn_should_terminate_on_unknown_after_noun():
     """Test that NP ATN properly terminates when encountering unknown token after noun."""
     
     # Create test case: determiner + noun + unknown
-    hypotheses = latn_tokenize("a box next")
+    hypotheses = latn_tokenize_layer1("a box next")
     tokens = hypotheses[0].tokens  # Get first hypothesis
     
     # Verify token properties

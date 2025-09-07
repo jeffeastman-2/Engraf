@@ -1,6 +1,6 @@
 import unittest
 from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
-from engraf.lexer.latn_tokenizer import latn_tokenize, TokenizationHypothesis
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1, TokenizationHypothesis
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import vector_from_features
 
@@ -144,7 +144,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
         This demonstrates the core LATN Layer 1 functionality.
         """
         sentence = "draw a light house at [0,0,0]"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
         
         # Should return multiple hypotheses
         self.assertGreater(len(hypotheses), 1, "LATN should return multiple hypotheses for ambiguous tokenization")
@@ -182,7 +182,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
         Optimized LATN now produces single hypothesis for truly unambiguous sentences.
         """
         sentence = "draw a box at [1,2,3]"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
         
         # Optimized LATN produces single hypothesis for unambiguous sentences
         self.assertEqual(len(hypotheses), 1, "Optimized LATN should produce single hypothesis for unambiguous sentences")
@@ -205,7 +205,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
         
         try:
             sentence = "draw a very light house"
-            hypotheses = latn_tokenize(sentence)
+            hypotheses = latn_tokenize_layer1(sentence)
             
             # Should return multiple hypotheses (3 possible interpretations)
             self.assertGreaterEqual(len(hypotheses), 3, "Should return at least 3 hypotheses for three-way ambiguity")
@@ -239,7 +239,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
         Test that LATN confidence scoring properly ranks hypotheses.
         """
         sentence = "draw a light house at [0,0,0]"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
         
         # Confidences should be in descending order
         confidences = [hyp.confidence for hyp in hypotheses]
@@ -258,7 +258,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
     def test_unambiguous_sentence_single_hypothesis(self):
         """Test that unambiguous sentences produce a single hypothesis"""
         sentence = "draw a box at [1,2,3]"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
         
         # Should produce exactly one hypothesis since there's no ambiguity
         self.assertEqual(len(hypotheses), 1,
@@ -272,7 +272,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
     def test_unknown_single_word_handling(self):
         """Test that unknown single words get proper <unknown> tokens"""
         sentence = "draw foozle at [1,2,3]"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
         
         # Should produce exactly one hypothesis with foozle marked as unknown
         self.assertEqual(len(hypotheses), 1,
@@ -299,7 +299,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
             SEMANTIC_VECTOR_SPACE['light house'] = vector_from_features('noun')
             
             sentence = "draw a light house"
-            hypotheses = latn_tokenize(sentence)
+            hypotheses = latn_tokenize_layer1(sentence)
             
             # Should produce 2 hypotheses: compound vs separate words
             self.assertEqual(len(hypotheses), 2,
@@ -333,7 +333,7 @@ class TestLATNLexicalLayer(unittest.TestCase):
     def test_no_pollution_from_invalid_compounds(self):
         """Test that invalid multi-word compounds don't create unknown tokens (pollution prevention)"""
         sentence = "draw a blurble flangle"  # Neither word exists, but this shouldn't create compounds
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
         
         # Should produce exactly one hypothesis with each unknown word marked separately
         self.assertEqual(len(hypotheses), 1,

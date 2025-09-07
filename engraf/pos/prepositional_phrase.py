@@ -26,5 +26,5 @@ class PrepositionalPhrase():
 
     def printString(self):
         if self.vector:
-            return f"{self.preposition} + {self.vector()}"
+            return f"{self.preposition} + {self.vector.non_zero_dims()}"
         return f"{self.preposition} + {self.noun_phrase.printString() if self.noun_phrase else ''}"

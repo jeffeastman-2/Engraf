@@ -14,7 +14,7 @@ starting at any token position.
 
 import pytest
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize  # Use full LATN tokenization
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1  # Use full LATN tokenization
 from engraf.atn.subnet_np import run_np
 from engraf.lexer.vector_space import VectorSpace
 
@@ -25,7 +25,7 @@ def parse_np_with_latn(text):
     This reflects real usage where LATN generates multiple tokenization hypotheses
     and tries to parse NPs from each one.
     """
-    tokenization_hypotheses = latn_tokenize(text)
+    tokenization_hypotheses = latn_tokenize_layer1(text)
     
     for hypothesis in tokenization_hypotheses:
         if hypothesis.tokens:  # Valid token list

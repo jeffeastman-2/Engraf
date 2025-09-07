@@ -38,7 +38,7 @@ class Layer3SemanticGrounder:
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
     
-    def process_pp_attachments(self, layer3_hypotheses, return_all_matches: bool = False):
+    def ground_layer3(self, layer3_hypotheses, return_all_matches: bool = False):
         """Two-pass PP attachment resolution with spatial validation and semantic grounding.
         
         Args:
@@ -65,7 +65,7 @@ class Layer3SemanticGrounder:
         
         return layer3_hypotheses
     
-    def ground(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
+    def ground(self, pp: PrepositionalPhrase, return_all_matches: bool = True) -> Layer3GroundingResult:
         """Ground a PrepositionalPhrase to spatial locations or object relationships.
         
         Args:

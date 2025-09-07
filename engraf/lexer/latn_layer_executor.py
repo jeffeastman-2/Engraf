@@ -15,7 +15,7 @@ Refactored for clean separation of concerns:
 from typing import List, Optional, Tuple, Dict, Any
 from dataclasses import dataclass
 
-from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize, TokenizationHypothesis
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1, TokenizationHypothesis
 from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
 from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
 from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4
@@ -115,7 +115,7 @@ class LATNLayerExecutor:
             Layer1Result with tokenization hypotheses
         """
         try:
-            hypotheses = latn_tokenize(sentence)
+            hypotheses = latn_tokenize_layer1(sentence)
             
             if not hypotheses or not sentence.strip():
                 return Layer1Result(
@@ -178,7 +178,7 @@ class LATNLayerExecutor:
 
             # Semantic grounding with hypothesis multiplication (if enabled)
             if self.layer2_grounder:
-                grounded_hypotheses, all_grounding_results = self.layer2_grounder.multiply_hypotheses_with_grounding(
+                grounded_hypotheses, all_grounding_results = self.layer2_grounder.ground_layer2(
                     layer2_hypotheses, return_all_matches=True
                 )
             else:
@@ -265,7 +265,7 @@ class LATNLayerExecutor:
             # Layer 3 grounding - process PP attachments with spatial validation
             if self.layer3_grounder:
                 # Process PP attachment combinations with spatial validation
-                grounded_hypotheses = self.layer3_grounder.process_pp_attachments(
+                grounded_hypotheses = self.layer3_grounder.ground_layer3(
                     layer3_hypotheses, return_all_matches=True
                 )
                 if report:
@@ -403,7 +403,7 @@ class LATNLayerExecutor:
 
             # Semantic grounding/execution (if enabled)
             if self.layer5_grounder:
-                grounded_hypotheses, grounding_results = self.layer5_grounder.multiply_hypotheses_with_grounding(
+                grounded_hypotheses, grounding_results = self.layer5_grounder.ground_layer5(
                     report=report)
                 if report:
                     print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
@@ -454,7 +454,7 @@ class LATNLayerExecutor:
         """Update the scene model and reinitialize grounders."""
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
-        self.layer3_grounder = Layer3SemanticGrounder() if scene_model else None
+        self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
         self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
     
@@ -473,10 +473,10 @@ class LATNLayerExecutor:
             'hypothesis_count': len(layer1_result.hypotheses),
             'description': layer1_result.description
         }
-        
+
         if target_layer >= 2:
             # Execute Layer 2
-            layer2_result = self.execute_layer2(sentence, enable_semantic_grounding=bool(self.scene))
+            layer2_result = self.execute_layer2(sentence)
             analysis['layer2'] = {
                 'success': layer2_result.success,
                 'confidence': layer2_result.confidence,
@@ -487,7 +487,7 @@ class LATNLayerExecutor:
         
         if target_layer >= 3:
             # Execute Layer 3
-            layer3_result = self.execute_layer3(sentence, enable_semantic_grounding=bool(self.scene))
+            layer3_result = self.execute_layer3(sentence)
             analysis['layer3'] = {
                 'success': layer3_result.success,
                 'confidence': layer3_result.confidence,

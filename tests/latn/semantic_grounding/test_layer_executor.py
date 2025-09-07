@@ -7,8 +7,7 @@ Tests for the LATN layer executor that provides entry points at each layer.
 
 import pytest
 from engraf.lexer.latn_layer_executor import (
-    LATNLayerExecutor, execute_layer1, execute_layer2, execute_layer3,
-    Layer1Result, Layer2Result, Layer3Result
+    LATNLayerExecutor, Layer1Result, Layer2Result, Layer3Result
 )
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
@@ -62,7 +61,7 @@ class TestLATNLayerExecutor:
     def test_execute_layer2_without_scene(self):
         """Test Layer 2 execution without semantic grounding."""
         executor = LATNLayerExecutor()
-        result = executor.execute_layer2("the red box", enable_semantic_grounding=False)
+        result = executor.execute_layer2("the red box")
         
         assert isinstance(result, Layer2Result)
         assert result.success
@@ -73,7 +72,7 @@ class TestLATNLayerExecutor:
     def test_execute_layer2_with_scene(self):
         """Test Layer 2 execution with semantic grounding."""
         executor = LATNLayerExecutor(self.scene)
-        result = executor.execute_layer2("the red box", enable_semantic_grounding=True)
+        result = executor.execute_layer2("the red box")
         
         assert isinstance(result, Layer2Result)
         assert result.success
@@ -111,24 +110,7 @@ class TestLATNLayerExecutor:
         assert not result.success
         assert not result.layer1_result.success
         assert "Layer 1 failure" in result.description
-    
-    def test_convenience_functions(self):
-        """Test the convenience functions for direct layer access."""
-        # Test Layer 1 convenience function
-        layer1_result = execute_layer1("the red box")
-        assert isinstance(layer1_result, Layer1Result)
-        assert layer1_result.success
         
-        # Test Layer 2 convenience function
-        layer2_result = execute_layer2("the red box", self.scene)
-        assert isinstance(layer2_result, Layer2Result)
-        assert layer2_result.success
-        
-        # Test Layer 3 convenience function
-        layer3_result = execute_layer3("the red box", self.scene)
-        assert isinstance(layer3_result, Layer3Result)
-        assert layer3_result.success
-    
     def test_scene_model_update(self):
         """Test updating the scene model."""
         executor = LATNLayerExecutor()
@@ -181,7 +163,7 @@ class TestLATNLayerExecutor:
         self.scene.add_object(green_box)
         
         # Test with generic "box" query
-        result = executor.execute_layer2("the box", return_all_matches=True)
+        result = executor.execute_layer2("the box")
         
         assert result.success
         if result.grounding_results:

@@ -14,7 +14,7 @@ starting at any token position.
 
 import pytest
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize  # Use full LATN tokenization
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1  # Use full LATN tokenization
 from engraf.atn.subnet_np import run_np
 from engraf.lexer.vector_space import VectorSpace
 
@@ -25,7 +25,7 @@ def parse_np_with_latn(text):
     This reflects real usage where LATN generates multiple tokenization hypotheses
     and tries to parse NPs from each one.
     """
-    tokenization_hypotheses = latn_tokenize(text)
+    tokenization_hypotheses = latn_tokenize_layer1(text)
     
     for hypothesis in tokenization_hypotheses:
         if hypothesis.tokens:  # Valid token list
@@ -68,7 +68,7 @@ class TestEnhancedNPGrammar:
         ]
 
         for case, expected_tokens in test_cases:
-            hypotheses = latn_tokenize(case)
+            hypotheses = latn_tokenize_layer1(case)
             tokens = hypotheses[0].tokens  # Use best hypothesis
             result = run_np(TokenStream(tokens))
             
@@ -89,7 +89,7 @@ class TestEnhancedNPGrammar:
         ]
 
         for case, expected_tokens in test_cases:
-            hypotheses = latn_tokenize(case)
+            hypotheses = latn_tokenize_layer1(case)
             tokens = hypotheses[0].tokens  # Use best hypothesis
             result = run_np(TokenStream(tokens))
             
@@ -109,7 +109,7 @@ class TestEnhancedNPGrammar:
         ]
 
         for case, expected_tokens in test_cases:
-            hypotheses = latn_tokenize(case)
+            hypotheses = latn_tokenize_layer1(case)
             tokens = hypotheses[0].tokens  # Use best hypothesis
             result = run_np(TokenStream(tokens))
             
@@ -124,12 +124,12 @@ class TestEnhancedNPGrammar:
     def test_adverb_scaling_effects(self):
         """Test that adverbs properly scale adjectives."""
         # Parse "big sphere" (baseline)
-        hypotheses1 = latn_tokenize("big sphere")
+        hypotheses1 = latn_tokenize_layer1("big sphere")
         tokens1 = hypotheses1[0].tokens  # Use best hypothesis
         result1 = run_np(TokenStream(tokens1))
         
         # Parse "very big sphere" (scaled)
-        hypotheses2 = latn_tokenize("very big sphere")
+        hypotheses2 = latn_tokenize_layer1("very big sphere")
         tokens2 = hypotheses2[0].tokens  # Use best hypothesis
         result2 = run_np(TokenStream(tokens2))
         
@@ -149,7 +149,7 @@ class TestEnhancedNPGrammar:
         ]
 
         for case, expected_tokens in test_cases:
-            hypotheses = latn_tokenize(case)
+            hypotheses = latn_tokenize_layer1(case)
             tokens = hypotheses[0].tokens  # Use best hypothesis
             result = run_np(TokenStream(tokens))
             
@@ -163,7 +163,7 @@ class TestEnhancedNPGrammar:
     
     def test_np_vector_composition(self):
         """Test that NP vectors properly combine tokens."""
-        hypotheses = latn_tokenize("very big red sphere")
+        hypotheses = latn_tokenize_layer1("very big red sphere")
         tokens = hypotheses[0].tokens  # Use best hypothesis
         result = run_np(TokenStream(tokens))
         
@@ -188,7 +188,7 @@ class TestEnhancedNPGrammar:
         ]
 
         for case, expected_attributes in test_cases:
-            hypotheses = latn_tokenize(case)
+            hypotheses = latn_tokenize_layer1(case)
             tokens = hypotheses[0].tokens  # Use best hypothesis
             result = run_np(TokenStream(tokens))
             
@@ -209,7 +209,7 @@ class TestEnhancedNPGrammar:
         """Test that enhanced NPs are ready for LATN multi-hypothesis generation."""
         # This tests that we can parse multiple NP patterns from the same token sequence
         # Use just the NP part without additional words that would confuse the parser
-        hypotheses = latn_tokenize("very big red spheres")
+        hypotheses = latn_tokenize_layer1("very big red spheres")
         sentence_tokens = hypotheses[0].tokens  # Use best hypothesis
         
         # Test that we can find NPs starting at different positions

@@ -55,7 +55,7 @@ class TestLayer2SemanticGrounding:
         # Create a generic box NP
         np = NounPhrase("box")
         np.determiner = "the"
-        np.vector = vector_from_features("noun")
+        np.vector = vector_from_features("noun def")
         
         result = self.grounder.ground(np, return_all_matches=True)
         

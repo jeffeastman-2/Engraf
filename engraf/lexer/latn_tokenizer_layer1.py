@@ -15,7 +15,7 @@ import re
 from typing import List, Tuple
 
 
-def latn_tokenize(sentence: str) -> List[TokenizationHypothesis]:
+def latn_tokenize_layer1(sentence: str) -> List[TokenizationHypothesis]:
     """
     LATN lexical layer: Return multiple ranked tokenization hypotheses.
     
@@ -217,7 +217,7 @@ def latn_tokenize_best(sentence):
     This provides backward compatibility with the original tokenize() function
     while using multi-hypothesis tokenization internally.
     """
-    hypotheses = latn_tokenize(sentence)
+    hypotheses = latn_tokenize_layer1(sentence)
     if hypotheses:
         return hypotheses[0].tokens
     else:

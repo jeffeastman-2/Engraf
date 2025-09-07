@@ -2,7 +2,7 @@ import numpy as np
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.lexer.token_stream import TokenStream
 from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
-from engraf.lexer.latn_tokenizer import latn_tokenize, latn_tokenize_best
+from engraf.lexer.latn_tokenizer import latn_tokenize_layer1, latn_tokenize_best
 from engraf.atn.subnet_np import run_np
 from engraf.lexer.vector_space import VectorSpace
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
@@ -60,7 +60,7 @@ def test_np_with_vector():
 def test_latn_tokenizer_with_simple_np():
     """Test that LATN tokenizer works with simple NP and provides multiple hypotheses."""
     sentence = "the red cube"
-    hypotheses = latn_tokenize(sentence)
+    hypotheses = latn_tokenize_layer1(sentence)
     
     # Should have at least one hypothesis
     assert len(hypotheses) > 0
@@ -79,7 +79,7 @@ def test_latn_tokenizer_with_simple_np():
 def test_latn_multiple_hypotheses_with_np():
     """Test how NP ATN handles different tokenization hypotheses."""
     sentence = "the big red sphere"
-    hypotheses = latn_tokenize(sentence)
+    hypotheses = latn_tokenize_layer1(sentence)
     
     print(f"Testing sentence: '{sentence}'")
     print(f"LATN generated {len(hypotheses)} hypotheses:")
@@ -133,7 +133,7 @@ def test_latn_ambiguous_compound_with_np():
     
     try:
         sentence = "a red cube"  # Could be "red cube" (compound) or "red" + "cube"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
 
         print(f"Testing ambiguous sentence: '{sentence}'")
         print(f"LATN generated {len(hypotheses)} hypotheses:")
@@ -196,7 +196,7 @@ def test_latn_with_adverb_adjective_np():
     
     try:
         sentence = "a very large blue sphere"
-        hypotheses = latn_tokenize(sentence)
+        hypotheses = latn_tokenize_layer1(sentence)
 
         print(f"Testing adverb-adjective sentence: '{sentence}'")
         print(f"LATN generated {len(hypotheses)} hypotheses")
@@ -283,7 +283,7 @@ def test_latn_semantic_grounding_ambiguous_objects():
         ambiguous_sentence = "the box"
         print(f"\nTesting ambiguous reference: '{ambiguous_sentence}'")
         
-        hypotheses = latn_tokenize(ambiguous_sentence)
+        hypotheses = latn_tokenize_layer1(ambiguous_sentence)
         print(f"LATN generated {len(hypotheses)} tokenization hypotheses")
         
         for i, hyp in enumerate(hypotheses, 1):
@@ -326,7 +326,7 @@ def test_latn_semantic_grounding_ambiguous_objects():
         specific_sentence = "the red box"
         print(f"\nTesting more specific reference: '{specific_sentence}'")
         
-        hypotheses = latn_tokenize(specific_sentence)
+        hypotheses = latn_tokenize_layer1(specific_sentence)
         for i, hyp in enumerate(hypotheses, 1):
             tokens = [tok.word for tok in hyp.tokens]
             print(f"  Hypothesis {i} (conf={hyp.confidence:.2f}): {tokens}")
@@ -358,7 +358,7 @@ def test_latn_semantic_grounding_ambiguous_objects():
         specific_green_sentence = "the green box"
         print(f"\nTesting specific green reference: '{specific_green_sentence}'")
         
-        hypotheses = latn_tokenize(specific_green_sentence)
+        hypotheses = latn_tokenize_layer1(specific_green_sentence)
         for i, hyp in enumerate(hypotheses, 1):
             tokens = [tok.word for tok in hyp.tokens]
             print(f"  Hypothesis {i} (conf={hyp.confidence:.2f}): {tokens}")
@@ -457,7 +457,7 @@ def test_latn_semantic_grounding_resolution():
         for sentence, expectation in test_cases:
             print(f"\nTesting: '{sentence}' - {expectation}")
             
-            hypotheses = latn_tokenize(sentence)
+            hypotheses = latn_tokenize_layer1(sentence)
             for i, hyp in enumerate(hypotheses, 1):
                 tokens = [tok.word for tok in hyp.tokens]
                 print(f"  Hypothesis {i} (conf={hyp.confidence:.2f}): {tokens}")
@@ -530,7 +530,7 @@ def test_latn_vs_original_tokenizer():
         print(f"  {tok.word}")
     
     # LATN tokenizer - multiple hypotheses  
-    latn_hypotheses = latn_tokenize(text)
+    latn_hypotheses = latn_tokenize_layer1(text)
     print(f"LATN tokenizer: {len(latn_hypotheses)} hypotheses")
     for i, hyp in enumerate(latn_hypotheses, 1):
         tokens = [tok.word for tok in hyp.tokens]
@@ -574,7 +574,7 @@ def test_latn_ambiguous_light_house():
         sentence = "a green box"
         
         # LATN should give multiple hypotheses
-        latn_hypotheses = latn_tokenize(sentence)
+        latn_hypotheses = latn_tokenize_layer1(sentence)
         print(f"LATN hypotheses for '{sentence}': {len(latn_hypotheses)}")
         
         for i, hyp in enumerate(latn_hypotheses, 1):
@@ -636,7 +636,7 @@ def test_latn_three_way_ambiguity_with_np():
         sentence = "a very big box"
         
         # LATN should give multiple hypotheses
-        latn_hypotheses = latn_tokenize(sentence)
+        latn_hypotheses = latn_tokenize_layer1(sentence)
         print(f"LATN hypotheses for '{sentence}': {len(latn_hypotheses)}")
         
         successful_parses = 0

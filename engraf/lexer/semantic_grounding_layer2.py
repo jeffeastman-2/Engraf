@@ -217,7 +217,7 @@ class Layer2SemanticGrounder:
         
         return noun_phrases
     
-    def multiply_hypotheses_with_grounding(self, layer2_hypotheses: List[TokenizationHypothesis], 
+    def ground_layer2(self, layer2_hypotheses: List[TokenizationHypothesis], 
                                          return_all_matches: bool = False) -> Tuple[List[TokenizationHypothesis], List[Layer2GroundingResult]]:
         """Multiply hypotheses based on grounding results using two-pass algorithm.
         
