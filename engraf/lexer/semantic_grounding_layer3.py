@@ -6,12 +6,10 @@ This module provides semantic grounding capabilities for LATN Layer 3 Prepositio
 It bridges between parsed PrepositionalPhrase structures and spatial locations/relationships.
 """
 
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 from dataclasses import dataclass
-import numpy as np
-
+ 
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
-from engraf.pos.noun_phrase import NounPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.hypothesis import TokenizationHypothesis
 from engraf.utils.debug import debug_print
@@ -38,7 +36,7 @@ class Layer3SemanticGrounder:
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
     
-    def ground_layer3(self, layer3_hypotheses, return_all_matches: bool = False):
+    def ground_layer3(self, layer3_hypotheses):
         """Two-pass PP attachment resolution with spatial validation and semantic grounding.
         
         Args:
@@ -64,144 +62,6 @@ class Layer3SemanticGrounder:
             return validated_hypotheses
         
         return layer3_hypotheses
-    
-    def ground(self, pp: PrepositionalPhrase, return_all_matches: bool = True) -> Layer3GroundingResult:
-        """Ground a PrepositionalPhrase to spatial locations or object relationships.
-        
-        Args:
-            pp: The PrepositionalPhrase to ground
-            return_all_matches: If True, return all possible spatial interpretations
-            
-        Returns:
-            Layer3GroundingResult with resolved spatial location/relationship
-        """
-        if not isinstance(pp, PrepositionalPhrase):
-            return Layer3GroundingResult(
-                success=False,
-                confidence=0.0,
-                description=f"Expected PrepositionalPhrase, got {type(pp).__name__}"
-            )
-        
-        # Handle different types of prepositional phrases
-        if pp.vector and pp.vector.isa("vector"):
-            # Vector coordinates like "at [1,2,3]"
-            return self._ground_vector_location(pp)
-        elif pp.preposition is not None and pp.noun_phrase is not None and pp.noun_phrase:
-            # Spatial relationships like "on the table", "above the red box"
-            return self._ground_spatial_relationship(pp, return_all_matches)
-        else:
-            return Layer3GroundingResult(
-                success=False,
-                confidence=0.0,
-                description=f"Cannot ground PP: {pp} (missing vector or NP object)"
-            )
-    
-    def _ground_vector_location(self, pp: PrepositionalPhrase) -> Layer3GroundingResult:
-        """Ground a prepositional phrase with vector coordinates."""
-        try:
-            # Extract coordinates from the PP's vector
-            if pp.vector is not None and pp.vector:
-                # Use the PP's computed vector as the spatial location
-                location_vector = VectorSpace()
-                # Copy the vector data using proper VectorSpace iteration
-                from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
-                for dim in VECTOR_DIMENSIONS:
-                    value = pp.vector[dim]
-                    if value != 0.0:
-                        location_vector[dim] = value
-                location_vector.word = f"Location({pp.preposition})"
-                
-                return Layer3GroundingResult(
-                    success=True,
-                    confidence=1.0,
-                    resolved_object=location_vector,
-                    description=f"Grounded PP '{pp}' to absolute location from vector"
-                )
-            else:
-                return Layer3GroundingResult(
-                    success=False,
-                    confidence=0.0,
-                    description=f"PP has no computed vector: {pp}"
-                )
-        except Exception as e:
-            return Layer3GroundingResult(
-                success=False,
-                confidence=0.0,
-                description=f"Failed to parse vector coordinates: {e}"
-            )
-    
-    def _ground_spatial_relationship(self, pp: PrepositionalPhrase, return_all_matches: bool = False) -> Layer3GroundingResult:
-        """Process a prepositional phrase with spatial relationship - requires grounded Scene Objects."""
-        
-        # Check if the PP contains grounded scene objects
-        # PP grounding should only succeed if the NP within the PP is grounded to a Scene Object
-        has_grounded_object = False
-        if pp.noun_phrase is not None and pp.noun_phrase:
-            np = pp.noun_phrase
-            if hasattr(np, 'grounding') and np.grounding is not None and np.grounding.get('scene_object') is not None:
-                has_grounded_object = True
-                
-        if not has_grounded_object:
-            return Layer3GroundingResult(
-                success=False,
-                confidence=0.0,
-                resolved_object=None,
-                description=f"Failed to ground NP within PP '{pp.preposition}' - no scene object found"
-            )
-        
-        # Create spatial relationship vector
-        spatial_vector = VectorSpace()
-        
-        # Add preposition semantics
-        if pp.preposition is not None and pp.preposition:
-            # Look up preposition in vocabulary for spatial semantics
-            from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-            
-            prep_key = pp.preposition.lower()
-            if prep_key in SEMANTIC_VECTOR_SPACE:
-                prep_vector = SEMANTIC_VECTOR_SPACE[prep_key]
-                spatial_vector += prep_vector
-        
-        # Add spatial location properties if available
-        if pp.spatial_location is not None and pp.spatial_location:
-            spatial_vector.spatial_location = pp.spatial_location
-            
-        # Add coordinate properties if available  
-        if pp.locX is not None:
-            spatial_vector.locX = pp.locX
-        if pp.locY is not None:
-            spatial_vector.locY = pp.locY
-        if pp.locZ is not None:
-            spatial_vector.locZ = pp.locZ
-            
-        # Get the actual scene object for reference
-        scene_object = pp.noun_phrase.grounding['scene_object'] if hasattr(pp.noun_phrase, 'grounding') and pp.noun_phrase.grounding else None
-        scene_obj_id = getattr(scene_object, 'object_id', 'unknown')
-        
-        # Add reference to the scene object and preposition
-        spatial_vector._reference_object = scene_object
-        spatial_vector._preposition = pp.preposition
-            
-        return Layer3GroundingResult(
-            success=True,
-            confidence=0.8,
-            resolved_object=spatial_vector,
-            description=f"Processed spatial PP: {pp.preposition} (grounded to {scene_obj_id})"
-        )
-    
-    def ground_multiple(self, pp_list: List[PrepositionalPhrase], return_all_matches: bool = False) -> List[Layer3GroundingResult]:
-        """Ground multiple PrepositionalPhrase tokens."""
-        results = []
-        for pp in pp_list:
-            result = self.ground(pp, return_all_matches=return_all_matches)
-            
-            # If grounding succeeds, store the spatial relationship
-            if result.success and hasattr(pp, 'resolve_to_spatial_location'):
-                pp.resolve_to_spatial_location(result.resolved_object)
-            
-            results.append(result)
-        
-        return results
     
     def _is_vector_destination_pp(self, pp_token) -> bool:
         """Check if a PP token has a vector destination (should go to Layer 4)."""

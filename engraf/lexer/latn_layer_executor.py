@@ -265,9 +265,7 @@ class LATNLayerExecutor:
             # Layer 3 grounding - process PP attachments with spatial validation
             if self.layer3_grounder:
                 # Process PP attachment combinations with spatial validation
-                grounded_hypotheses = self.layer3_grounder.ground_layer3(
-                    layer3_hypotheses, return_all_matches=True
-                )
+                grounded_hypotheses = self.layer3_grounder.ground_layer3(layer3_hypotheses)
                 if report:
                     print(f"Layer 3 grounding produced {len(grounded_hypotheses)} hypotheses")
                     self.enumerate_hypotheses(grounded_hypotheses)
@@ -403,8 +401,7 @@ class LATNLayerExecutor:
 
             # Semantic grounding/execution (if enabled)
             if self.layer5_grounder:
-                grounded_hypotheses, grounding_results = self.layer5_grounder.ground_layer5(
-                    report=report)
+                grounded_hypotheses, grounding_results = self.layer5_grounder.ground_layer5(layer5_hypotheses)
                 if report:
                     print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
                     self.enumerate_hypotheses(grounded_hypotheses)

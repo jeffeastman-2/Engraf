@@ -48,6 +48,9 @@ class SentencePhrase():
         else:
             self.predicate = ConjunctionPhrase(tok, left=self.predicate)
 
+    def apply_subject_token(self, token):
+        self.apply_subject(token._original_np)
+
     def apply_subject(self, subj):
         debug_print(f"✅ => Applying sentence subject {subj} \n      to {self}")
         if self.subject is None:
@@ -62,6 +65,9 @@ class SentencePhrase():
                 return
             else: debug_print(f"⚠️ ERROR: tail.right is not None {self}")
  
+    def apply_predicate_token(self, token):
+        self.apply_predicate(token._original_vp)
+
     def apply_predicate(self, pred):
         debug_print(f"✅ => Applying sentence predicate {pred} \n      to {self}")
         if self.predicate is None:

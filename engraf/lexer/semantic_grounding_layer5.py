@@ -9,6 +9,8 @@ Sentence tokens. It takes well-formed sentences and executes them in the scene.
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
+from engraf.interpreter.handlers.object_creator import ObjectCreator
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.sentence_phrase import SentencePhrase
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
@@ -33,6 +35,7 @@ class Layer5SemanticGrounder:
     Layer 5 performs sentence execution - taking well-formed sentence structures
     and executing the commands they represent in the scene.
     """
+    _last_acted_object = [None]  # Use list for mutable reference
     
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
@@ -96,8 +99,31 @@ class Layer5SemanticGrounder:
         
         # Imperative sentences (VP only): "move it", "create cube"
         if sentence.predicate and not sentence.subject:
-            return self._execute_imperative(sentence.predicate, sentence.prepositional_phrases, executed_actions, scene_changes)
-        
+            if isinstance(sentence.predicate, ConjunctionPhrase):
+                for pred in sentence.predicate.flatten():
+                    if isinstance(pred, VerbPhrase):
+                        result = self._execute_imperative(pred, scene_changes)
+                        executed_actions.extend(result.executed_actions)
+                        scene_changes.extend(result.scene_changes)
+                        return Layer5GroundingResult(
+                            success=result.success,
+                            confidence=result.confidence,
+                            executed_actions=executed_actions,
+                            scene_changes=scene_changes,
+                            description=result.description
+                        )
+            else:
+                result = self._execute_imperative(sentence.predicate, scene_changes)
+                executed_actions.extend(result.executed_actions)
+                scene_changes.extend(result.scene_changes)
+                return Layer5GroundingResult(
+                    success=result.success,
+                    confidence=result.confidence,
+                    executed_actions=executed_actions,
+                    scene_changes=scene_changes,
+                    description=result.description
+                )
+
         # Declarative sentences (NP + VP): "the cube moves"
         elif sentence.subject and sentence.predicate:
             return self._execute_declarative(sentence.subject, sentence.predicate, sentence.prepositional_phrases, executed_actions, scene_changes)
@@ -114,48 +140,45 @@ class Layer5SemanticGrounder:
                 scene_changes=scene_changes,
                 description="Unrecognized sentence structure"
             )
-    
-    def _execute_imperative(self, predicate, prepositional_phrases: List, executed_actions: List[str], scene_changes: List[str]) -> Layer5GroundingResult:
+
+    def _execute_imperative(self, predicate, scene_changes) -> Layer5GroundingResult:
         """Execute imperative sentence: VP + optional PPs.
         
         Examples: "move it to [2,3,4]", "create red cube", "rotate it by 90 degrees"
         """
-        if not hasattr(predicate, '_original_vp') or not isinstance(predicate._original_vp, VerbPhrase):
+        if not isinstance(predicate, VerbPhrase):
             return Layer5GroundingResult(
                 success=False,
                 confidence=0.0,
-                executed_actions=executed_actions,
-                scene_changes=scene_changes,
+                executed_actions=[],
+                scene_changes=[],
                 description="Predicate is not a verb phrase"
             )
-        
-        vp = predicate._original_vp
-        verb_word = vp.verb.word if hasattr(vp.verb, 'word') else str(vp.verb)
-        
-        # Extract target objects from VP noun phrase
-        target_objects = self._extract_objects_from_np(vp.noun_phrase)
-        
-        if verb_word in ['move', 'translate']:
-            return self._execute_move_command(target_objects, prepositional_phrases, executed_actions, scene_changes)
-        elif verb_word in ['create', 'make', 'draw']:
-            return self._execute_create_command(vp.noun_phrase, prepositional_phrases, executed_actions, scene_changes)
-        elif verb_word in ['rotate', 'turn']:
-            return self._execute_rotate_command(target_objects, prepositional_phrases, executed_actions, scene_changes)
-        elif verb_word in ['color', 'paint']:
-            return self._execute_color_command(target_objects, vp.noun_phrase, executed_actions, scene_changes)
-        elif verb_word in ['scale', 'resize']:
-            return self._execute_scale_command(target_objects, vp.noun_phrase, executed_actions, scene_changes)
-        elif verb_word in ['group', 'organize']:
-            return self._execute_group_command(target_objects, executed_actions, scene_changes)
         else:
-            executed_actions.append(f"Analyzed verb: {verb_word}")
-            return Layer5GroundingResult(
-                success=True,
-                confidence=0.6,
-                executed_actions=executed_actions,
-                scene_changes=scene_changes,
-                description=f"Recognized but did not execute action: {verb_word}"
-            )
+            vector = predicate.vector
+            if vector.isa("create"):
+                return self._execute_create_command(predicate, scene_changes)
+            else:
+                # Extract target objects from VP noun phrase
+                target_objects = self._extract_objects_from_np(predicate.noun_phrase)
+                if vector.isa("move"):
+                    return self._execute_move_command(target_objects)
+                elif vector.isa("rotate"):
+                        return self._execute_rotate_command(target_objects)
+                elif vector.isa("color"):
+                    return self._execute_color_command(target_objects)
+                elif vector.isa("scale"):
+                    return self._execute_scale_command(target_objects)
+                elif vector.isa("group") or vector.isa("organize"):
+                    return self._execute_group_command(target_objects)
+                else:
+                    return Layer5GroundingResult(
+                        success=False,
+                        confidence=0.6,
+                        executed_actions=[],
+                        scene_changes=[],
+                        description=f"Recognized but did not execute action: {vector.word}"
+                    )
     
     def _execute_declarative(self, subject, predicate, prepositional_phrases: List, executed_actions: List[str], scene_changes: List[str]) -> Layer5GroundingResult:
         """Execute declarative sentence: NP + VP + optional PPs."""
@@ -250,17 +273,25 @@ class Layer5SemanticGrounder:
                 description="No target location found for move command"
             )
     
-    def _execute_create_command(self, np_token, pps: List, executed_actions: List[str], scene_changes: List[str]) -> Layer5GroundingResult:
-        """Execute create command."""
-        executed_actions.append("Analyzed creation command")
-        scene_changes.append("Creation command recognized (execution not implemented)")
-        return Layer5GroundingResult(
-            success=True,
-            confidence=0.6,
-            executed_actions=executed_actions,
-            scene_changes=scene_changes,
-            description="Create command analyzed (actual creation not implemented)"
-        )
+    def _execute_create_command(self, predicate, scene_changes: List[str]) -> Layer5GroundingResult:
+                created_objects = []
+                object_counter = [0]
+                object_creator = ObjectCreator(self.scene_model, object_counter)
+                if predicate.noun_phrase:
+                    objects = object_creator.extract_objects_from_np(predicate.noun_phrase)
+                    for obj_info in objects:
+                        obj_id = object_creator.create_scene_object(obj_info)
+                        if obj_id:
+                            created_objects.append(obj_id)
+                            # Update the most recently acted upon object
+                            self._last_acted_object[0] = obj_id
+                return Layer5GroundingResult(
+                    success=True,
+                    confidence=1.0 if created_objects else 0.0,
+                    executed_actions=[f"Created {len(created_objects)} object(s)"],
+                    scene_changes=[f"Created objects: {', '.join(created_objects)}"],
+                    description="Created objects successfully"
+                )
     
     def _execute_rotate_command(self, objects: List[SceneObject], pps: List, executed_actions: List[str], scene_changes: List[str]) -> Layer5GroundingResult:
         """Execute rotate command."""
