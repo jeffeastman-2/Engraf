@@ -167,10 +167,9 @@ SEMANTIC_VECTOR_SPACE = {
     
     # Conjunctions
     'and': vector_from_features("conj"),
-    
-    # Disjunctions
-    'or': vector_from_features("disj"),
-    
+    'or': vector_from_features("conj disj"),
+    ',': vector_from_features("conj disj"),
+
     # Negation
     'not': vector_from_features("neg"),
     'no': vector_from_features("neg"),

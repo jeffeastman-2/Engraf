@@ -2,7 +2,7 @@
 """
 Unit tests for LATN Layer 5 - Sentence Phrase Tokenization
 
-Tests the VP tokenization functionality that builds on Layers 1-4.
+Tests the Sentence tokenization functionality that builds on Layers 1-4.
 """
 
 import pytest

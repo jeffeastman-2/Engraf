@@ -23,6 +23,7 @@ class VectorSpace:
         self._grounded_phrase = None  # Set by Layer 2 grounding
         self._original_np = None      # Set when creating NP tokens
         self._original_pp = None      # Set when creating PP tokens
+        self._original_sp = None    # Set when creating Sentence tokens
         self.scene_object = None      # Expected by Layer 3 spatial validation
         self._attachment_info = {}    # Set during PP attachment processing
         self._reference_object = None # Expected by Layer 3 spatial grounding results

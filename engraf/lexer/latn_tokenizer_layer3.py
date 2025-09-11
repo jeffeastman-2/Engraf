@@ -2,7 +2,7 @@
 """
 LATN Layer 3: PrepositionalPhrase Token Replacement
 
-This module implements Layer 3 of the LATN (Layer-Aware Tokenization Network) system.
+This module implements Layer 3 of the LATN (Layered Augmented Transition Network) system.
 Layer 3 replaces prepositional phrase constructions with single PrepositionalPhrase tokens.
 
 Layer 3 builds on:
@@ -130,8 +130,8 @@ def find_pp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                             best_pp = coord_pp
                         elif isinstance(best_pp, ConjunctionPhrase):
                             # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_pp, right=pp2_result)
-                            best_pp = new_coord
+                            new_coord = ConjunctionPhrase(conj_token, left=best_pp.right, right=pp2_result)
+                            best_pp.right = new_coord
 
                         # Update best_end to include the newly parsed PP
                         best_end = i + ts.position - 1

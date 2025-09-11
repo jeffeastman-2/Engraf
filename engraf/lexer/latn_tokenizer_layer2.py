@@ -44,6 +44,7 @@ def create_np_token(np_or_conj) -> VectorSpace:
         
         # Mark this as a ConjunctionPhrase token
         token["conj"] = 1.0
+        token["plural"] = 1.0
         token["NP"] = 1.0  # Also mark as NP since it functions as one
         
         # Create descriptive word - use phrase-level display if available
@@ -65,6 +66,7 @@ def create_np_token(np_or_conj) -> VectorSpace:
                     token[dim] = value
         
         # Mark this as a NounPhrase token
+        token["singular"] = 1.0
         token["NP"] = 1.0
         
         # Create descriptive word
@@ -132,11 +134,12 @@ def find_np_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         if isinstance(best_np, NounPhrase):
                             # Convert to ConjunctionPhrase
                             coord_np = ConjunctionPhrase(conj_token, left=best_np, right=np2_result)
+                            coord_np.vector["plural"] = 1.0
                             best_np = coord_np
                         elif isinstance(best_np, ConjunctionPhrase):
                             # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_np, right=np2_result)
-                            best_np = new_coord
+                            new_coord = ConjunctionPhrase(conj_token, left=best_np.right, right=np2_result)
+                            best_np.right = new_coord
                         
                         # Update best_end to include the newly parsed NP
                         best_end = i + ts.position - 1

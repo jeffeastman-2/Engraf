@@ -130,8 +130,8 @@ def find_vp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                             best_vp = coord_vp
                         elif isinstance(best_vp, ConjunctionPhrase):
                             # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_vp, right=vp2_result)
-                            best_vp = new_coord
+                            new_coord = ConjunctionPhrase(conj_token, left=best_vp.right, right=vp2_result)
+                            best_vp.right = new_coord
 
                         # Update best_end to include the newly parsed VP
                         best_end = i + ts.position - 1

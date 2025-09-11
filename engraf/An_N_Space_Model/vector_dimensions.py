@@ -16,8 +16,8 @@ VECTOR_DIMENSIONS = [
     "NP",        # noun phrase tokens (Layer 2 composite tokens)
     "PP",        # prepositional phrase tokens (Layer 3 composite tokens)
     "VP",        # verb phrase tokens (Layer 4 composite tokens)
-    "Sentence",  # sentence tokens (Layer 5 composite tokens)
-    
+    "SP",       # sentence tokens (Layer 5 composite tokens)
+
     # Grammatical features
     "number",    # numeric quantity information
     "vector",    # coordinate/vector literal marker

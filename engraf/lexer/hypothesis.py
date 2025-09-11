@@ -101,7 +101,7 @@ class TokenizationHypothesis:
                 self.printPP(i,token)
             elif token.isa("VP") :
                 self.printVP(i,token)
-            elif token.isa("Sentence") :
+            elif token.isa("SP") :
                 self.printSentence(i,token)
             else:
                 print(f"{self.spaces}[{i}] {token}")

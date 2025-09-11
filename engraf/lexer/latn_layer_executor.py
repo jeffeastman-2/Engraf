@@ -19,7 +19,7 @@ from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1, Tokenizatio
 from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
 from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
 from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4
-from engraf.lexer.latn_tokenizer_layer5 import latn_tokenize_layer5, extract_sentence_phrases
+from engraf.lexer.latn_tokenizer_layer5 import latn_tokenize_layer5
 from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder, Layer2GroundingResult
 from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer3GroundingResult
 from engraf.lexer.semantic_grounding_layer4 import Layer4SemanticGrounder, Layer4GroundingResult
@@ -493,3 +493,21 @@ class LATNLayerExecutor:
             }
         
         return analysis
+
+def extract_sentence_phrases(layer5_hypotheses: List[TokenizationHypothesis]) -> List[SentencePhrase]:
+    """Extract SentencePhrase objects from Layer 5 processing.
+    
+    Args:
+        layer5_hypotheses: List of Layer 5 tokenization hypotheses
+        
+    Returns:
+        List of SentencePhrase objects found in the hypotheses
+    """
+    sentence_phrases = []
+    
+    for hypothesis in layer5_hypotheses:
+        for token in hypothesis.tokens:
+            if hasattr(token, '_sentence_phrase') and token._sentence_phrase:
+                sentence_phrases.append(token._sentence_phrase)
+    
+    return sentence_phrases
