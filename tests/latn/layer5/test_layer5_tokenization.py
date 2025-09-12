@@ -50,9 +50,10 @@ class TestLayer5VPTokenization:
         result = self.executor.execute_layer5("create a blue cube")
 
         assert result.success, "Layer 5 should succeed"
-        assert len(result.sentence_phrases) > 0, "Should extract Sentence objects"
+        assert len(result.hypotheses) == 1, "Should extract Sentence objects"
 
-        sent = result.sentence_phrases[0]
+        hyp = result.hypotheses[0]
+        sent = hyp.tokens[0]._original_sp
         assert isinstance(sent, SentencePhrase), "Should be SentencePhrase object"
         assert sent.subject is None, "Should not have subject"
         assert sent.predicate is not None, "Should have predicate"

@@ -64,27 +64,17 @@ def run_atn(start_state, end_state, ts: TokenStream, pos):
                 if action is None:
                     debug_print(" ⚠️ ERROR: This arc has a None action!")
 
-                if getattr(action, "_is_subnetwork", False):
-                    result = action(pos, tok)
-                    if result is None:
-                        debug_print(" ⚠️ Subnetwork failed — aborting parse")
-                        return None
-                    pos = result  # use the result from the subnetwork as the next pos
-                else:
-                    action(pos, tok)
-
+                action(pos, tok)
                 current = next_state
 
-                # Advance only if action is not a subnetwork runner
-                is_subnet = getattr(action, "_is_subnetwork", False)
-                if should_consume and tok is not None and action != noop and not is_subnet:
+                # Advance the token stream if needed
+                if should_consume and tok is not None and action != noop:
                     ts.advance()
                 else:
                     debug_print(f"    Token '{tok}' accepted but not consumed") 
                     debug_print(f"        should_consume = {should_consume}")   
                     if tok is None: debug_print(f"        tok was None")   
                     debug_print(f"        action was {action}") 
-                    debug_print(f"        is_subnet was {is_subnet}")  
 
                 matched = True
                 break

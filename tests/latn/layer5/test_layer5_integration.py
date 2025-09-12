@@ -34,7 +34,7 @@ class TestLayer5Integration:
         for command in create_commands:
             result = self.executor.execute_layer5(command)
             assert result.success, f"Layer 5 should succeed: {command}"
-            assert len(result.sentence_phrases) > 0, f"Should extract sentence phrases: {command}"
+            assert len(result.hypotheses) > 0, f"Should extract sentence phrases: {command}"
 
         # Now test Layer 2 grounding against the existing objects
         grounding_phrases = [

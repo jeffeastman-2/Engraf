@@ -127,6 +127,7 @@ def find_sp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         if isinstance(best_sp, SentencePhrase):
                             # Convert to ConjunctionPhrase
                             coord_sp = ConjunctionPhrase(conj_token, left=best_sp, right=sp2_result)
+                            coord_sp.vector["plural"] = 1.0
                             best_sp = coord_sp
                         elif isinstance(best_sp, ConjunctionPhrase):
                             # Extend existing coordination by chaining

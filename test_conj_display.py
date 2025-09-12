@@ -11,16 +11,14 @@ from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
 
 def test_coordination_display():
     """Test the enhanced CONJ-NP token display."""
-    text = ["the red cube and the blue sphere",
-            "the red cube under the table and the blue sphere",
-            "the red cube under the table and the blue sphere above the table"]
+    text = ["color the sphere and the box and move the sphere and the box"]
     print()
 
     executor = LATNLayerExecutor()
     for t in text:
         print()
         print(f'Testing input: "{t}"')
-        executor.execute_layer2(t, report=True)
+        executor.execute_layer4(t, report=True)
 
 if __name__ == "__main__":
     test_coordination_display()

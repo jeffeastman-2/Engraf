@@ -1,29 +1,42 @@
 from engraf.atn.core import ATNState
 from engraf.lexer.token_stream import TokenStream
-from engraf.utils.predicates import is_verb, is_none, is_np_token, is_pp_token, is_conjunction_no_consume, any_of, is_tobe, is_adjective, is_number, is_conjunction, is_adjective_conjunction, is_predicate_conjunction
-from engraf.atn.core import noop
+from engraf.utils.predicates import is_adverb, is_verb, is_none, is_np_token, \
+    is_pp_token, is_conjunction_no_consume, any_of, is_tobe, is_adjective, is_conjunction_only, is_anything_no_consume
 from engraf.pos.verb_phrase import VerbPhrase
+from engraf.atn.core import ATNState, noop
 
 
 # --- Build the Verb Phrase ATN ---
 def build_vp_atn(vp: VerbPhrase, ts: TokenStream):
     start = ATNState("VP-START")
     after_verb = ATNState("VP-AFTER-VERB")
+    after_tobe = ATNState("VP-AFTER-TOBE")
+    after_adverb = ATNState("VP-AFTER-ADVERB")
     after_np = ATNState("VP-AFTER-NP")
     after_adj = ATNState("VP-AFTER-ADJ")
-    after_amount = ATNState("VP-AFTER-AMOUNT")
     after_pp = ATNState("VP-AFTER-PP")
     end = ATNState("VP-END")
 
     # VERB
+    start.add_arc(is_adverb, lambda _, tok: vp.apply_adverb(tok), after_adverb)
     start.add_arc(is_verb, lambda _, tok: vp.apply_verb(tok), after_verb)
-    
+    start.add_arc(is_tobe, lambda _, tok: vp.apply_verb(tok), after_tobe)
+
+    after_adverb.add_arc(is_verb, lambda _, tok: vp.apply_verb(tok), after_verb)
+    after_adverb.add_arc(is_adverb, lambda _, tok: vp.apply_adverb(tok), after_adverb)
+
+    # Look for a conjunction as in "slightly rotate and move" then go back for another verb
+    after_verb.add_arc(is_conjunction_only, lambda _, tok: vp.apply_conjunction(tok), start)
+    after_verb.add_arc(is_anything_no_consume, noop, after_tobe)  # Allow VP to end after verb if nothing follows
+
     # After VERB: look for NP tokens (created by Layer 2)
-    after_verb.add_arc(is_np_token, lambda _, tok: vp.apply_np(_extract_np_from_token(tok)), after_np)
+    after_tobe.add_arc(is_np_token, lambda _, tok: vp.apply_np(_extract_np_from_token(tok)), after_np)
+    # ... or PP tokens created by Layer 3 (e.g., "is above the cube")
+    after_tobe.add_arc(is_pp_token, lambda _, tok: vp.apply_pp(_extract_pp_from_token(tok)), after_pp)      
     # For "to be" verbs, allow direct adjectives
-    after_verb.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
+    after_tobe.add_arc(is_adjective, lambda _, tok: vp.apply_adjective(tok), after_adj)
     # Allow final transition if stream is exhausted
-    after_verb.add_arc(is_none, noop, end)
+    after_tobe.add_arc(is_none, noop, end)
 
     # After NP: can have PP tokens (created by Layer 3), adjective complement, or end
     after_np.add_arc(is_pp_token, lambda _, tok: vp.apply_pp(_extract_pp_from_token(tok)), after_pp)

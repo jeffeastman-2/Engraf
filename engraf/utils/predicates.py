@@ -68,3 +68,5 @@ def is_predicate_conjunction(ts):
     
     return predicate
 
+def is_conjunction_only(tok):
+    return tok is not None and tok.isa("conj") and not (tok.isa("NP") or tok.isa("PP") or tok.isa("VP"))

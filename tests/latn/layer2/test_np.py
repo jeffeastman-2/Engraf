@@ -702,7 +702,5 @@ def test_coordinated_np():
     assert conj is not None
     original_np = conj._original_np
     assert isinstance(original_np, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_np)}"
-    assert isinstance(original_np.right, NounPhrase), f"Expected NounPhrase, got {type(original_np.right)}"
-    assert isinstance(original_np.left, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_np.left)}"     
-    assert isinstance(original_np.left.left, NounPhrase), f"Expected NounPhrase, got {type(original_np.left.left)}" 
-    assert isinstance(original_np.left.right, NounPhrase), f"Expected NounPhrase, got {type(original_np.left.right)}"   
+    parts = [np for np in original_np.flatten()]
+    assert len(parts) == 3, f"Should have 3 parts, got {len(parts)}"

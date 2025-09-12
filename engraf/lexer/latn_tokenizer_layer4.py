@@ -21,6 +21,7 @@ from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.lexer.vector_space import VectorSpace
 from engraf.atn.vp import build_vp_atn
 from engraf.pos.verb_phrase import VerbPhrase
+from engraf.utils.debug import set_debug
 
 
 def create_vp_token(vp_or_conj) -> VectorSpace:
@@ -72,7 +73,7 @@ def create_vp_token(vp_or_conj) -> VectorSpace:
         else:
             # Fallback: construct description from components
             parts = []
-            if hasattr(vp_or_conj, 'verb') and vp_or_conj.verb:
+            if hasattr(vp_or_conj, 'verb') and vp_or_conj.verb:    
                 parts.append(vp_or_conj.verb)
             if hasattr(vp_or_conj, 'vector_text') and vp_or_conj.vector_text:
                 parts.append(vp_or_conj.vector_text)
@@ -127,6 +128,7 @@ def find_vp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         if isinstance(best_vp, VerbPhrase):
                             # Convert to ConjunctionPhrase
                             coord_vp = ConjunctionPhrase(conj_token, left=best_vp, right=vp2_result)
+                            coord_vp.vector["plural"] = 1.0
                             best_vp = coord_vp
                         elif isinstance(best_vp, ConjunctionPhrase):
                             # Extend existing coordination by chaining
@@ -261,7 +263,8 @@ def latn_tokenize_layer4(layer3_hypotheses: List[TokenizationHypothesis]) -> Lis
         List of VPTokenizationHypothesis objects, ranked by confidence
     """
     layer4_hypotheses = []
-
+    #set_debug(True)
+    
     for base_hyp in layer3_hypotheses:
         # Generate multiple coordination hypotheses for ambiguous structures
         coordination_hypotheses = find_coordination_hypotheses(base_hyp.tokens)

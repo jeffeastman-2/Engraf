@@ -35,7 +35,7 @@ def latn_tokenize_layer1(sentence: str) -> List[TokenizationHypothesis]:
             \]             # closing bracket
             | -?\d+(?:\.\d+)?         # standalone number (int or float)
             | '[\w\s]+'     # quoted words (single quotes)
-            | \w+           # normal word
+            | \w+(?:-\w+)*  # normal word (including hyphenated words)
             | [^\w\s]       # punctuation
         )""",
         re.VERBOSE,

@@ -1,13 +1,12 @@
-import numpy as np
-from typing import Optional
+
 from engraf.lexer.vector_space import VectorSpace
-from engraf.pos.noun_phrase import NounPhrase
 from engraf.utils.debug import debug_print
 
 class VerbPhrase():
-    def __init__(self, verb=None):
+    def __init__(self):
         # VerbPhrase doesn't need to call super() if it doesn't inherit from anything
-        self.verb = verb
+        self.verb = None
+        self.vector = VectorSpace()
         self.noun_phrase = None
         self.preps = []
         self.adjective_complement = []  # Changed to list for multiple adjectives
@@ -24,8 +23,20 @@ class VerbPhrase():
         return v
 
     def apply_verb(self, tok):
-        self.verb = tok.word
-        self.vector = tok
+        if self.verb is None:
+            self.verb = f"{tok.word} "
+        else:
+            self.verb = (f"{self.verb}{tok.word} ")
+        self.vector += tok
+
+    def apply_adverb(self, tok):
+        if self.verb is None:
+            self.verb = f"{tok.word} "
+        else:
+            self.verb = (f"{self.verb}{tok.word} ")
+
+    def apply_conjunction(self, tok):
+        self.verb = (f"{self.verb}{tok.word} ")
 
     def apply_np(self, np):
         self.noun_phrase = np

@@ -33,7 +33,7 @@ class VectorSpace:
     def __repr__(self):
         # Only show non-zero dimensions for cleaner output
         non_zero_dims = self.non_zero_dims()
-        return f"VS(word={self.word!r}, {{ {non_zero_dims} }})"
+        return f"{self.word!r} = {{ {non_zero_dims} }}"
 
     def to_array(self):
         return self.vector

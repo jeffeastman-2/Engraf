@@ -127,6 +127,7 @@ def find_pp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         if isinstance(best_pp, PrepositionalPhrase):
                             # Convert to ConjunctionPhrase
                             coord_pp = ConjunctionPhrase(conj_token, left=best_pp, right=pp2_result)
+                            coord_pp.vector["plural"] = 1.0
                             best_pp = coord_pp
                         elif isinstance(best_pp, ConjunctionPhrase):
                             # Extend existing coordination by chaining

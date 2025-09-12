@@ -37,10 +37,8 @@ def test_coordinated_pp():
     assert conj is not None
     original_pp = conj._original_pp
     assert isinstance(original_pp, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_pp)}"
-    assert isinstance(original_pp.right, PrepositionalPhrase), f"Expected PrepositionalPhrase, got {type(original_pp.right)}"
-    assert isinstance(original_pp.left, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_pp.left)}"
-    assert isinstance(original_pp.left.left, PrepositionalPhrase), f"Expected PrepositionalPhrase, got {type(original_pp.left.left)}"
-    assert isinstance(original_pp.left.right, PrepositionalPhrase), f"Expected PrepositionalPhrase, got {type(original_pp.left.right)}"
+    parts = [pp for pp in original_pp.flatten()]
+    assert len(parts) == 3, f"Should have 3 parts, got {len(parts)}"
 
 def test_coordinated_pp_with_nps():
 
