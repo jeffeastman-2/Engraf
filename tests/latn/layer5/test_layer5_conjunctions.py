@@ -363,7 +363,7 @@ class TestLayer5Conjunctions:
         assert isinstance(subj, NounPhrase), "Subject should be NounPhrase"
         pred = sent.predicate
         assert isinstance(pred, VerbPhrase), "Predicate should be VerbPhrase"
-        assert pred.verb == "xrotate and yrotate ", "Predicate verb should be 'rotate'"
+        assert pred.verb == "xrotate and yrotate", "Predicate verb should be 'rotate'"
 
     # F) Pronouns & agreement
     # 19. Pronoun plural subject + VP

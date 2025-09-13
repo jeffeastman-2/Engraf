@@ -99,30 +99,16 @@ class Layer5SemanticGrounder:
         
         # Imperative sentences (VP only): "move it", "create cube"
         if sentence.predicate and not sentence.subject:
-            if isinstance(sentence.predicate, ConjunctionPhrase):
-                for pred in sentence.predicate.flatten():
-                    if isinstance(pred, VerbPhrase):
-                        result = self._execute_imperative(pred, scene_changes)
-                        executed_actions.extend(result.executed_actions)
-                        scene_changes.extend(result.scene_changes)
-                        return Layer5GroundingResult(
-                            success=result.success,
-                            confidence=result.confidence,
-                            executed_actions=executed_actions,
-                            scene_changes=scene_changes,
-                            description=result.description
-                        )
-            else:
-                result = self._execute_imperative(sentence.predicate, scene_changes)
-                executed_actions.extend(result.executed_actions)
-                scene_changes.extend(result.scene_changes)
-                return Layer5GroundingResult(
-                    success=result.success,
-                    confidence=result.confidence,
-                    executed_actions=executed_actions,
-                    scene_changes=scene_changes,
-                    description=result.description
-                )
+            result = self._execute_imperative(sentence.predicate, scene_changes)
+            executed_actions.extend(result.executed_actions)
+            scene_changes.extend(result.scene_changes)
+            return Layer5GroundingResult(
+                success=result.success,
+                confidence=result.confidence,
+                executed_actions=executed_actions,
+                scene_changes=scene_changes,
+                description=result.description
+            )
 
         # Declarative sentences (NP + VP): "the cube moves"
         elif sentence.subject and sentence.predicate:
@@ -358,10 +344,19 @@ class Layer5SemanticGrounder:
             # Extract and execute sentences from this hypothesis
             sentence_phrases = []
             for token in hypothesis.tokens:
-                if hasattr(token, '_sentence_phrase') and isinstance(token._sentence_phrase, SentencePhrase):
-                    sentence_phrases.append(token._sentence_phrase)
-            
-            if sentence_phrases:
+                sp = token._original_sp if hasattr(token, '_original_sp') else None
+                if sp and isinstance(sp, SentencePhrase):
+                    sentence_phrases.append(sp)
+                elif sp and isinstance(sp, ConjunctionPhrase):
+                    for part in sp.flatten():
+                        if isinstance(part, SentencePhrase):
+                            sentence_phrases.append(part)
+                        else:
+                            break # Stop processing if not a recognized phrase
+                else:
+                    break   # Stop processing if not a recognized phrase
+
+            if sentence_phrases and len(sentence_phrases) > 0:
                 grounding_results = self.execute_sentences(sentence_phrases)
                 all_grounding_results.extend(grounding_results)
                 

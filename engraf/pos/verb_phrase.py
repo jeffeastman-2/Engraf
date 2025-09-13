@@ -24,19 +24,19 @@ class VerbPhrase():
 
     def apply_verb(self, tok):
         if self.verb is None:
-            self.verb = f"{tok.word} "
+            self.verb = tok.word
         else:
-            self.verb = (f"{self.verb}{tok.word} ")
+            self.verb = (f"{self.verb} {tok.word}")
         self.vector += tok
 
     def apply_adverb(self, tok):
         if self.verb is None:
-            self.verb = f"{tok.word} "
+            self.verb = tok.word
         else:
-            self.verb = (f"{self.verb}{tok.word} ")
+            self.verb = (f"{self.verb} {tok.word}")
 
     def apply_conjunction(self, tok):
-        self.verb = (f"{self.verb}{tok.word} ")
+        self.verb = (f"{self.verb} {tok.word}")
 
     def apply_np(self, np):
         self.noun_phrase = np

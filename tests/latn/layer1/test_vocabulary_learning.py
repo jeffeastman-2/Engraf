@@ -4,7 +4,7 @@ Test vocabulary learning from quoted definitions
 """
 
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.latn_layer_executor import tokenize_best
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.lexer.vocabulary_builder import add_to_vocabulary, has_word
 
@@ -26,7 +26,7 @@ def test_vocabulary_learning_sequence():
         print("-" * 40)
         
         try:
-            tokens = TokenStream(tokenize(sentence))
+            tokens = TokenStream(tokenize_best(sentence))
             result = run_sentence(tokens)
             
             if result is not None:

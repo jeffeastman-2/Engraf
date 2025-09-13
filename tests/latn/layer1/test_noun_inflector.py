@@ -1,6 +1,5 @@
 import pytest
 from engraf.utils.noun_inflector import singularize_noun, is_plural
-from engraf.lexer.vector_space import VectorSpace
 
 class TestNounInflector:
     """Test suite for the noun inflector module."""

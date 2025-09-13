@@ -1,5 +1,5 @@
 import pytest
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.latn_layer_executor import tokenize_best
 from engraf.lexer.vector_space import VectorSpace
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vocabulary_builder import add_to_vocabulary, get_from_vocabulary, has_word
@@ -11,7 +11,7 @@ def assert_vector_has_pos(vs: VectorSpace, expected_pos: str):
         
 
 def test_tokenize_simple_words():
-    tokens = tokenize("draw a red cube")
+    tokens = tokenize_best("draw a red cube")
     assert len(tokens) == 4
     assert_vector_has_pos(tokens[0], "verb")
     assert_vector_has_pos(tokens[1], "det")
@@ -19,7 +19,7 @@ def test_tokenize_simple_words():
     assert_vector_has_pos(tokens[3], "noun")
 
 def test_tokenize_vector_literal():
-    tokens = tokenize("at [3.0, 4.0, 5.0]")
+    tokens = tokenize_best("at [3.0, 4.0, 5.0]")
     assert len(tokens) == 2
     assert_vector_has_pos(tokens[0], "prep")
     assert_vector_has_pos(tokens[1], "vector")
@@ -28,7 +28,7 @@ def test_tokenize_vector_literal():
     assert tokens[1]["locZ"] == 5.0
 
 def test_tokenize_number():
-    tokens = tokenize("draw 2 cube")
+    tokens = tokenize_best("draw 2 cube")
     assert len(tokens) == 3
     assert_vector_has_pos(tokens[0], "verb")
     assert_vector_has_pos(tokens[1], "det def")
@@ -39,21 +39,21 @@ def test_tokenize_number():
     assert_vector_has_pos(tokens[2], "noun")
 
 def test_tokenize_with_float_number():
-    tokens = tokenize("draw 3.5 sphere")
+    tokens = tokenize_best("draw 3.5 sphere")
     assert len(tokens) == 3
     assert_vector_has_pos(tokens[1], "det def")
     assert tokens[1]["number"] == 3.5
 
 def test_tokenize_unknown_token_raises():
     # Unknown tokens now get marked with unknown=1.0 instead of raising errors
-    tokens = list(tokenize("draw foozle"))
+    tokens = list(tokenize_best("draw foozle"))
     assert len(tokens) == 2, "Should tokenize both known and unknown tokens"
     assert tokens[0].word == "draw", "First token should be 'draw'"
     assert tokens[1].word == "foozle", "Second token should be 'foozle'"
     assert tokens[1]["unknown"] == 1.0, "Unknown token should have unknown=1.0"
 
 def test_tokenize_quoted_word():
-    tokens = tokenize("'sky blue' is blue and green")
+    tokens = tokenize_best("'sky blue' is blue and green")
     assert len(tokens) == 5
     assert_vector_has_pos(tokens[0], "quoted")
     assert tokens[0].word == "sky blue"
@@ -66,7 +66,7 @@ def test_tokenize_quoted_word():
     assert has_word("sky blue")
 
 def test_tokenize_plural_words():
-    tokens = tokenize("draw three red cubes")
+    tokens = tokenize_best("draw three red cubes")
     assert len(tokens) == 4
     assert_vector_has_pos(tokens[0], "verb")
     assert_vector_has_pos(tokens[1], "det")

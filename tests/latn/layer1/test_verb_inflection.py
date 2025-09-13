@@ -1,7 +1,6 @@
 import pytest
 from engraf.utils.verb_inflector import find_root_verb, is_verb_inflection
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
-from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+from engraf.lexer.latn_layer_executor import tokenize_best 
 
 
 class TestVerbInflection:
@@ -92,7 +91,7 @@ class TestTokenizerVerbInflection:
     
     def test_tokenizer_past_participle(self):
         """Test that tokenizer correctly handles past participles."""
-        tokens = tokenize("called")
+        tokens = tokenize_best("called")
         assert len(tokens) == 1
         tok = tokens[0]
         
@@ -104,7 +103,7 @@ class TestTokenizerVerbInflection:
     
     def test_tokenizer_present_participle(self):
         """Test that tokenizer correctly handles present participles."""
-        tokens = tokenize("calling")
+        tokens = tokenize_best("calling")
         assert len(tokens) == 1
         tok = tokens[0]
         
@@ -116,7 +115,7 @@ class TestTokenizerVerbInflection:
     
     def test_tokenizer_base_verb(self):
         """Test that tokenizer correctly handles base verbs."""
-        tokens = tokenize("call")
+        tokens = tokenize_best("call")
         assert len(tokens) == 1
         tok = tokens[0]
         
@@ -129,7 +128,7 @@ class TestTokenizerVerbInflection:
     
     def test_sentence_with_inflections(self):
         """Test full sentences with verb inflections."""
-        tokens = tokenize("create a sphere called 'sun'")
+        tokens = tokenize_best("create a sphere called 'sun'")
         assert len(tokens) == 5
         
         # Check "create" (base verb)
@@ -156,7 +155,7 @@ class TestGrammaticalErrorDetection:
     
     def test_correct_naming_syntax(self):
         """Test that correct syntax doesn't trigger errors."""
-        tokens = tokenize("create a sphere called 'sun'")
+        tokens = tokenize_best("create a sphere called 'sun'")
         
         # Should not detect any grammatical errors
         for i, tok in enumerate(tokens):
@@ -166,7 +165,7 @@ class TestGrammaticalErrorDetection:
     
     def test_incorrect_naming_syntax(self):
         """Test detection of incorrect base verb + quoted name."""
-        tokens = tokenize("create a box name 'fred'")
+        tokens = tokenize_best("create a box name 'fred'")
         
         # Find the naming verb
         naming_verb = None
@@ -195,7 +194,7 @@ class TestGrammaticalErrorDetection:
     
     def test_mixed_verbs_in_sentence(self):
         """Test sentences with multiple verb forms."""
-        tokens = tokenize("creating a box called 'test'")
+        tokens = tokenize_best("creating a box called 'test'")
         
         # "creating" should be present participle
         creating_tok = tokens[0]

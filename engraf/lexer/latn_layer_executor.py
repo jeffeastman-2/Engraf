@@ -507,7 +507,20 @@ def extract_sentence_phrases(layer5_hypotheses: List[TokenizationHypothesis]) ->
     
     for hypothesis in layer5_hypotheses:
         for token in hypothesis.tokens:
-            if hasattr(token, '_sentence_phrase') and token._sentence_phrase:
-                sentence_phrases.append(token._sentence_phrase)
-    
+            if hasattr(token, '_original_sp') and token._original_sp:
+                sentence_phrases.append(token._original_sp)
+
     return sentence_phrases
+
+def tokenize_best(sentence):
+    """Tokenize a sentence using the current vocabulary."""
+    hypotheses = tokenize_all(sentence)
+    hypothesis = hypotheses[0] if len(hypotheses) > 0 else None
+    return hypothesis
+
+def tokenize_all(sentence):
+    """Tokenize a sentence using LATN Layer 1, returning multiple hypotheses."""
+    executor = LATNLayerExecutor()
+    result = executor.execute_layer1(sentence)
+    assert result is not None, "LATN Layer 1 tokenization failed"
+    return result.hypotheses

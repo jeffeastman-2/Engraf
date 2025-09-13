@@ -16,7 +16,6 @@ class TestLayer5ActionExecution:
         initial_count = len(self.scene.objects)
         
         result = self.executor.execute_layer5("create a red box")
-
         assert result.success, "Layer 5 should succeed"
 
         # Should have created an object - Layer 5 creates objects
