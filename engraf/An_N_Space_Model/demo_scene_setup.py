@@ -71,13 +71,7 @@ def get_common_test_phrases():
         dict: Categories of test phrases used across different layer demos
     """
     return {
-        'spatial_validation': [
-            "the cube above the table",
-            "the sphere right of the cube", 
-            "the cylinder behind the table",
-            "the table above the cube",  # Should fail validation
-            "the cube left of the sphere"
-        ],
+        'debug': ["draw a very tall box at [0,1,0] and rotate it by 90 degrees"],
         
         'vector_coordinates': [
             "move the cube to [5, 0, 0]",

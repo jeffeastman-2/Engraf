@@ -68,3 +68,29 @@ class VerbPhrase():
         else:
             str = f"{self.verb} + {(self.noun_phrase.printString() if self.noun_phrase else "")}"
         return str
+
+    # ...existing code...
+
+    def __eq__(self, other):
+        """Deep equality comparison for VerbPhrase objects."""
+        if not isinstance(other, VerbPhrase):
+            return False
+        
+        return (
+            self.verb == other.verb and
+            self.noun_phrase == other.noun_phrase and
+            self.preps == other.preps and
+            self.adjective_complement == other.adjective_complement and
+            self.amount == other.amount and
+            getattr(self, 'vector', None) == getattr(other, 'vector', None)
+        )
+
+    def __hash__(self):
+        """Hash method for VerbPhrase objects."""
+        return hash((
+            self.verb,
+            self.noun_phrase,
+            tuple(self.preps) if self.preps else (),
+            tuple(self.adjective_complement) if self.adjective_complement else (),
+            self.amount
+        ))

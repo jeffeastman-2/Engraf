@@ -114,6 +114,32 @@ class SentencePhrase():
         else:
             self.vector += tok
 
+    def __eq__(self, other):
+        """Deep equality comparison for SentencePhrase objects."""
+        if not isinstance(other, SentencePhrase):
+            return False
+        
+        return (
+            getattr(self, 'subject', None) == getattr(other, 'subject', None) and
+            getattr(self, 'predicate', None) == getattr(other, 'predicate', None) and
+            getattr(self, 'definition_word', None) == getattr(other, 'definition_word', None) and
+            getattr(self, 'tobe', None) == getattr(other, 'tobe', None) and
+            getattr(self, 'scale_factor', 1.0) == getattr(other, 'scale_factor', 1.0) and
+            getattr(self, 'prepositional_phrases', []) == getattr(other, 'prepositional_phrases', [])
+        )
+
+    def __hash__(self):
+        """Hash method for SentencePhrase objects."""
+        return hash((
+            getattr(self, 'subject', None),
+            getattr(self, 'predicate', None),
+            getattr(self, 'definition_word', None),
+            getattr(self, 'tobe', None),
+            getattr(self, 'scale_factor', 1.0),
+            tuple(getattr(self, 'prepositional_phrases', []))
+        ))
+    
+
 
 class SentenceImperative(SentencePhrase):
     def __init__(self, subject=None, predicate=None):
@@ -128,9 +154,3 @@ class SentenceImperative(SentencePhrase):
         return self.predicate.verb and self.predicate.verb.scalar_projection(intent) > threshold
 
 
-
-
-def promote_sentence(sentence: SentencePhrase):
-    if sentence.subject is None and sentence.predicate and sentence.predicate.is_imperative():
-        return SentenceImperative(subject=None, predicate=sentence.predicate)
-    return sentence

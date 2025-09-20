@@ -1,8 +1,7 @@
+from py_compile import main
 import numpy as np
-from engraf.atn.np import build_np_atn
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
-from engraf.atn.subnet_np import run_np
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 
 input = [
@@ -48,8 +47,7 @@ def test_dissertation_sentences_parsing():
     print("="*80)
     
     # Create interpreter with MockRenderer
-    mock_renderer = MockRenderer()
-    interpreter = SentenceInterpreter(renderer=mock_renderer)
+    executor = LATNLayerExecutor()
     
     successful_parses = []
     failed_parses = []
@@ -70,25 +68,25 @@ def test_dissertation_sentences_parsing():
         
         try:
             # Use full sentence interpretation (parsing + semantic validation)
-            result = interpreter.interpret(clean_sentence)
-            
-            if result['success']:
+            result = executor.execute_layer5(clean_sentence)
+
+            if result.success:
                 if expected_to_fail:
                     print(f"🔶 UNEXPECTED SUCCESS: Was expected to fail but interpreted successfully")
-                    print(f"    Result: {result['message']}")
+                    print(f"    Result: {result.hypotheses[0].description}")
                     unexpected_successes.append((i, clean_sentence))
                 else:
                     print(f"✅ SUCCESS: Interpreted successfully")
-                    print(f"    Result: {result['message']}")
+                    print(f"    Result: {result.hypotheses[0].description}")
                     successful_parses.append((i, clean_sentence))
             else:
                 if expected_to_fail:
                     print(f"✅ EXPECTED FAILURE: Interpreter correctly rejected invalid command")
-                    print(f"    Error: {result['message']}")
+                    print(f"    Error: {result.sentence}")
                     expected_failures.append((i, clean_sentence))
                 else:
                     print(f"❌ UNEXPECTED FAILURE: Interpreter returned failure")
-                    print(f"    Error: {result['message']}")
+                    print(f"    Error: {result.sentence}")
                     unexpected_failures.append((i, clean_sentence))
                 
         except Exception as e:
@@ -147,3 +145,6 @@ def test_dissertation_sentences_parsing():
         print("✅ Test completed successfully - all results as expected")
     
     assert True, "Test completed - see output for parsing results"
+
+if __name__ == "__main__":
+    main()

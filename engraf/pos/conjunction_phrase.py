@@ -33,3 +33,28 @@ class ConjunctionPhrase:
         parts = [f"{item.printString()}" for item in flattened]
         str =  "(" + f" {self.conjunction} ".join(parts) + ")"
         return str
+    
+def __eq__(self, other):
+    """Deep equality comparison using flatten() to compare tree structures."""
+    if not isinstance(other, ConjunctionPhrase):
+        return False
+    
+    # Use flatten() to get the linear representation of both trees
+    self_flattened = list(self.flatten())  # Convert generator to list
+    other_flattened = list(other.flatten())  # Convert generator to list
+
+    # Compare the flattened lists
+    if len(self_flattened) != len(other_flattened):
+        return False
+        
+    for i in range(len(self_flattened)):
+        if self_flattened[i] != other_flattened[i]:  # Complete the comparison
+            return False
+            
+    return True
+
+def __hash__(self):
+    """Hash method using flattened representation."""
+    # Hash the flattened structure - convert generator to tuple
+    flattened = tuple(self.flatten())  # Convert generator to tuple for hashing
+    return hash(flattened)

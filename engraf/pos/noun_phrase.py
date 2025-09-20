@@ -163,3 +163,30 @@ class NounPhrase():
             return f"{self.noun} ({scene_obj.name})"
         else:
             return " ".join(self.get_consumed_words())
+        
+
+    def __eq__(self, other):
+        """Deep equality comparison for NounPhrase objects."""
+        if not isinstance(other, NounPhrase):
+            return False
+        
+        # Compare all attributes
+        return (
+            self.determiner == other.determiner and
+            self.noun == other.noun and
+            self.preps == other.preps and
+            getattr(self, 'vector', None) == getattr(other, 'vector', None) and
+            getattr(self, 'plural', False) == getattr(other, 'plural', False) and
+            getattr(self, 'amount', None) == getattr(other, 'amount', None)
+        )
+
+    def __hash__(self):
+        """Hash method for NounPhrase objects."""
+        return hash((
+            self.determiner,
+            tuple(self.adjectives) if self.adjectives else (),
+            self.noun,
+            tuple(self.preps) if self.preps else (),
+            getattr(self, 'plural', False),
+            str(getattr(self, 'amount', None))
+        ))

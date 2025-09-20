@@ -41,7 +41,6 @@ class Layer3SemanticGrounder:
         
         Args:
             layer3_hypotheses: Hypotheses with PP tokens to process
-            return_all_matches: Whether to return all valid combinations
             
         Returns:
             Processed hypotheses with validated PP attachments and semantic grounding

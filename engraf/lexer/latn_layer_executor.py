@@ -93,7 +93,7 @@ class LATNLayerExecutor:
     def __init__(self, scene_model: Optional[SceneModel] = None):
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
-        self.layer3_grounder = Layer3SemanticGrounder(scene_model)  if scene_model else None
+        self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
         self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
 
@@ -336,22 +336,29 @@ class LATNLayerExecutor:
             if report:
                 print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses")
                 self.enumerate_hypotheses(layer4_hypotheses)
-            
-            # Extract verb phrases
+
+            verb_phrases = []
+            final_hypotheses = []
+
             if self.layer4_grounder:
-                verb_phrases = self.layer4_grounder.extract_verb_phrases(layer4_hypotheses)
+                # Process VP attachment combinations with spatial validation
+                grounded_hypotheses = self.layer4_grounder.ground_layer4(layer4_hypotheses)
+                verb_phrases = [vp for hyp in grounded_hypotheses for vp in self.layer4_grounder.extract_verb_phrases(hyp)]
                 if report:
-                    print(f"Layer 4 grounding produced {len(verb_phrases)} verb phrases")
-                    self.enumerate_hypotheses(verb_phrases)
+                    print(f"Layer 4 grounding produced {len(grounded_hypotheses)} hypotheses")
+                    self.enumerate_hypotheses(grounded_hypotheses)
+                # Use the grounded hypotheses as the final result
+                final_hypotheses = grounded_hypotheses
             else:
-                verb_phrases = []
+                # No grounding - use original hypotheses
+                final_hypotheses = layer4_hypotheses
             
             layer4_confidence = layer4_hypotheses[0].confidence if layer4_hypotheses else layer3_result.confidence
             overall_confidence = (layer3_result.confidence + layer4_confidence) / 2
             
             return Layer4Result(
                 layer3_result=layer3_result,
-                hypotheses=layer4_hypotheses,
+                hypotheses=final_hypotheses,
                 verb_phrases=verb_phrases,
                 success=True,
                 confidence=overall_confidence,
@@ -401,7 +408,7 @@ class LATNLayerExecutor:
 
             # Semantic grounding/execution (if enabled)
             if self.layer5_grounder:
-                grounded_hypotheses, grounding_results = self.layer5_grounder.ground_layer5(layer5_hypotheses)
+                grounded_hypotheses = self.layer5_grounder.ground_layer5(layer5_hypotheses)
                 if report:
                     print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
                     self.enumerate_hypotheses(grounded_hypotheses)
@@ -411,21 +418,20 @@ class LATNLayerExecutor:
                 grounding_results = []
             
             # Extract sentence phrases from grounded hypotheses
-            sentence_phrases = extract_sentence_phrases(grounded_hypotheses)
-            
+            sentence_phrases = []
+            if self.layer5_grounder:
+                for hyp in grounded_hypotheses:
+                    sentence_phrases.extend(self.layer5_grounder.extract_sentence_phrases(hyp))
             layer5_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer4_result.confidence
             overall_confidence = (layer4_result.confidence + layer5_confidence) / 2
             
             description = f"Layer 5 processed {len(sentence_phrases)} sentences"
-            if self.layer5_grounder and grounding_results:
-                executed_count = sum(1 for gr in grounding_results if gr.success)
-                description += f" and executed {executed_count} command(s)"
             
             return Layer5Result(
                 layer4_result=layer4_result,
                 hypotheses=grounded_hypotheses,
                 sentence_phrases=sentence_phrases,
-                grounding_results=grounding_results,
+                grounding_results=None,
                 success=True,
                 confidence=overall_confidence,
                 description=description
@@ -524,3 +530,18 @@ def tokenize_all(sentence):
     result = executor.execute_layer1(sentence)
     assert result is not None, "LATN Layer 1 tokenization failed"
     return result.hypotheses
+
+def is_different_phrase_sequence(a, b):
+    if len(a) != len(b):
+        return True
+    for i in range(len(a)):
+        # Compare start_idx and end_idx (indices 0 and 1)
+        if a[i][0] != b[i][0] or a[i][1] != b[i][1]:
+            return True
+        
+        # For POS objects (index 2), compare by content rather than identity
+        pos_a, pos_b = a[i][2], b[i][2]
+        if pos_a != pos_b:
+            return True
+                
+    return False

@@ -31,20 +31,16 @@ def run_layer_and_summarize(executor, layer, phrase, enable_semantic_grounding):
         print("❌ Tokenization failed")
 
 def main():
-    """Main demo function using standardized scene and test phrases."""
+    """Main demo function using no scene and test phrases."""
     print("🔗 LATN Overall Demo")
     print("=" * 60)
     #set_debug(True)
 
-    # Setup standardized demo scene
-    scene = setup_demo_scene()
-    print_scene_info(scene)
-    
     # Get standardized test phrases
     test_phrases_dict = get_common_test_phrases()
     
     # Create executor
-    executor = LATNLayerExecutor(scene)
+    executor = LATNLayerExecutor()
     
     # Process each category separately  
     for category_name, phrases in test_phrases_dict.items():
