@@ -138,19 +138,14 @@ class SentencePhrase():
             getattr(self, 'scale_factor', 1.0),
             tuple(getattr(self, 'prepositional_phrases', []))
         ))
-    
 
-
-class SentenceImperative(SentencePhrase):
-    def __init__(self, subject=None, predicate=None):
-        super().__init__(subject, predicate)
-        self.action = predicate.verb if predicate else None
-
-    @property
-    def object(self):
-        return self.predicate.noun_phrase if self.predicate else None
-    
-    def has_intent(self, intent: str, threshold=0.5) -> bool:
-        return self.predicate.verb and self.predicate.verb.scalar_projection(intent) > threshold
+    def printString(self):
+        """Print a string representation of the sentence."""
+        subject_str = self.subject.printString() if self.subject else None
+        predicate_str = self.predicate.printString() if self.predicate else "[No Predicate]"
+        if subject_str:
+            return f"{subject_str} {predicate_str}"
+        else:
+            return f"{predicate_str}"
 
 

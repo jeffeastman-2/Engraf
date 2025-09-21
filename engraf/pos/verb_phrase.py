@@ -66,7 +66,7 @@ class VerbPhrase():
             adjectives = " ".join(self.adjective_complement)
             str = f"{self.verb} {adjectives} + {(self.noun_phrase.printString() if self.noun_phrase else "")}"
         else:
-            str = f"{self.verb} + {(self.noun_phrase.printString() if self.noun_phrase else "")}"
+            str = f"({self.verb} {(self.noun_phrase.printString() if self.noun_phrase else "")})"
         return str
 
     # ...existing code...

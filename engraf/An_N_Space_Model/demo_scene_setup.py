@@ -71,7 +71,8 @@ def get_common_test_phrases():
         dict: Categories of test phrases used across different layer demos
     """
     return {
-        'debug': ["draw a very tall box at [0,1,0] and rotate it by 90 degrees"],
+        'debug': ["draw a very tall box at [0,1,0] and rotate it by 90 degrees",
+                  "color the red cube above the table and the blue sphere below the cylinder green"],
         
         'vector_coordinates': [
             "move the cube to [5, 0, 0]",

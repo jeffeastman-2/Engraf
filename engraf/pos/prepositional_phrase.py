@@ -25,10 +25,10 @@ class PrepositionalPhrase():
         self.noun_phrase = np
 
     def printString(self):
-        if self.vector:
-            return f"{self.preposition} + {self.vector.non_zero_dims()}"
-        return f"{self.preposition} + {self.noun_phrase.printString() if self.noun_phrase else ''}"
-    
+        if self.noun_phrase:
+            return f"{self.preposition} {self.noun_phrase.printString() if self.noun_phrase else ''}"
+        return f"{self.preposition} + {self.vector.non_zero_dims()}"
+
 
     def __eq__(self, other):
         """Deep equality comparison for PrepositionalPhrase objects."""

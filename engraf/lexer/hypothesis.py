@@ -58,39 +58,49 @@ class TokenizationHypothesis:
     def printNP(self, i, token):
         """Print a noun phrase token."""
         original_np = token._original_np
-        if token.isa("conj") and token._original_np:
+        if original_np is not None:
             str = original_np.printString()
-            print(f"{self.spaces}[{i}] [CONJ-NP] {str}")
+            if token.isa("conj"):
+                print(f"{self.spaces}[{i}] [CONJ-NP] {str}")
+            else:
+                print(f"{self.spaces}[{i}] [NP] {str}")
         else:
             print(f"{self.spaces}[{i}] {token.word} = {token.non_zero_dims()}")
 
     def printPP(self, i, token):
-        if token.isa("conj") and token._original_pp:
-            str = token._original_pp.printString()
-            print(f"{self.spaces}[{i}] [CONJ-PP] {str}")
+        original_pp = token._original_pp
+        if original_pp:
+            str = original_pp.printString()
+            if token.isa("conj"):
+                print(f"{self.spaces}[{i}] [CONJ-PP] {str}")
+            else:
+                print(f"{self.spaces}[{i}] [PP] {str}")
         else:
             print(f"{self.spaces}[{i}] {token.word} = {token.non_zero_dims()}")
 
     def printVP(self, i, token):
         """Print a verb phrase token."""
         original_vp = token._original_vp
-        if token.isa("conj") and token._original_vp:
+        if original_vp:
             str = original_vp.printString()
-            print(f"{self.spaces}[{i}] [CONJ-VP] {str}")
-        else:
-            original_vp_np = original_vp.noun_phrase
-            if isinstance(original_vp_np, ConjunctionPhrase):
-                str = original_vp_np.printString()
-                print(f"{self.spaces}[{i}] [CONJ-VP] {original_vp.verb} => {str}")
-            elif isinstance(original_vp_np, NounPhrase):
-                str = original_vp_np.printString()
-                print(f"{self.spaces}[{i}] [VP] {original_vp.verb} => {str}")
+            if token.isa("conj"):
+                print(f"{self.spaces}[{i}] [CONJ-VP] {str}")
             else:
-                print(f"{self.spaces}[{i}] {token.word}")
+                print(f"{self.spaces}[{i}] [VP] {str}")
+        else:
+            print(f"{self.spaces}[{i}] {token.word}")
 
     def printSentence(self, i, token):
         """Print a sentence token."""
-        print(f"{self.spaces}[{i}] [Sentence] {token.word}")
+        original_sp = token._original_sp
+        if original_sp:
+            str = original_sp.printString()
+            if token.isa("conj"):
+                print(f"{self.spaces}[{i}] [CONJ-SP] {str}")
+            else:
+                print(f"{self.spaces}[{i}] [SP] {str}")
+        else:
+            print(f"{self.spaces}[{i}] {token.word}")
 
     def print_tokens(self):
         """Print all tokens, each on a new line. Useful for demo examples."""

@@ -162,7 +162,10 @@ class NounPhrase():
             scene_obj = self.grounding['scene_object']
             return f"{self.noun} ({scene_obj.name})"
         else:
-            return " ".join(self.get_consumed_words())
+            if self.preps:
+                str = f"{self.get_consumed_words()} {' '.join(prep.printString() for prep in self.preps)}"
+                return str
+        return " ".join(self.get_consumed_words())
         
 
     def __eq__(self, other):
