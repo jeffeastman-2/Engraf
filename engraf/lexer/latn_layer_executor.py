@@ -97,11 +97,10 @@ class LATNLayerExecutor:
         self.layer4_grounder = Layer4SemanticGrounder(scene_model) if scene_model else None
         self.layer5_grounder = Layer5SemanticGrounder(scene_model) if scene_model else None
 
-    def enumerate_hypotheses(self, hypotheses: List[TokenizationHypothesis]):
+    def enumerate_hypotheses(self, hypotheses: List[TokenizationHypothesis], layer: str = ""):
         """Enumerate and print tokenization hypotheses."""
         for i, hyp in enumerate(hypotheses, 1):
-            tokens = [t.word for t in hyp.tokens]
-            print(f"  {i}. Tokens: {tokens} | Confidence: {hyp.confidence:.3f}")
+            print(f"  {layer}-{i}  Tokens: {len(hyp.tokens)} | Confidence: {hyp.confidence:.3f}")
             hyp.print_tokens()
 
     def execute_layer1(self, sentence: str, report=False) -> Layer1Result:
@@ -129,7 +128,7 @@ class LATNLayerExecutor:
             best_confidence = hypotheses[0].confidence if hypotheses else 0.0
             if(report):
                 print(f"Layer 1 tokenization produced {len(hypotheses)} hypotheses for: '{sentence}'")
-                self.enumerate_hypotheses(hypotheses)
+                self.enumerate_hypotheses(hypotheses, layer="1t")
             return Layer1Result(
                 hypotheses=hypotheses,
                 success=True,
@@ -174,7 +173,7 @@ class LATNLayerExecutor:
 
             if(report):
                 print(f"Layer 2 tokenization produced {len(layer2_hypotheses)} hypotheses")
-                self.enumerate_hypotheses(layer2_hypotheses)
+                self.enumerate_hypotheses(layer2_hypotheses, layer="2t")
 
             # Semantic grounding with hypothesis multiplication (if enabled)
             if self.layer2_grounder:
@@ -204,7 +203,7 @@ class LATNLayerExecutor:
 
             if(report):
                 print(f"Layer 2 grounding produced {len(grounded_hypotheses)} hypotheses")
-                self.enumerate_hypotheses(grounded_hypotheses)
+                self.enumerate_hypotheses(grounded_hypotheses, layer="2g")
             
             return Layer2Result(
                 layer1_result=layer1_result,
@@ -257,7 +256,7 @@ class LATNLayerExecutor:
             layer3_hypotheses = latn_tokenize_layer3(layer2_result.hypotheses)
             if report:
                 print(f"Layer 3 tokenization produced {len(layer3_hypotheses)} hypotheses")
-                self.enumerate_hypotheses(layer3_hypotheses)
+                self.enumerate_hypotheses(layer3_hypotheses, layer="3t")
 
             # Extract PrepositionalPhrase objects
             prepositional_phrases = self.layer3_grounder.extract_prepositional_phrases(layer3_hypotheses) if self.layer3_grounder else []
@@ -268,7 +267,7 @@ class LATNLayerExecutor:
                 grounded_hypotheses = self.layer3_grounder.ground_layer3(layer3_hypotheses)
                 if report:
                     print(f"Layer 3 grounding produced {len(grounded_hypotheses)} hypotheses")
-                    self.enumerate_hypotheses(grounded_hypotheses)
+                    self.enumerate_hypotheses(grounded_hypotheses, layer="3g")
 
                 # Use the grounded hypotheses as the final result
                 final_hypotheses = grounded_hypotheses
@@ -335,7 +334,7 @@ class LATNLayerExecutor:
 
             if report:
                 print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses")
-                self.enumerate_hypotheses(layer4_hypotheses)
+                self.enumerate_hypotheses(layer4_hypotheses, layer="4t")
 
             verb_phrases = []
             final_hypotheses = []
@@ -346,7 +345,7 @@ class LATNLayerExecutor:
                 verb_phrases = [vp for hyp in grounded_hypotheses for vp in self.layer4_grounder.extract_verb_phrases(hyp)]
                 if report:
                     print(f"Layer 4 grounding produced {len(grounded_hypotheses)} hypotheses")
-                    self.enumerate_hypotheses(grounded_hypotheses)
+                    self.enumerate_hypotheses(grounded_hypotheses, layer="4g")
                 # Use the grounded hypotheses as the final result
                 final_hypotheses = grounded_hypotheses
             else:
@@ -404,14 +403,14 @@ class LATNLayerExecutor:
             layer5_hypotheses = latn_tokenize_layer5(layer4_result.hypotheses)
             if report:
                 print(f"Layer 5 tokenization produced {len(layer5_hypotheses)} hypotheses")
-                self.enumerate_hypotheses(layer5_hypotheses)
+                self.enumerate_hypotheses(layer5_hypotheses, layer="5t")
 
             # Semantic grounding/execution (if enabled)
             if self.layer5_grounder:
                 grounded_hypotheses = self.layer5_grounder.ground_layer5(layer5_hypotheses)
                 if report:
                     print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
-                    self.enumerate_hypotheses(grounded_hypotheses)
+                    self.enumerate_hypotheses(grounded_hypotheses, layer="5g")
             else:
                 # No grounding - keep original hypotheses
                 grounded_hypotheses = layer5_hypotheses

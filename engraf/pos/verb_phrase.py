@@ -62,11 +62,17 @@ class VerbPhrase():
         return self.verb and self.verb.scalar_projection(intent) > threshold
 
     def printString(self):
+        str = self.verb
+        if self.preps:
+            for pp in self.preps:
+                str += f" ({pp.printString()})"
         if self.adjective_complement:
             adjectives = " ".join(self.adjective_complement)
-            str = f"{self.verb} {adjectives} + {(self.noun_phrase.printString() if self.noun_phrase else "")}"
-        else:
-            str = f"({self.verb} {(self.noun_phrase.printString() if self.noun_phrase else "")})"
+            str += f" ({adjectives})"
+        if self.noun_phrase:
+            str += f" [{self.noun_phrase.printString()}]"
+        if self.amount:
+            str += f" [{self.amount.printString()}]"
         return str
 
     # ...existing code...

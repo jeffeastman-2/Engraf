@@ -193,6 +193,15 @@ class VectorSpace:
         new_vs.vector = self.vector.copy()
         return new_vs
 
+    def __eq__(self, other):
+        if not isinstance(other, VectorSpace):
+            return False
+        # Compare the actual numpy arrays
+        return np.array_equal(self.vector, other.vector)
+    
+    def __hash__(self):
+        # Implement hash method too
+        return hash(tuple(self.vector))  # or appropriate hash
 
 def vector_from_features(pos, adverb=None, loc=None, scale=None, rot=None, color=None, word=None, number=None, texture=None, transparency=None, **semantic_dims):
     vs = VectorSpace(word)

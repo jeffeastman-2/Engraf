@@ -12,10 +12,11 @@ class NounPhrase():
         self.scale_factor = 1.0
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
         self.consumed_tokens = []  # All original tokens that were consumed to build this NP
-        
+        self.is_unit = False  # True if this NP represents a unit (e.g., "meters", "degrees")
         self.grounding = None        # Set in L2 grounding
 
     def apply_determiner(self, tok):
+        self.is_unit = self.is_unit or tok.isa("unit") 
         self.determiner = tok.word
         self.vector += tok
         self.consumed_tokens.append(tok)
@@ -24,6 +25,7 @@ class NounPhrase():
         self.noun = "vector"
         self.vector += tok
         self.consumed_tokens.append(tok)
+        self.is_unit = True
 
     def apply_adverb(self, tok):
         """Store the adverb vector for use in scaling the next adjective."""
@@ -70,6 +72,7 @@ class NounPhrase():
                 debug_print(f"❌ {error_msg}")
                 raise ValueError(error_msg)
         
+        self.is_unit = self.is_unit or tok.isa("unit") or tok.isa("vector")
         self.noun = tok.word
         self.vector += tok
         self.consumed_tokens.append(tok)
@@ -163,7 +166,7 @@ class NounPhrase():
             return f"{self.noun} ({scene_obj.name})"
         else:
             if self.preps:
-                str = f"{self.get_consumed_words()} {' '.join(prep.printString() for prep in self.preps)}"
+                str = f"{' '.join(self.get_consumed_words())} ({' '.join(prep.printString() for prep in self.preps)})"
                 return str
         return " ".join(self.get_consumed_words())
         

@@ -6,6 +6,7 @@ class ConjunctionPhrase:
         self.conjunction = tok.word
         self.vector = tok
         self.right = right
+        self.preps = []  # Add this for PP attachments
 
     def __iter__(self):
         yield from self.flatten()
@@ -32,6 +33,9 @@ class ConjunctionPhrase:
         flattened = self.flatten()
         parts = [f"{item.printString()}" for item in flattened]
         str =  "(" + f" {self.conjunction} ".join(parts) + ")"
+        if self.preps:
+            str = '(' + str
+            str += " " + " ".join(prep.printString() for prep in self.preps) + ")"
         return str
     
 def __eq__(self, other):

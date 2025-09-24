@@ -241,6 +241,77 @@ def calculate_coordination_confidence(pp_sequences: List[tuple], is_phrase_level
     
     return confidence
 
+def _generate_pp_attachment_combinations(layer3_hypotheses):
+    """Generate all possible PP attachment combinations."""
+    from copy import deepcopy
+    from itertools import product
+    
+    all_combinations = []
+    
+    for hypothesis in layer3_hypotheses:
+        # Find PP tokens and their possible attachment targets
+        pp_positions = []
+        attachment_options = []
+        
+        for i, token in enumerate(hypothesis.tokens):
+            if token.isa("PP"):
+                pp_positions.append(i)
+                
+                # Find all preceding NP/PP tokens as potential attachment targets
+                targets = [None]
+                for j in range(i):
+                    prev_token = hypothesis.tokens[j]
+                    if prev_token.isa("NP")or prev_token.isa("PP"):
+                        targets.append(j)
+
+                attachment_options.append(targets)  # None = no attachment
+
+        if not pp_positions:
+            # No PPs to attach, keep original hypothesis
+            all_combinations.append(hypothesis)
+            continue
+        
+        # Generate cartesian product of all attachment combinations
+        for combination in product(*attachment_options):
+            # Create new hypothesis with this attachment combination
+            new_hypothesis = deepcopy(hypothesis)
+            
+            # Track which PP tokens will be removed (those that attach to something)
+            tokens_to_remove = set()
+            
+            # Add attachment references and mark for removal if attached
+            for pp_idx, target_idx in zip(pp_positions, combination):
+                pp_token = new_hypothesis.tokens[pp_idx]                
+                if target_idx is not None:  # PP attaches to something
+                    target_token = new_hypothesis.tokens[target_idx]
+                    # Handle attachment to a NP
+                    if target_token.isa("NP"):
+                        np_obj = target_token._original_np
+                    # Handle attachment to a PP (attach to its NP)
+                    elif target_token.isa("PP"):
+                        pp_obj = target_token._original_pp
+                        np_obj = pp_obj.noun_phrase
+                    np_obj.preps.append(pp_token._original_pp)
+
+                    # Remove the PP token since it's now bound for identification
+                    tokens_to_remove.add(pp_idx)
+            
+            # Remove attached PP tokens from the token sequence
+            new_hypothesis.tokens = [token for i, token in enumerate(new_hypothesis.tokens)
+                                   if i not in tokens_to_remove]
+
+            # Update confidence based on attachment complexity
+            num_attachments = len([t for t in combination if t is not None])
+            attachment_penalty = num_attachments * 0.05
+            new_hypothesis.confidence = max(0.1, hypothesis.confidence - attachment_penalty)
+            
+            # Update description to reflect attachment pattern
+            if num_attachments > 0:
+                new_hypothesis.description += f" ({num_attachments} PP attachments)"
+            
+            all_combinations.append(new_hypothesis)
+    
+    return all_combinations
 
 def latn_tokenize_layer3(layer2_hypotheses: List[TokenizationHypothesis]) -> List[TokenizationHypothesis]:
     """LATN Layer 3: Replace prepositional phrase sequences with PrepositionalPhrase tokens.
@@ -294,6 +365,8 @@ def latn_tokenize_layer3(layer2_hypotheses: List[TokenizationHypothesis]) -> Lis
                     replacements=[]
                 )
                 layer3_hypotheses.append(layer3_hyp)
+
+    layer3_hypotheses = _generate_pp_attachment_combinations(layer3_hypotheses) 
 
     # Sort by confidence (highest first)
     layer3_hypotheses.sort(key=lambda h: h.confidence, reverse=True)

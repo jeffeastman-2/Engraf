@@ -45,12 +45,8 @@ class Layer3SemanticGrounder:
         Returns:
             Processed hypotheses with validated PP attachments and semantic grounding
         """
-        # Pass 1: Generate all possible PP attachment combinations
-        attachment_hypotheses = self._generate_pp_attachment_combinations(layer3_hypotheses)
-        debug_print(f"🔀 Pass 1: Generated {len(attachment_hypotheses)} PP attachment combinations")
-        
-        # Pass 2: Spatial validation filter
-        validated_hypotheses = self._validate_spatial_attachments(attachment_hypotheses)
+        # Spatial validation filter
+        validated_hypotheses = self._validate_spatial_attachments(layer3_hypotheses)
         debug_print(f"✅ Pass 2: {len(validated_hypotheses)} spatially valid combinations")
         
         # Pass 3: Semantic grounding for validated attachments
@@ -62,82 +58,7 @@ class Layer3SemanticGrounder:
         
         return layer3_hypotheses
     
-    def _is_vector_destination_pp(self, pp_token) -> bool:
-        """Check if a PP token has a vector destination (should go to Layer 4)."""
-        return (hasattr(pp_token, '_original_pp') and pp_token._original_pp and 
-                hasattr(pp_token._original_pp, 'noun_phrase') and pp_token._original_pp.noun_phrase and
-                hasattr(pp_token._original_pp.noun_phrase, 'vector') and 
-                pp_token._original_pp.noun_phrase.vector.isa("vector"))
-
-    def _generate_pp_attachment_combinations(self, layer3_hypotheses):
-        """Pass 1: Generate all possible PP attachment combinations."""
-        from copy import deepcopy
-        from itertools import product
-        
-        all_combinations = []
-        
-        for hypothesis in layer3_hypotheses:
-            # Find PP tokens and their possible attachment targets
-            pp_positions = []
-            attachment_options = []
-            
-            for i, token in enumerate(hypothesis.tokens):
-                if token.isa("PP"):
-                    # Skip PPs with vector destinations - they should go to Layer 4
-                    if self._is_vector_destination_pp(token):
-                        continue  # Skip vector destination PPs
-                        
-                    pp_positions.append(i)
-                    
-                    # Find all preceding NP/PP tokens as potential attachment targets
-                    targets = []
-                    for j in range(i):
-                        prev_token = hypothesis.tokens[j]
-                        if prev_token.isa("NP"):
-                            targets.append(j)
-                        elif prev_token.isa("PP"):
-                            # Only include PPs that don't have vector destinations
-                            if not self._is_vector_destination_pp(prev_token):
-                                targets.append(j)
-                    
-                    attachment_options.append(targets if targets else [None])  # None = no attachment
-            
-            if not pp_positions:
-                # No PPs to attach, keep original hypothesis
-                all_combinations.append(hypothesis)
-                continue
-            
-            # Generate cartesian product of all attachment combinations
-            for combination in product(*attachment_options):
-                # Create new hypothesis with this attachment combination
-                new_hypothesis = deepcopy(hypothesis)
-                
-                # Add attachment metadata to PP tokens and update target NP tokens
-                tokens_to_remove = set()
-                for pp_idx, target_idx in zip(pp_positions, combination):
-                    pp_token = new_hypothesis.tokens[pp_idx]
-                    
-                    # Add attachment information to PP token
-                    if pp_token._attachment_info is None:
-                        pp_token._attachment_info = {}
-                    pp_token._attachment_info['attaches_to'] = target_idx
-                    pp_token._attachment_info['combination_id'] = str(combination)
-                        
-                        # Don't remove PP tokens yet - they need to be validated first
-                
-                # Don't remove PP tokens here - they'll be removed after successful validation
-                # if tokens_to_remove:
-                #     new_hypothesis.tokens = [token for i, token in enumerate(new_hypothesis.tokens) 
-                #                            if i not in tokens_to_remove]
-                
-                # Update confidence based on attachment complexity
-                attachment_penalty = len([t for t in combination if t is not None]) * 0.05
-                new_hypothesis.confidence = max(0.1, hypothesis.confidence - attachment_penalty)
-                
-                all_combinations.append(new_hypothesis)
-        
-        return all_combinations
-    
+   
     def _validate_spatial_attachments(self, attachment_hypotheses):
         """Pass 2: Validate PP attachments using spatial reasoning and immediately merge valid PPSOs."""
         validated = []
