@@ -57,9 +57,12 @@ class TokenizationHypothesis:
 
     def printNP(self, i, token):
         """Print a noun phrase token."""
-        original_np = token._original_np
-        if original_np is not None:
-            str = original_np.printString()
+        if token._grounded_phrase:
+            display_np = token._grounded_phrase
+        else:
+            display_np = token._original_np
+        if display_np is not None:
+            str = display_np.printString()
             if token.isa("conj"):
                 print(f"{self.spaces}[{i}] [CONJ-NP] {str}")
             else:

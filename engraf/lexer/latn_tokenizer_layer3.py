@@ -287,11 +287,15 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
                     # Handle attachment to a NP
                     if target_token.isa("NP"):
                         np_obj = target_token._original_np
+                        np_obj.preps.append(pp_token._original_pp)
+                        # if the NP is grounded, update its grounded NP's preps as well
+                        if target_token._grounded_phrase:
+                            target_token._grounded_phrase.preps.append(pp_token._original_pp)
                     # Handle attachment to a PP (attach to its NP)
                     elif target_token.isa("PP"):
                         pp_obj = target_token._original_pp
                         np_obj = pp_obj.noun_phrase
-                    np_obj.preps.append(pp_token._original_pp)
+                        np_obj.preps.append(pp_token._original_pp)
 
                     # Remove the PP token since it's now bound for identification
                     tokens_to_remove.add(pp_idx)

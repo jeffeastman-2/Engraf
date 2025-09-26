@@ -13,7 +13,17 @@ class NounPhrase():
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
         self.consumed_tokens = []  # All original tokens that were consumed to build this NP
         self.is_unit = False  # True if this NP represents a unit (e.g., "meters", "degrees")
-        self.grounding = None        # Set in L2 grounding
+        self._grounding = None        # Set in L2 grounding
+
+    @property
+    def grounding(self):
+        return self._grounding
+
+    @grounding.setter  
+    def grounding(self, value):
+        if value is not None and not isinstance(value, dict):
+            raise TypeError(f"Grounding must be dict or None, got {type(value)}")
+        self._grounding = value
 
     def apply_determiner(self, tok):
         self.is_unit = self.is_unit or tok.isa("unit") 
@@ -48,7 +58,6 @@ class NounPhrase():
             debug_print(f"✅ Setting adjective vector without scale: {tok}")
             self.vector += tok
         self.consumed_tokens.append(tok)
-
 
     def apply_noun(self, tok):
         debug_print(f"✅ NP applying noun {tok.word} with vector {tok}")
@@ -135,9 +144,9 @@ class NounPhrase():
         consumed_words = [tok.word for tok in self.consumed_tokens]
         
         # If grounded, show grounding information in a more readable format
-        if self.grounding and self.grounding.get('scene_object'):
-            scene_obj = self.grounding['scene_object']
-            confidence = self.grounding.get('confidence', 0.0)
+        if self._grounding and self._grounding.get('scene_object'):
+            scene_obj = self._grounding['scene_object']
+            confidence = self._grounding.get('confidence', 0.0)
             grounded_desc = f"grounded→{scene_obj.name}@{confidence:.2f}"
             parts = [f"noun={self.noun}", f"{grounded_desc}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
         else:
@@ -161,15 +170,16 @@ class NounPhrase():
         return (0, len(self.consumed_tokens))  # Placeholder - would use actual positions
     
     def printString(self):
+        str = ""
         if self.grounding and self.grounding.get('scene_object'):
             scene_obj = self.grounding['scene_object']
-            return f"{self.noun} ({scene_obj.name})"
+            str = f"<{scene_obj.entity_id}>"
         else:
-            if self.preps:
-                str = f"{' '.join(self.get_consumed_words())} ({' '.join(prep.printString() for prep in self.preps)})"
-                return str
-        return " ".join(self.get_consumed_words())
-        
+            str = f"{' '.join(self.get_consumed_words())}"
+        if self.preps:
+            str = f"{str} ({' '.join(prep.printString() for prep in self.preps)})"
+        return str
+         
 
     def __eq__(self, other):
         """Deep equality comparison for NounPhrase objects."""

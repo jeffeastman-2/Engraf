@@ -1,5 +1,6 @@
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 
 
@@ -12,48 +13,39 @@ def test_coordinated_pp():
     result = executor.execute_layer3('above the red box and below the blue circle and behind the octahedron',report=True)
 
     assert result.success, "Failed to tokenize coordinated PPs in Layer 3"
-    assert len(result.hypotheses) == 2, "Should generate 2 hypotheses"
+    assert len(result.hypotheses) == 7, "Should generate 14 hypotheses"
 
-    main_hyp = result.hypotheses[1]
+    main_hyp = result.hypotheses[0]
     # Should have exactly 3 PP tokens (one for each prepositional phrase)
-    assert len(main_hyp.tokens) == 5, f"Should have exactly 5 tokens, got {len(main_hyp.tokens)}"
-    main_pp = main_hyp.tokens[0].word
-    assert main_pp.startswith("PP("), "First token should be a PP"
-    conj_pp = main_hyp.tokens[1].word
-    assert conj_pp.startswith("and"), "Second token should be a conjunction"
-    other_pp = main_hyp.tokens[2].word
-    assert other_pp.startswith("PP("), "Third token should be a PP"
-    conj_pp = main_hyp.tokens[3].word
-    assert conj_pp.startswith("and"), "Fourth token should be a conjunction"
-    other_pp = main_hyp.tokens[4].word
-    assert other_pp.startswith("PP("), "Fifth token should be a PP"
-
-    conj_hyp = result.hypotheses[0]    
-    # Should have exactly 2 NP tokens (one for each noun phrase)
-    assert len(conj_hyp.tokens) == 1, f"Should have exactly 1 token, got {len(conj_hyp.tokens)}"
-    conj_np = conj_hyp.tokens[0].word
-    assert conj_np.startswith("CONJ-PP"), "First token should be a conjunction PP"
-    conj = conj_hyp.tokens[0]
-    assert conj is not None
-    original_pp = conj._original_pp
-    assert isinstance(original_pp, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_pp)}"
-    parts = [pp for pp in original_pp.flatten()]
-    assert len(parts) == 3, f"Should have 3 parts, got {len(parts)}"
+    assert len(main_hyp.tokens) == 1, f"Should have exactly 1 token, got {len(main_hyp.tokens)}"
+    main_pp = main_hyp.tokens[0]
+    assert main_pp.word == "CONJ-PP", "First token should be a CONJ-PP"
+    parts = list(main_pp._original_pp.flatten())
+    assert len(parts) == 3, f"CONJ-PP should have 3 parts, got {len(parts)}"
+    assert all(isinstance(part, PrepositionalPhrase) for part in parts), "All parts should be PrepositionalPhrase instances"
+    assert parts[0].preposition == "above", f"First PP should be 'above', got '{parts[0].preposition}'"
+    assert parts[1].preposition == "below", f"Second PP should be 'below', got '{parts[1].preposition}'"
+    assert parts[2].preposition == "behind", f"Third PP should be 'behind', got '{parts[2].preposition}'"
 
 def test_coordinated_pp_with_nps():
 
     executor = LATNLayerExecutor()
 
-    # Test coordinated PPs: "color the red cube above the table and the blue sphere below the cylinder green"
-    # Hypothesis-1: "color the red cube (above the table) and (the blue sphere) below the cylinder green"
-    # Hypothesis-2: "color the red cube (above the table and the blue sphere) (below the cylinder) green"
-    result = executor.execute_layer3('color the red cube above the table and the blue sphere below the cylinder green',report=True)
+    result = executor.execute_layer3('the red cube above the table and the blue sphere below the cylinder',report=True)
 
     assert result.success, "Failed to tokenize coordinated PPs in Layer 3"
-    assert len(result.hypotheses) == 2, "Should generate 2 hypotheses"
+    assert len(result.hypotheses) == 14, "Should generate 2 hypotheses"
 
     hyp = result.hypotheses[0]
-    assert len(hyp.tokens) == 5, f"Should have exactly 5 tokens, got {len(hyp.tokens)}"
-    hyp = result.hypotheses[1]
-    assert len(hyp.tokens) == 7, f"Should have exactly 7 tokens, got {len(hyp.tokens)}"
-
+    assert len(hyp.tokens) == 3, f"Should have exactly 3 tokens, got {len(hyp.tokens)}"
+    np = hyp.tokens[0]._original_np
+    str = np.printString()
+    assert hyp.tokens[0]._original_np.printString() == "the red cube", f"First token should be NP, got {hyp.tokens[0].word}"
+    pp = hyp.tokens[1]._original_pp
+    np = pp.noun_phrase
+    assert isinstance(np, ConjunctionPhrase), f"Second token should be CONJ-NP, got {hyp.tokens[1].word}"
+    parts = list(np.flatten())
+    assert len(parts) == 2, f"CONJ-NP should have 2 parts, got {len(parts)}"
+    assert all(isinstance(part, NounPhrase) for part in parts), "All parts should be NounPhrase instances"
+    assert parts[0].printString() == "the table", f"First NP part should be 'the table', got '{parts[0].printString()}'"
+    assert parts[1].printString() == "the blue sphere", f"Second NP part should be 'the blue sphere', got '{parts[1].printString()}'"

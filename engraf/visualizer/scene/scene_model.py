@@ -164,7 +164,7 @@ class SceneModel:
         self.entities.clear()
         self.recent.clear()
         
-    def find_noun_phrase(self, np, return_all_matches=False):
+    def find_noun_phrase(self, np, return_all_matches=True):
         """
         Given a noun phrase context, try to find the most relevant SceneObject or SceneAssembly.
         First searches assemblies, then individual objects.

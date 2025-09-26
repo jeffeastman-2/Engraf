@@ -33,12 +33,6 @@ class Layer2GroundingResult:
         if self.alternative_matches is None:
             self.alternative_matches = []
     
-    @property
-    def resolved_object(self):
-        """Backward compatibility: return first object if any."""
-        return self.resolved_objects[0] if self.resolved_objects else None
-
-
 class Layer2SemanticGrounder:
     """Semantic grounding for LATN Layer 2 NounPhrase tokens."""
     
@@ -163,10 +157,6 @@ class Layer2SemanticGrounder:
                 'multiple_objects': np.vector.isa("plural")
             }
             
-            # Keep backward compatibility with scene_object (singular)
-            if resolved_object_list:
-                grounding_info['scene_object'] = resolved_object_list[0]
-            
             grounded_np.grounding = grounding_info
             
             return Layer2GroundingResult(
@@ -206,104 +196,113 @@ class Layer2SemanticGrounder:
         for i, hypothesis in enumerate(layer2_hypotheses):
             # Look for NP tokens in the hypothesis token stream
             for j, token in enumerate(hypothesis.tokens):
-                if token._original_np is not None and isinstance(token._original_np, NounPhrase):
-                    # Check if this token has been grounded
-                    if token._grounded_phrase is not None:
-                        # Use the grounded SceneObjectPhrase
-                        noun_phrases.append(token._grounded_phrase)
+                if token.isa("NP"):
+                    if token.isa("conj"):
+                        conj = token._original_np
+                        for np in conj.flatten():
+                            noun_phrases.append(np)
                     else:
-                        # Use the original NounPhrase (unbound)
-                        noun_phrases.append(token._original_np)
-        
+                        # Check if this token has been grounded
+                        if token._grounded_phrase is not None:
+                            # Use the grounded NounPhrase
+                            noun_phrases.append(token._grounded_phrase)
+                        else:
+                            # Use the original NounPhrase (unbound)
+                            noun_phrases.append(token._original_np)
+            
         return noun_phrases
     
     def ground_layer2(self, layer2_hypotheses: List[TokenizationHypothesis], 
-                                         return_all_matches: bool = False) -> Tuple[List[TokenizationHypothesis], List[Layer2GroundingResult]]:
-        """Multiply hypotheses based on grounding results using two-pass algorithm.
-        
-        Pass 1: Collect all scene object matches for each NP in each hypothesis
-        Pass 2: Generate combinatorial hypotheses with one object per NP
-        
-        Returns:
-            tuple: (grounded_hypotheses, all_grounding_results)
-        """
+                    return_all_matches: bool = False) -> Tuple[List[TokenizationHypothesis], List[Layer2GroundingResult]]:
+        """Multiply hypotheses based on grounding results using two-pass algorithm."""
         all_grounded_hypotheses = []
         all_grounding_results = []
         
         for hypothesis in layer2_hypotheses:
             # Pass 1: Collect all potential groundings for each NP in this hypothesis
-            np_grounding_options = []  # List of lists: [[obj1, obj2], [obj3], ...]
-            np_positions = []  # Track which tokens are NPs
+            np_grounding_options = []
+            np_positions = []
+            hypothesis_grounding_results = []  # ← Track grounding results for this hypothesis
             
             for i, token in enumerate(hypothesis.tokens):
-                if token._original_np is not None and isinstance(token._original_np, NounPhrase):
+                if token.isa("conj") and token.isa("NP"):
+                    continue  # Skip conjunction tokens for now
+                elif token.isa("NP") and token._original_np is not None:
                     np_positions.append(i)
                     np = token._original_np
                     
                     # Get all possible groundings for this NP
                     grounding_result = self.ground(np, return_all_matches=return_all_matches)
                     all_grounding_results.append(grounding_result)
+                    hypothesis_grounding_results.append(grounding_result)  # ← Store for this hypothesis
                     
                     if grounding_result.success:
                         if return_all_matches and grounding_result.alternative_matches:
                             # Include best match + alternatives
-                            options = [(grounding_result.confidence, grounding_result.resolved_object, grounding_result.grounded_noun_phrase)]
-                            for conf, obj in grounding_result.alternative_matches:
-                                # Create grounded noun phrase for alternative
-                                alt_np = copy.deepcopy(np)
-                                alt_np.grounding = {
-                                    'scene_object': obj,
-                                    'confidence': conf,
-                                    'type': 'scene_object'
-                                }
-                                options.append((conf, obj, alt_np))
+                            obj = grounding_result.resolved_objects[0]
+                            np = grounding_result.grounded_noun_phrase
+                            options = [(grounding_result.confidence, obj, np, grounding_result)]
+                            for conf, alt_obj in grounding_result.alternative_matches:
+                                # Create alternative grounded NounPhrase
+                                alt_np = copy.deepcopy(grounding_result.grounded_noun_phrase)
+                                alt_np.grounding['scene_objects'] = [alt_obj]
+                                alt_np.grounding['confidence'] = conf
+
+                                # Create alternative grounding result
+                                alt_grounding_result = Layer2GroundingResult(
+                                    success=True,
+                                    confidence=conf,
+                                    resolved_objects=[alt_obj],  # This is correct - alt_obj is SceneObject
+                                    grounded_noun_phrase=alt_np,
+                                    description=f"Alternative match for {np}: {alt_obj.object_id}"
+                                )
+                                options.append((conf, alt_obj, alt_np, alt_grounding_result))
                             np_grounding_options.append(options)
                         else:
                             # Single best match
-                            np_grounding_options.append([(grounding_result.confidence, grounding_result.resolved_object, grounding_result.grounded_noun_phrase)])
+                            np_grounding_options.append([(grounding_result.confidence, grounding_result.resolved_objects[0], grounding_result.grounded_noun_phrase, grounding_result)])
                     else:
-                        # No grounding found - use original NP
-                        np_grounding_options.append([(0.5, None, np)])  # Ungrounded gets neutral score
+                        # No grounding found
+                        np_grounding_options.append([(0.5, None, np, grounding_result)])
             
             # Pass 2: Generate combinatorial hypotheses
             if np_grounding_options:
-                # Generate all combinations of groundings
                 for combo in product(*np_grounding_options):
-                    # Create new hypothesis for this grounding combination
                     new_hypothesis = copy.deepcopy(hypothesis)
+                    new_hypothesis.grounding_results = []  # ← Add grounding results to hypothesis
                     
-                    # Apply the grounding combination
                     combo_confidence = 1.0
-                    for np_idx, (conf, scene_obj, grounded_phrase) in enumerate(combo):
+                    grounding_confidences = []
+                    for np_idx, (conf, scene_obj, grounded_phrase, grounding_result) in enumerate(combo):
                         token_idx = np_positions[np_idx]
                         token = new_hypothesis.tokens[token_idx]
                         
                         # Attach grounded phrase to token
                         token._grounded_phrase = grounded_phrase
+                        new_hypothesis.grounding_results.append(grounding_result)  # ← Attach grounding result
                         
-                        # Update token's vector to have grounded information if it's a grounded NP
-                        if hasattr(grounded_phrase, 'grounding') and grounded_phrase.grounding:
-                            # Copy the grounded phrase vector but preserve original token dimensions
-                            original_vector = token.vector.copy()
-                            token.vector = grounded_phrase.vector.copy()
-                            
-                            # Preserve the NP dimension to maintain token type
-                            from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
-                            np_index = VECTOR_DIMENSIONS.index('NP')
-                            if original_vector[np_index] > 0:  # If original token was an NP
-                                token.vector[np_index] = original_vector[np_index]  # Preserve NP dimension
+                        grounding_confidences.append(conf)
+
+                    # ← ADD THIS: Calculate combo_confidence from grounding results
+                    if grounding_confidences:
+                        # Option 1: Average grounding confidence with softer penalty
+                        avg_grounding = sum(grounding_confidences) / len(grounding_confidences)
+                        combo_confidence = 0.7 + 0.3 * avg_grounding  # Base 70% + 30% from grounding
                         
-                        # Update confidence
-                        combo_confidence *= conf
-                    
+                        # Option 2: Multiplicative (more conservative)
+                        # combo_confidence = 1.0
+                        # for conf in grounding_confidences:
+                        #     combo_confidence *= (0.8 + 0.2 * conf)  # Softer multiplicative penalty
+                       
                     # Update hypothesis confidence
                     new_hypothesis.confidence = hypothesis.confidence * combo_confidence
                     all_grounded_hypotheses.append(new_hypothesis)
             else:
                 # No NPs to ground - keep original hypothesis
+                hypothesis.grounding_results = []  # ← Empty list for consistency
                 all_grounded_hypotheses.append(hypothesis)
         
-        # Sort hypotheses by confidence (best first)
+        # Sort hypotheses by confidence
         all_grounded_hypotheses.sort(key=lambda h: h.confidence, reverse=True)
         
         return all_grounded_hypotheses, all_grounding_results
