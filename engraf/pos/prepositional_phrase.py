@@ -30,22 +30,14 @@ class PrepositionalPhrase():
         return f"{self.preposition} + {self.vector.non_zero_dims()}"
 
 
-    def __eq__(self, other):
+    def equals(self, other):
         """Deep equality comparison for PrepositionalPhrase objects."""
         if not isinstance(other, PrepositionalPhrase):
-            return False
-        
+            return False        
         return (
             self.preposition == other.preposition and
-            self.noun_phrase == other.noun_phrase and
+            self.noun_phrase.equals(other.noun_phrase) and
             getattr(self, 'vector', None) == getattr(other, 'vector', None) and
             getattr(self, 'vector_text', None) == getattr(other, 'vector_text', None)
         )
 
-    def __hash__(self):
-        """Hash method for PrepositionalPhrase objects."""
-        return hash((
-            self.preposition,
-            self.noun_phrase,
-            getattr(self, 'vector_text', None)
-        ))

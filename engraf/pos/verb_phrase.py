@@ -75,28 +75,23 @@ class VerbPhrase():
             str += f" [{self.amount.printString()}]"
         return str
 
-    # ...existing code...
-
-    def __eq__(self, other):
+    def equals(self, other):
         """Deep equality comparison for VerbPhrase objects."""
         if not isinstance(other, VerbPhrase):
             return False
-        
+        if len(self.preps) != len(other.preps):
+            return False
+        for this_prep, other_prep in zip(self.preps, other.preps):
+            if not this_prep.equals(other_prep):
+                return False  
+        if len(self.adjective_complement) != len(other.adjective_complement):
+            return False
+        for this_adj, other_adj in zip(self.adjective_complement, other.adjective_complement):
+            if this_adj != other_adj:
+                return False
         return (
             self.verb == other.verb and
-            self.noun_phrase == other.noun_phrase and
-            self.preps == other.preps and
-            self.adjective_complement == other.adjective_complement and
+            self.noun_phrase.equals(other.noun_phrase) and
             self.amount == other.amount and
             getattr(self, 'vector', None) == getattr(other, 'vector', None)
         )
-
-    def __hash__(self):
-        """Hash method for VerbPhrase objects."""
-        return hash((
-            self.verb,
-            self.noun_phrase,
-            tuple(self.preps) if self.preps else (),
-            tuple(self.adjective_complement) if self.adjective_complement else (),
-            self.amount
-        ))

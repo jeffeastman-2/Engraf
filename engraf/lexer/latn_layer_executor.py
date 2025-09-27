@@ -178,7 +178,7 @@ class LATNLayerExecutor:
             # Semantic grounding with hypothesis multiplication (if enabled)
             if self.layer2_grounder:
                 grounded_hypotheses, all_grounding_results = self.layer2_grounder.ground_layer2(
-                    layer2_hypotheses, return_all_matches=True
+                    layer2_hypotheses=layer2_hypotheses
                 )
             else:
                 # No grounding - keep original hypotheses
@@ -540,7 +540,6 @@ def is_different_phrase_sequence(a, b):
         
         # For POS objects (index 2), compare by content rather than identity
         pos_a, pos_b = a[i][2], b[i][2]
-        if pos_a != pos_b:
-            return True
-                
+        if not pos_a.equals(pos_b):
+            return True              
     return False

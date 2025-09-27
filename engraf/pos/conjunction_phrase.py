@@ -23,26 +23,16 @@ class ConjunctionPhrase:
             str += " " + " ".join(prep.printString() for prep in self.preps) + ")"
         return str
     
-def __eq__(self, other):
+def equals(self, other):
     """Deep equality comparison using phrases to compare tree structures."""
     if not isinstance(other, ConjunctionPhrase):
         return False
-
     self_phrases = self.phrases
     other_phrases = other.phrases
-
     # Compare the phrases lists
     if len(self_phrases) != len(other_phrases):
         return False
-
     for i in range(len(self_phrases)):
-        if self_phrases[i] != other_phrases[i]:  # Complete the comparison
-            return False
-            
+        if not self_phrases[i].equals(other_phrases[i]):  # Complete the comparison
+            return False            
     return True
-
-def __hash__(self):
-    """Hash method using flattened representation."""
-    # Hash the flattened structure - convert generator to tuple
-    flattened = tuple(self.flatten())  # Convert generator to tuple for hashing
-    return hash(flattened)

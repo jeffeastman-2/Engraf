@@ -79,30 +79,27 @@ class SentencePhrase():
         else:
             self.vector += tok
 
-    def __eq__(self, other):
+    def equals(self, other):
         """Deep equality comparison for SentencePhrase objects."""
         if not isinstance(other, SentencePhrase):
+            return False        
+        if self.subject and other.subject:
+            if not self.subject.equals(other.subject):
+                return False            
+        if self.predicate and other.predicate:
+            if not self.predicate.equals(other.predicate):
+                return False
+        if len(self.preps) != len(other.preps):
             return False
-        
+        for this_prep, other_prep in zip(self.preps, other.preps):
+            if not this_prep.equals(other_prep):
+                return False
         return (
-            getattr(self, 'subject', None) == getattr(other, 'subject', None) and
-            getattr(self, 'predicate', None) == getattr(other, 'predicate', None) and
             getattr(self, 'definition_word', None) == getattr(other, 'definition_word', None) and
             getattr(self, 'tobe', None) == getattr(other, 'tobe', None) and
-            getattr(self, 'scale_factor', 1.0) == getattr(other, 'scale_factor', 1.0) and
-            getattr(self, 'prepositional_phrases', []) == getattr(other, 'prepositional_phrases', [])
+            getattr(self, 'scale_factor', 1.0) == getattr(other, 'scale_factor', 1.0) 
         )
 
-    def __hash__(self):
-        """Hash method for SentencePhrase objects."""
-        return hash((
-            getattr(self, 'subject', None),
-            getattr(self, 'predicate', None),
-            getattr(self, 'definition_word', None),
-            getattr(self, 'tobe', None),
-            getattr(self, 'scale_factor', 1.0),
-            tuple(getattr(self, 'prepositional_phrases', []))
-        ))
 
     def printString(self):
         """Print a string representation of the sentence."""

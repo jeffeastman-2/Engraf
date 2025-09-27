@@ -181,28 +181,21 @@ class NounPhrase():
         return str
          
 
-    def __eq__(self, other):
+    def equals(self, other):
         """Deep equality comparison for NounPhrase objects."""
         if not isinstance(other, NounPhrase):
             return False
-        
-        # Compare all attributes
+        if len(self.preps) != len(other.preps):
+            return False
+        for this_prep, other_prep in zip(self.preps, other.preps):
+            if not this_prep.equals(other_prep):
+                return False
+        # Compare all simple attributes
         return (
             self.determiner == other.determiner and
             self.noun == other.noun and
-            self.preps == other.preps and
             getattr(self, 'vector', None) == getattr(other, 'vector', None) and
             getattr(self, 'plural', False) == getattr(other, 'plural', False) and
             getattr(self, 'amount', None) == getattr(other, 'amount', None)
         )
 
-    def __hash__(self):
-        """Hash method for NounPhrase objects."""
-        return hash((
-            self.determiner,
-            tuple(self.adjectives) if self.adjectives else (),
-            self.noun,
-            tuple(self.preps) if self.preps else (),
-            getattr(self, 'plural', False),
-            str(getattr(self, 'amount', None))
-        ))
