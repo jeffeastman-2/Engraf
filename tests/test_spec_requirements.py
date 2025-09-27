@@ -31,7 +31,7 @@ def test_subject_coordination():
         f"Expected 'are' in tobe, got '{sentence.tobe}'"
     
     # Check that we have two noun phrases in the subject
-    subjects = list(sentence.subject.flatten())
+    subjects = sentence.subject.phrases
     assert len(subjects) == 2, \
         f"Should have 2 subjects, got {len(subjects)}"
     
@@ -72,7 +72,7 @@ def test_imperative_coordinated_objects():
         f"Object should be ConjunctionPhrase, got {type(sentence.predicate.noun_phrase)}"
     
     # Check that we have two noun phrases in the object
-    objects = list(sentence.predicate.noun_phrase.flatten())
+    objects = sentence.predicate.noun_phrase.phrases
     assert len(objects) == 2, \
         f"Should have 2 objects, got {len(objects)}"
     
@@ -105,7 +105,7 @@ def test_recursive_conjunctions():
         f"Object should be ConjunctionPhrase, got {type(sentence.predicate.noun_phrase)}"
     
     # Check that we have three noun phrases in the object
-    objects = list(sentence.predicate.noun_phrase.flatten())
+    objects = sentence.predicate.noun_phrase.phrases
     assert len(objects) == 3, \
         f"Should have 3 objects, got {len(objects)}"
     

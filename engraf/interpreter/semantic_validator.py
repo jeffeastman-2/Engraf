@@ -33,7 +33,7 @@ class SemanticAgreementValidator:
         # Handle ConjunctionPhrase by validating each component
         if isinstance(sentence.predicate, ConjunctionPhrase):
             # This is a ConjunctionPhrase - validate each component
-            for component in sentence.predicate.flatten():
+            for component in sentence.predicate.phrases:
                 is_valid, error_msg = self._validate_single_phrase(component)
                 if not is_valid:
                     return False, error_msg

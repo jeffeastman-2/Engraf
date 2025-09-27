@@ -39,7 +39,7 @@ def test_vocabulary_learning_sequence():
                 hyp0 = result.hypotheses[0]
                 vector = hyp0.tokens
                 assert len(vector) == 1
-                sent = vector[0]._original_sp
+                sent = vector[0].phrase
                 assert isinstance(sent, SentencePhrase)
                 subj = sent.vector
                 pred = sent.predicate

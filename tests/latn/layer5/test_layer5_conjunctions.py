@@ -71,7 +71,7 @@ class TestLayer5Conjunctions:
         assert isinstance(subj, ConjunctionPhrase), "Subject should be ConjunctionPhrase(NP,NP)"
         assert subj.vector.isa("plural"), "Subject number should be plural"
         assert subj.vector.isa("conj"), "Subject should be a noun phrase"
-        parts = [np for np in subj.flatten()]
+        parts = [np for np in subj.phrases]
         assert len(parts) == 3, "Should have three coordinated NPs"
         pred = sent.predicate
         assert pred is None, "Predicate should be None"
@@ -93,7 +93,7 @@ class TestLayer5Conjunctions:
         assert isinstance(subj, ConjunctionPhrase), "Subject should be ConjunctionPhrase(NP,NP)"
         assert subj.vector.isa("plural"), "Subject number should be plural"
         assert subj.vector.isa("conj"), "Subject should be a noun phrase"
-        parts = [np for np in subj.flatten()]
+        parts = [np for np in subj.phrases]
         assert len(parts) == 2, "Should have two coordinated NPs"
         pred = sent.predicate
         assert pred is None, "Predicate should be None"
@@ -115,7 +115,7 @@ class TestLayer5Conjunctions:
         assert isinstance(subj, ConjunctionPhrase), "Subject should be ConjunctionPhrase(NP,NP)"
         assert subj.vector.isa("plural"), "Subject number should be plural"
         assert subj.vector.isa("conj"), "Subject should be a noun phrase"
-        parts = [np for np in subj.flatten()]
+        parts = [np for np in subj.phrases]
         assert len(parts) == 2, "Should have two coordinated NPs"
         pred = sent.predicate
         assert pred is None, "Predicate should be None"
@@ -137,7 +137,7 @@ class TestLayer5Conjunctions:
         # B (narrow): [NP [NP the cube] ∧ [NP the sphere [PP on [NP the table]]]]
         assert np.vector.isa("plural"), "Subject number should be plural"
         assert np.vector.isa("conj"), "Subject should be a noun phrase"
-        parts = [np for np in np.flatten()]
+        parts = [np for np in np.phrases]
         assert len(parts) == 2, "Should have two coordinated NPs"
         pp = hypo[1]._original_pp
         assert isinstance(pp, PrepositionalPhrase), "Second hypothesis should be a PrepositionalPhrase"
@@ -164,7 +164,7 @@ class TestLayer5Conjunctions:
         assert len(preps) == 1, "Should have one coordinated prepositional phrases"
         coord = preps[0]
         assert isinstance(coord, ConjunctionPhrase), "Coordinated PP should be ConjunctionPhrase"
-        parts = [pp for pp in coord.flatten()]
+        parts = [pp for pp in coord.phrases]
         assert len(parts) == 2, "Should have two coordinated PPs"
 
     # 8. Left/Right relation
@@ -188,7 +188,7 @@ class TestLayer5Conjunctions:
         assert len(preps) == 1, "Should have one coordinated prepositional phrases"
         coord = preps[0]
         assert isinstance(coord, ConjunctionPhrase), "Coordinated PP should be ConjunctionPhrase"
-        parts = [pp for pp in coord.flatten()]
+        parts = [pp for pp in coord.phrases]
         assert len(parts) == 2, "Should have two coordinated PPs"
 
 # C) VP-level coordination (Layer-4)
@@ -207,7 +207,7 @@ class TestLayer5Conjunctions:
         assert subj is None
         pred = sp.predicate
         assert isinstance(pred, ConjunctionPhrase), "Predicate should be ConjunctionPhrase"
-        parts = [vp for vp in pred.flatten()]
+        parts = [vp for vp in pred.phrases]
         assert len(parts) == 2, "Should have two VP parts"
 
     # 10. VP∧VP with shared object (right-node raising)
@@ -225,7 +225,7 @@ class TestLayer5Conjunctions:
         assert subj is None
         pred = sp.predicate
         assert isinstance(pred, ConjunctionPhrase), "Predicate should be ConjunctionPhrase"
-        parts = [vp for vp in pred.flatten()]
+        parts = [vp for vp in pred.phrases]
         assert len(parts) == 2, "Should have two VP parts"
     
     # 11. Mixed: VP∧VP and NP∧NP as object
@@ -244,7 +244,7 @@ class TestLayer5Conjunctions:
         pred = sent.predicate
         assert isinstance(pred, ConjunctionPhrase), "Predicate should be ConjunctionPhrase(VP,VP)"
         assert pred.vector.isa("plural"), "Predicate should be plural"
-        parts = [vp for vp in pred.flatten()]
+        parts = [vp for vp in pred.phrases]
         assert len(parts) == 2, "Should have two VP parts"
 
     # 12. Adverb inside VP conj
@@ -278,7 +278,7 @@ class TestLayer5Conjunctions:
         assert isinstance(sent, SentencePhrase), "First hypothesis should be a SentencePhrase"
         pred = sent.predicate
         assert isinstance(pred, ConjunctionPhrase), "Predicate should be ConjunctionPhrase"
-        parts = [vp for vp in pred.flatten()]
+        parts = [vp for vp in pred.phrases]
         assert len(parts) == 2, "Should have two VP parts"
 
     # 14. Correlative “both…and” gives plural subject

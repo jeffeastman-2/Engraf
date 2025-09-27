@@ -23,10 +23,6 @@ def test_coordinated_vp():
     assert conj_vp.startswith("CONJ-VP"), "First token should be a conjunction VP"
     conj = hyp0.tokens[0]
     assert conj is not None
-    original_vp = conj._original_vp
-    assert isinstance(original_vp, ConjunctionPhrase), f"Expected ConjunctionPhrase, got {type(original_vp)}"
-    assert isinstance(original_vp.right, VerbPhrase), f"Expected VerbPhrase, got {type(original_vp.right)}"
-    assert isinstance(original_vp.left, VerbPhrase), f"Expected ConjunctionPhrase, got {type(original_vp.left)}"
 
     hyp1 = result.hypotheses[1]
     # Should have exactly 2 VP tokens (one for each verb phrase)

@@ -194,8 +194,8 @@ class LATNLayerExecutor:
                 all_noun_phrases = []
                 for hypothesis in grounded_hypotheses:
                     for token in hypothesis.tokens:
-                        if token._original_np is not None and token._original_np:
-                            all_noun_phrases.append(token._original_np)
+                        if token.phrase is not None and token.phrase:
+                            all_noun_phrases.append(token.phrase)
             
             # Calculate confidence based on best hypothesis
             layer2_confidence = grounded_hypotheses[0].confidence if grounded_hypotheses else layer1_result.confidence
@@ -512,8 +512,8 @@ def extract_sentence_phrases(layer5_hypotheses: List[TokenizationHypothesis]) ->
     
     for hypothesis in layer5_hypotheses:
         for token in hypothesis.tokens:
-            if hasattr(token, '_original_sp') and token._original_sp:
-                sentence_phrases.append(token._original_sp)
+            if hasattr(token, '_original_sp') and token.phrase:
+                sentence_phrases.append(token.phrase)
 
     return sentence_phrases
 

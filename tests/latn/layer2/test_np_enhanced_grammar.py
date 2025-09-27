@@ -14,7 +14,7 @@ starting at any token position.
 
 import pytest
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize_layer1  # Use full LATN tokenization
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1  # Use full LATN tokenization
 from engraf.atn.subnet_np import run_np
 from engraf.lexer.vector_space import VectorSpace
 

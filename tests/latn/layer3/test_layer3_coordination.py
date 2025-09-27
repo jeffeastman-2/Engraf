@@ -20,7 +20,7 @@ def test_coordinated_pp():
     assert len(main_hyp.tokens) == 1, f"Should have exactly 1 token, got {len(main_hyp.tokens)}"
     main_pp = main_hyp.tokens[0]
     assert main_pp.word == "CONJ-PP", "First token should be a CONJ-PP"
-    parts = list(main_pp._original_pp.flatten())
+    parts = list(main_pp.phrase.flatten())
     assert len(parts) == 3, f"CONJ-PP should have 3 parts, got {len(parts)}"
     assert all(isinstance(part, PrepositionalPhrase) for part in parts), "All parts should be PrepositionalPhrase instances"
     assert parts[0].preposition == "above", f"First PP should be 'above', got '{parts[0].preposition}'"
@@ -38,13 +38,13 @@ def test_coordinated_pp_with_nps():
 
     hyp = result.hypotheses[0]
     assert len(hyp.tokens) == 3, f"Should have exactly 3 tokens, got {len(hyp.tokens)}"
-    np = hyp.tokens[0]._original_np
+    np = hyp.tokens[0].phrase
     str = np.printString()
-    assert hyp.tokens[0]._original_np.printString() == "the red cube", f"First token should be NP, got {hyp.tokens[0].word}"
-    pp = hyp.tokens[1]._original_pp
+    assert hyp.tokens[0].phrase.printString() == "the red cube", f"First token should be NP, got {hyp.tokens[0].word}"
+    pp = hyp.tokens[1].phrase
     np = pp.noun_phrase
     assert isinstance(np, ConjunctionPhrase), f"Second token should be CONJ-NP, got {hyp.tokens[1].word}"
-    parts = list(np.flatten())
+    parts = np.phrases
     assert len(parts) == 2, f"CONJ-NP should have 2 parts, got {len(parts)}"
     assert all(isinstance(part, NounPhrase) for part in parts), "All parts should be NounPhrase instances"
     assert parts[0].printString() == "the table", f"First NP part should be 'the table', got '{parts[0].printString()}'"

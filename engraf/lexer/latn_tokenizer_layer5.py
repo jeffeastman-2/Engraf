@@ -81,7 +81,7 @@ def create_sp_token(sentence_or_conj) -> VectorSpace:
             token.word = f"SP({text})"
 
     # Store reference to original object for Layer 3
-    token._original_sp = sentence_or_conj
+    token.phrase = sentence_or_conj
 
     return token
 

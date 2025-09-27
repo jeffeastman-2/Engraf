@@ -9,26 +9,16 @@ from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
 
 class VectorSpace:
-    def __init__(self, array=None, word=None, data=None):
+    def __init__(self, array=None, word=None):
         if array is None:
             self.vector = np.zeros(VECTOR_LENGTH)
         else:
             if len(array) != VECTOR_LENGTH:
                 raise ValueError(f"Expected vector of length {VECTOR_LENGTH}, got {len(array)}")
             self.vector = np.array(array, dtype=float)
-        self.word = word  # NEW
-        self.data = data or {}
+        self.word = word          # the word this vector represents
+        self.phrase = None        # Set when creating VP, PP, or Sentence tokens
         
-        # Static fields to replace dynamic attributes used in Layer 2/3
-        self._grounded_phrase = None  # Set by Layer 2 grounding
-        self._original_np = None      # Set when creating NP tokens
-        self._original_pp = None      # Set when creating PP tokens
-        self._original_sp = None    # Set when creating Sentence tokens
-        self.scene_object = None      # Expected by Layer 3 spatial validation
-        self._attachment_info = {}    # Set during PP attachment processing
-        self._reference_object = None # Expected by Layer 3 spatial grounding results
-        self._preposition = None      # Expected by Layer 3 spatial grounding results
-
     # Add optional __str__ override for easier debugging
     def __repr__(self):
         # Only show non-zero dimensions for cleaner output

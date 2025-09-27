@@ -50,7 +50,7 @@ class Layer4SemanticGrounder:
             if vp and isinstance(vp, VerbPhrase):
                 verb_phrases.append(vp)
             elif vp and isinstance(vp, ConjunctionPhrase):
-                for part in vp.flatten():
+                for part in vp.phrases:
                     if isinstance(part, VerbPhrase):
                         verb_phrases.append(part)
         return verb_phrases

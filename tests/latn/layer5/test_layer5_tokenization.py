@@ -53,7 +53,7 @@ class TestLayer5VPTokenization:
         assert len(result.hypotheses) == 1, "Should extract Sentence objects"
 
         hyp = result.hypotheses[0]
-        sent = hyp.tokens[0]._original_sp
+        sent = hyp.tokens[0].phrase
         assert isinstance(sent, SentencePhrase), "Should be SentencePhrase object"
         assert sent.subject is None, "Should not have subject"
         assert sent.predicate is not None, "Should have predicate"

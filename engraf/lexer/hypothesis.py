@@ -57,12 +57,8 @@ class TokenizationHypothesis:
 
     def printNP(self, i, token):
         """Print a noun phrase token."""
-        if token._grounded_phrase:
-            display_np = token._grounded_phrase
-        else:
-            display_np = token._original_np
-        if display_np is not None:
-            str = display_np.printString()
+        if token.phrase is not None:
+            str = token.phrase.printString()
             if token.isa("conj"):
                 print(f"{self.spaces}[{i}] [CONJ-NP] {str}")
             else:
@@ -189,7 +185,7 @@ class TokenizationHypothesis:
                 # Show the coordination structure with individual NP contents
                 conj_phrase = token._original_np
                 np_parts = []
-                for np in conj_phrase.flatten():
+                for np in conj_phrase.phrases:
                     if hasattr(np, 'get_original_text'):
                         np_parts.append(f'"{np.get_original_text()}"')
                     else:

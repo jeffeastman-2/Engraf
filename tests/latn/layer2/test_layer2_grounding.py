@@ -8,7 +8,6 @@ Tests semantic grounding of NP tokens to existing scene objects.
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.lexer.vector_space import vector_from_features
 from engraf.visualizer.scene.scene_model import SceneModel, SceneObject
-from engraf.pos.noun_phrase import NounPhrase
 
 
 class TestLayer2Grounding:
@@ -129,8 +128,8 @@ class TestLayer2Grounding:
         grounded_objects = []
         for hypothesis in result.hypotheses:
             for token in hypothesis.tokens:
-                if  token._grounded_phrase:
-                    grounded_phrase = token._grounded_phrase
+                if  token.phrase:
+                    grounded_phrase = token.phrase
                     if grounded_phrase  and grounded_phrase.grounding is not None:
                         grounded_objects.extend([obj.object_id for obj in grounded_phrase.grounding['scene_objects']])
 
@@ -357,7 +356,7 @@ class TestLayer2Grounding:
         # Note: Since the coordinated NP is a single token, there are no separate 'and' or second NP tokens here
         # Verify grounding of both NPs via tokens
         grounded_objects = []
-        conj_np_token = best_hypothesis.tokens[0]._original_np
+        conj_np_token = best_hypothesis.tokens[0].phrase
         for np in conj_np_token.flatten():
             if hasattr(np, 'grounding') and np.grounding:
                 if np._grounded_phrase.grounding is not None:

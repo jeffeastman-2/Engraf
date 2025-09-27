@@ -28,7 +28,7 @@ def create_np_token(text, **attributes):
     token = VectorSpace()
     token["NP"] = 1.0  # Use correct dimension name
     token.word = f"NP({text})"
-    token._original_np = np_obj
+    token.phrase = np_obj
     
     # Add any additional attributes
     for key, value in attributes.items():

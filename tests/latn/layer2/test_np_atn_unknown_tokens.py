@@ -10,7 +10,7 @@ import pytest
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.atn.np import run_np
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize_layer1, latn_tokenize_best
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1
 from engraf.pos.noun_phrase import NounPhrase
 
 

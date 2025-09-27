@@ -81,7 +81,7 @@ def create_pp_token(pp_or_conj) -> VectorSpace:
             token.word = f"PP({text})"
 
     # Store reference to original object for Layer 3
-    token._original_pp = pp_or_conj
+    token.phrase = pp_or_conj
 
     return token
 

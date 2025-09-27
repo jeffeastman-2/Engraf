@@ -14,7 +14,7 @@ def test_complex_sentence():
     assert len(result.hypotheses) > 0, "Should have at least one hypothesis"
     hypo_0 = result.hypotheses[0]
     assert len(hypo_0.tokens) == 1, "Hypothesis should 1 token"
-    sent = hypo_0.tokens[0]._original_sp
+    sent = hypo_0.tokens[0].phrase
     assert isinstance(sent, ConjunctionPhrase), "Token should be a ConjunctionPhrase"
     parts = [sp for sp in sent.flatten()]
     assert len(parts) == 2, "Should have two coordinated NPs"

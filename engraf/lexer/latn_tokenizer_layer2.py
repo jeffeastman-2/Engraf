@@ -88,7 +88,7 @@ def create_np_token(np_or_conj) -> VectorSpace:
             token.word = f"NP({text})"
     
     # Store reference to original object for Layer 3
-    token._original_np = np_or_conj
+    token.phrase = np_or_conj
     
     return token
 
@@ -133,13 +133,11 @@ def find_np_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         # Successfully parsed another NP - create/extend coordination
                         if isinstance(best_np, NounPhrase):
                             # Convert to ConjunctionPhrase
-                            coord_np = ConjunctionPhrase(conj_token, left=best_np, right=np2_result)
+                            coord_np = ConjunctionPhrase(conj_token, phrases=[best_np, np2_result])
                             coord_np.vector["plural"] = 1.0
                             best_np = coord_np
                         elif isinstance(best_np, ConjunctionPhrase):
-                            # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_np.right, right=np2_result)
-                            best_np.right = new_coord
+                            best_np.phrases.append(np2_result)
                         
                         # Update best_end to include the newly parsed NP
                         best_end = i + ts.position - 1

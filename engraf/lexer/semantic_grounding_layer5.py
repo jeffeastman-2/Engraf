@@ -55,11 +55,11 @@ class Layer5SemanticGrounder:
             # hypotheses with anything other than SPs or CPs of SPs
             sentence_phrases = []
             for token in hypothesis.tokens:
-                sp = token._original_sp if hasattr(token, '_original_sp') else None
+                sp = token.phrase if hasattr(token, '_original_sp') else None
                 if sp and isinstance(sp, SentencePhrase):
                     sentence_phrases.append(sp)
                 elif sp and isinstance(sp, ConjunctionPhrase):
-                    for part in sp.flatten():
+                    for part in sp.phrases:
                         if isinstance(part, SentencePhrase):
                             sentence_phrases.append(part)
                         else:
@@ -87,11 +87,11 @@ class Layer5SemanticGrounder:
         """
         sentence_phrases = []
         for token in hypothesis.tokens:
-            sp = token._original_sp if hasattr(token, '_original_sp') else None
+            sp = token.phrase if hasattr(token, '_original_sp') else None
             if sp and isinstance(sp, SentencePhrase):
                 sentence_phrases.append(sp)
             elif sp and isinstance(sp, ConjunctionPhrase):
-                for part in sp.flatten():
+                for part in sp.phrases:
                     if isinstance(part, SentencePhrase):
                         sentence_phrases.append(part)
         return sentence_phrases

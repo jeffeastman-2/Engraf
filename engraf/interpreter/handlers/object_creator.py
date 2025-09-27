@@ -34,8 +34,7 @@ class ObjectCreator:
         
         if isinstance(np, ConjunctionPhrase):
             # Handle conjunctions (e.g., "a cube and a sphere")
-            objects.extend(self.extract_objects_from_np(np.left))
-            objects.extend(self.extract_objects_from_np(np.right))
+            objects.extend(np.phrases)
         
         elif isinstance(np, NounPhrase):
             # Extract object information from single noun phrase

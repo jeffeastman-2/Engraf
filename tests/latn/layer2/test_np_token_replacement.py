@@ -13,7 +13,7 @@ from engraf.lexer.latn_tokenizer_layer2 import (
     find_np_sequences,
     replace_np_sequences
 )
-from engraf.lexer.latn_tokenizer import latn_tokenize_layer1
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.atn.subnet_np import run_np
 from engraf.pos.noun_phrase import NounPhrase
@@ -33,7 +33,7 @@ class TestLATNLayer2Basic:
         assert len(best.tokens) == 1, "Should have exactly one token"
         assert best.tokens[0].word == "NP(the red box)", "Should create NP token"
         assert best.tokens[0].isa("NP"), "Token should have NP dimension"
-        assert hasattr(best.tokens[0], '_original_np'), "Should have original NP reference"
+        assert hasattr(best.tokens[0], 'phrase'), "Should have original NP reference"
         assert len(best.replacements) == 1, "Should record NP replacement"
     
     def test_vector_np_replacement(self):
@@ -164,8 +164,8 @@ class TestLATNLayer2TokenCreation:
         assert np_token.isa("NP"), "Should have NP dimension"
         assert np_token.isa("noun"), "Should preserve noun semantics"
         assert np_token.isa("adj"), "Should preserve adjective semantics"
-        assert hasattr(np_token, '_original_np'), "Should store original NP"
-        assert np_token._original_np is np, "Should reference original NP"
+        assert hasattr(np_token, 'phrase'), "Should store original NP"
+        assert np_token.phrase is np, "Should reference original NP"
     
     def test_create_np_token_word_format(self):
         """Test NP token word formatting."""

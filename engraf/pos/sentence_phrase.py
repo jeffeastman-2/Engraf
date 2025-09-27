@@ -24,30 +24,6 @@ class SentencePhrase():
         self.definition_word = tok.word
         self.vector = tok  # Store the vector representation of the quoted word
 
-    def apply_subject_conjunction(self, tok):
-        debug_print(f"✅ => Applying subject conjunction '{tok.word}'")
-        if isinstance(self.subject, ConjunctionPhrase):
-            tail = self.subject.get_last()   
-            if tail.right is None: 
-                tail.right = ConjunctionPhrase(tok)
-                debug_print(f"✅ => setting tail.right in {self}")
-            else: 
-                tail.right = ConjunctionPhrase(tok, left=tail.right)
-        else:
-            self.subject = ConjunctionPhrase(tok, left=self.subject)
-            
-    def apply_predicate_conjunction(self, tok):
-        debug_print(f"✅ => Applying predicate conjunction '{tok.word}'")
-        if isinstance(self.predicate, ConjunctionPhrase):
-            tail = self.predicate.get_last()    
-            if tail.right is None:
-                tail.right = ConjunctionPhrase(tok)
-                debug_print(f"✅ => setting tail.right in {self}")
-            else: 
-                tail.right = ConjunctionPhrase(tok, left=tail.right)
-        else:
-            self.predicate = ConjunctionPhrase(tok, left=self.predicate)
-
     def apply_subject_token(self, token):
         self.apply_subject(token._original_np)
 
@@ -58,12 +34,7 @@ class SentencePhrase():
         elif self.subject == subj:
             return
         elif isinstance(self.subject, ConjunctionPhrase):
-            tail = self.subject.get_last()
-            if tail.right is  None:
-                tail.right = subj
-            elif tail.right == subj:
-                return
-            else: debug_print(f"⚠️ ERROR: tail.right is not None {self}")
+            self.subject.phrases.append(subj)
  
     def apply_predicate_token(self, token):
         self.apply_predicate(token._original_vp)
@@ -76,13 +47,7 @@ class SentencePhrase():
             # Avoid wrapping the same predicate twice
             return
         elif isinstance(self.predicate, ConjunctionPhrase):
-            tail = self.predicate.get_last()
-            if tail.right is None:
-                tail.right = pred
-            elif tail.right == pred:
-                return
-            else:
-                debug_print(f"⚠️ ERROR: tail.right not None {self}")
+            self.predicate.phrases.append(pred)
 
     def apply_prepositional_phrase(self, pp_token):
         """Apply a PP token to the sentence structure."""

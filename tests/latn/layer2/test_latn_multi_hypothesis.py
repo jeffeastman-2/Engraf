@@ -10,7 +10,7 @@ from engraf.lexer.vector_space import vector_from_features
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize_layer1
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1
 from engraf.atn.subnet_np import run_np
 
 

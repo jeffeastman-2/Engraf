@@ -65,7 +65,7 @@ class Layer3SemanticGrounder:
         if not grounded_np:
             return 1.0  # No grounding to validate        
         if isinstance(grounded_np, ConjunctionPhrase):   
-            nps = list(grounded_np.flatten())
+            nps = grounded_np.phrases
             score = 0.0
             for np in nps:
                 if np.grounding:
@@ -184,8 +184,8 @@ class Layer3SemanticGrounder:
         
         for hypothesis in layer3_hypotheses:
             for token in hypothesis.tokens:
-                if token._original_pp is not None and isinstance(token._original_pp, PrepositionalPhrase):
-                    prepositional_phrases.append(token._original_pp)
+                if token.phrase is not None and isinstance(token.phrase, PrepositionalPhrase):
+                    prepositional_phrases.append(token.phrase)
         
         return prepositional_phrases
     

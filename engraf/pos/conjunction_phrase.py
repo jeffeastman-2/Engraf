@@ -1,37 +1,22 @@
 
 
 class ConjunctionPhrase:
-    def __init__(self, tok, left=None, right= None):
-        self.left = left
+    def __init__(self, tok, phrases=[]):
         self.conjunction = tok.word
         self.vector = tok
-        self.right = right
+        self.phrases = phrases # NPs or PPs or VPs or SPs
         self.preps = []  # Add this for PP attachments
 
-    def __iter__(self):
-        yield from self.flatten()
-
-    def flatten(self):
-        current = self
-        while isinstance(current, ConjunctionPhrase):
-            yield current.left
-            current = current.right
-        yield current  # final right-most item
 
     def __repr__(self):
-        return f"ConjunctionPhrase({self.left}  {self.conjunction}  {self.right})"
+        return f"ConjunctionPhrase({self.conjunction} {self.phrases})"
 
     def get_last(self):
-        current = self
-        while isinstance(current.right, ConjunctionPhrase):
-            current = current.right
-        print(f"++ get_last returning {current}")
-        return current
+        return self.phrases[-1] if self.phrases else None
 
     def printString(self):
         """Print the string representation of the conjunction phrase."""
-        flattened = self.flatten()
-        parts = [f"{item.printString()}" for item in flattened]
+        parts = [f"{item.printString()}" for item in self.phrases]
         str =  "(" + f" {self.conjunction} ".join(parts) + ")"
         if self.preps:
             str = '(' + str
@@ -39,20 +24,19 @@ class ConjunctionPhrase:
         return str
     
 def __eq__(self, other):
-    """Deep equality comparison using flatten() to compare tree structures."""
+    """Deep equality comparison using phrases to compare tree structures."""
     if not isinstance(other, ConjunctionPhrase):
         return False
-    
-    # Use flatten() to get the linear representation of both trees
-    self_flattened = list(self.flatten())  # Convert generator to list
-    other_flattened = list(other.flatten())  # Convert generator to list
 
-    # Compare the flattened lists
-    if len(self_flattened) != len(other_flattened):
+    self_phrases = self.phrases
+    other_phrases = other.phrases
+
+    # Compare the phrases lists
+    if len(self_phrases) != len(other_phrases):
         return False
-        
-    for i in range(len(self_flattened)):
-        if self_flattened[i] != other_flattened[i]:  # Complete the comparison
+
+    for i in range(len(self_phrases)):
+        if self_phrases[i] != other_phrases[i]:  # Complete the comparison
             return False
             
     return True
