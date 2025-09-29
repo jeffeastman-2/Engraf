@@ -82,7 +82,7 @@ def create_vp_token(vp_or_conj) -> VectorSpace:
             token.word = f"VP({text})"
 
     # Store reference to original object for Layer 3
-    token._original_vp = vp_or_conj
+    token.phrase = vp_or_conj
 
     return token
 
@@ -127,13 +127,11 @@ def find_vp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         # Successfully parsed another VP - create/extend coordination
                         if isinstance(best_vp, VerbPhrase):
                             # Convert to ConjunctionPhrase
-                            coord_vp = ConjunctionPhrase(conj_token, left=best_vp, right=vp2_result)
+                            coord_vp = ConjunctionPhrase(conj_token, [best_vp, vp2_result])
                             coord_vp.vector["plural"] = 1.0
                             best_vp = coord_vp
                         elif isinstance(best_vp, ConjunctionPhrase):
-                            # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_vp.right, right=vp2_result)
-                            best_vp.right = new_coord
+                            best_vp.phrases.append(vp2_result)
 
                         # Update best_end to include the newly parsed VP
                         best_end = i + ts.position - 1

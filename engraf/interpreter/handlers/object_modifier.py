@@ -51,8 +51,8 @@ class ObjectModifier:
                 print(f"🔧 vp.vector.isa('transform'): {vp.vector.isa('transform')}")
                 print(f"🔧 hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
                 if hasattr(vp, 'adjective_complement'):
-                    print(f"🔧 vp.adjective_complement: {vp.adjective_complement}")
-                    print(f"🔧 bool(vp.adjective_complement): {bool(vp.adjective_complement)}")
+                    print(f"🔧 vp.adjective_complement: {vp.adjective_complements}")
+                    print(f"🔧 bool(vp.adjective_complement): {bool(vp.adjective_complements)}")
                 
                 # Handle transform verbs (move, rotate, scale, ...) using vector space
                 if vp.vector.isa('transform') and vp.noun_phrase:
@@ -88,13 +88,13 @@ class ObjectModifier:
                         
                         # Check for adjective complements that might indicate scaling
                         # Generic transform verbs like 'make' can use adjective complements for scaling
-                        if hasattr(vp, 'adjective_complement') and vp.adjective_complement:
-                            print(f"🔧 Found adjective complements for transformation: {vp.adjective_complement}")
+                        if hasattr(vp, 'adjective_complement') and vp.adjective_complements:
+                            print(f"🔧 Found adjective complements for transformation: {vp.adjective_complements}")
                             self._apply_adjective_scaling(scene_entity, vp)
                         else:
                             print(f"🔧 No adjective complements for transformation")
                             print(f"    hasattr(vp, 'adjective_complement'): {hasattr(vp, 'adjective_complement')}")
-                            print(f"    vp.adjective_complement: {vp.adjective_complement if hasattr(vp, 'adjective_complement') else 'N/A'}")
+                            print(f"    vp.adjective_complement: {vp.adjective_complements if hasattr(vp, 'adjective_complement') else 'N/A'}")
                 
                 # Handle style verbs (color, texture, etc.) using vector space  
                 elif vp.vector.isa('style') and hasattr(vp, 'adjective_complement'):
@@ -272,10 +272,10 @@ class ObjectModifier:
     def _apply_adjective_scaling(self, scene_obj: SceneObject, vp: VerbPhrase):
         """Apply scaling to an object based on adjective complements like 'bigger'."""
         print(f"🔧 _apply_adjective_scaling called with scene_obj: {scene_obj.name}")
-        print(f"🔧 adjective_complement: {vp.adjective_complement}")
+        print(f"🔧 adjective_complement: {vp.adjective_complements}")
         
         # Process each adjective complement
-        for adjective in vp.adjective_complement:
+        for adjective in vp.adjective_complements:
             print(f"🔧 Processing adjective: {adjective}")
             print(f"🔧 Before scaling: scaleX={scene_obj.vector['scaleX']}, scaleY={scene_obj.vector['scaleY']}, scaleZ={scene_obj.vector['scaleZ']}")
             

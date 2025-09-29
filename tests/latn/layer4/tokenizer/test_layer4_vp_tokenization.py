@@ -7,7 +7,6 @@ Tests the VP tokenization functionality that builds on Layers 1-3.
 
 import pytest
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4, VPTokenizationHypothesis
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.pos.verb_phrase import VerbPhrase
 
@@ -29,14 +28,9 @@ class TestLayer4VPTokenization:
         
         best = result.hypotheses[0]
         print(f"Tokens: {[tok.word for tok in best.tokens]}")
-        print(f"VP replacements: {len(best.vp_replacements)}")
-        
-        # Should have VP replacements
-        assert len(best.vp_replacements) > 0, "Should have VP replacements"
-        
         # Should have VP tokens
         vp_tokens = [tok for tok in best.tokens if tok.isa("VP")]
-        assert len(vp_tokens) > 0, "Should have VP tokens"
+        assert len(vp_tokens) == 1, "Should have VP tokens"
     
     def test_move_command(self):
         """Test: 'move the sphere' -> VP token."""
@@ -47,7 +41,7 @@ class TestLayer4VPTokenization:
         
         best = result.hypotheses[0]
         vp_tokens = [tok for tok in best.tokens if tok.isa("VP")]
-        assert len(vp_tokens) > 0, "Should have VP tokens"
+        assert len(vp_tokens) == 1, "Should have VP tokens"
         
         # Check that it identifies as a move action
         vp_token = vp_tokens[0]
@@ -127,7 +121,7 @@ class TestLayer4ActionExecution:
         # Should have identified the verb phrase semantics
         assert len(result.verb_phrases) > 0, "Should have extracted verb phrases"
         vp = result.verb_phrases[0]
-        assert vp.verb.word == "create", "Should identify create verb"
+        assert vp.verb == "create", "Should identify create verb"
         assert vp.noun_phrase is not None, "Should have noun phrase object"
     
     def test_multiple_create_commands(self):
@@ -185,7 +179,7 @@ class TestLayer4ActionExecution:
             # Should have extracted verb phrases with semantic information
             assert len(result.verb_phrases) > 0, f"Should extract verb phrases for '{command}'"
             vp = result.verb_phrases[0]
-            assert vp.verb.word in ["create", "make", "build"], f"Should identify action verb for '{command}'"
+            assert vp.verb in ["create", "make", "build"], f"Should identify action verb for '{command}'"
             assert vp.noun_phrase is not None, f"Should have noun phrase for '{command}'"
 
 

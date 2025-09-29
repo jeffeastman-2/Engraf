@@ -92,7 +92,6 @@ SEMANTIC_VECTOR_SPACE = {
     'draw': vector_from_features("verb action create"),
     'make': vector_from_features("verb action create transform"),
     'build': vector_from_features("verb action create"),
-    'place': vector_from_features("verb action create"),
 
     # edit
     'copy': vector_from_features("verb action edit"),
@@ -101,6 +100,7 @@ SEMANTIC_VECTOR_SPACE = {
     'paste': vector_from_features("verb action edit"),
 
     # organize
+    'place': vector_from_features("verb action organize"),
     'align': vector_from_features("verb action organize"),
     'group': vector_from_features("verb action organize"),
     'position': vector_from_features("verb action organize"),

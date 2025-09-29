@@ -79,7 +79,7 @@ class TokenizationHypothesis:
 
     def printVP(self, i, token):
         """Print a verb phrase token."""
-        original_vp = token._original_vp
+        original_vp = token.phrase
         if original_vp:
             str = original_vp.printString()
             if token.isa("conj"):

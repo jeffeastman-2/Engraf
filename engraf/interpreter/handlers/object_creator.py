@@ -59,8 +59,8 @@ class ObjectCreator:
         }
         
         # Handle prepositional phrases for positioning
-        if hasattr(np, 'preps') and np.preps:
-            obj_info['prepositional_phrases'] = np.preps
+        if hasattr(np, 'preps') and np.prepositions:
+            obj_info['prepositional_phrases'] = np.prepositions
         
         return obj_info
     

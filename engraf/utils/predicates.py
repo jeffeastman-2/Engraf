@@ -20,6 +20,11 @@ def any_of(*predicates):
     def combined_predicate(tok):
         return any(pred(tok) for pred in predicates)
     return combined_predicate
+def is_any_of(tok, predicates):
+    for pred in predicates:
+        if tok.isa(pred):
+            return True
+    return False
 def is_conjunction(tok): return tok is not None and tok.isa("conj")
 def is_anything(tok): return True
 def is_anything_no_consume(tok):

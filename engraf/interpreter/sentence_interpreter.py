@@ -212,7 +212,7 @@ class SentenceInterpreter:
         if hasattr(vp, 'vector') and vp.vector:
             # Check if this is a modification verb (with adjective complement like "bigger")
             # This takes priority over creation verbs for cases like "make it bigger"
-            if (hasattr(vp, 'adjective_complement') and vp.adjective_complement and 
+            if (hasattr(vp, 'adjective_complement') and vp.adjective_complements and 
                 vp.vector.isa('transform')):
                 modified_objects = self._handle_modification_verb(vp)
                 result['objects_modified'].extend(modified_objects)

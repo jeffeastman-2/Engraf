@@ -8,7 +8,7 @@ class NounPhrase():
         self.noun = noun
         self.pronoun = None
         self.determiner = None
-        self.preps = []
+        self.prepositions = []
         self.scale_factor = 1.0
         self.proper_noun = None  # For proper noun names like "called 'Charlie'"
         self.consumed_tokens = []  # All original tokens that were consumed to build this NP
@@ -127,7 +127,7 @@ class NounPhrase():
 
     def apply_pp(self, pp_obj):
         debug_print(f"✅ Np applying PP: {pp_obj}")
-        self.preps.append(pp_obj)
+        self.prepositions.append(pp_obj)
         self.vector += pp_obj.vector
 
     def to_vector(self):
@@ -136,7 +136,7 @@ class NounPhrase():
             v += self.determiner.to_vector()
         for adj in self.adjectives:
             adj.modify(v)
-        for prep in self.preps:
+        for prep in self.prepositions:
             v += prep.to_vector()
         return v
 
@@ -148,9 +148,9 @@ class NounPhrase():
             scene_obj = self._grounding['scene_object']
             confidence = self._grounding.get('confidence', 0.0)
             grounded_desc = f"grounded→{scene_obj.name}@{confidence:.2f}"
-            parts = [f"noun={self.noun}", f"{grounded_desc}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
+            parts = [f"noun={self.noun}", f"{grounded_desc}", f"vector={self.vector}", f"PPs={self.prepositions}", f"consumed={consumed_words}"]
         else:
-            parts = [f"noun={self.noun}", f"vector={self.vector}", f"PPs={self.preps}", f"consumed={consumed_words}"]
+            parts = [f"noun={self.noun}", f"vector={self.vector}", f"PPs={self.prepositions}", f"consumed={consumed_words}"]
         
         return f"NP({', '.join(parts)})"
     
@@ -176,8 +176,8 @@ class NounPhrase():
             str = f"<{' '.join(obj.entity_id for obj in scene_objs)}>"
         else:
             str = f"{' '.join(self.get_consumed_words())}"
-        if self.preps:
-            str = f"{str} ({' '.join(prep.printString() for prep in self.preps)})"
+        if self.prepositions:
+            str = f"{str} ({' '.join(prep.printString() for prep in self.prepositions)})"
         return str
          
 
@@ -185,9 +185,9 @@ class NounPhrase():
         """Deep equality comparison for NounPhrase objects."""
         if not isinstance(other, NounPhrase):
             return False
-        if len(self.preps) != len(other.preps):
+        if len(self.prepositions) != len(other.prepositions):
             return False
-        for this_prep, other_prep in zip(self.preps, other.preps):
+        for this_prep, other_prep in zip(self.prepositions, other.prepositions):
             if not this_prep.equals(other_prep):
                 return False
         # Compare all simple attributes

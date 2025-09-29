@@ -160,7 +160,7 @@ class TestLayer5Conjunctions:
         assert isinstance(subj, NounPhrase), "Subject should be NounPhrase"
         pred = sent.predicate
         assert isinstance(pred, VerbPhrase), "Predicate should be VerbPhrase"
-        preps = pred.preps
+        preps = pred.prepositions
         assert len(preps) == 1, "Should have one coordinated prepositional phrases"
         coord = preps[0]
         assert isinstance(coord, ConjunctionPhrase), "Coordinated PP should be ConjunctionPhrase"
@@ -184,7 +184,7 @@ class TestLayer5Conjunctions:
         assert isinstance(subj, NounPhrase), "Subject should be NounPhrase"
         pred = sent.predicate
         assert isinstance(pred, VerbPhrase), "Predicate should be VerbPhrase"
-        preps = pred.preps
+        preps = pred.prepositions
         assert len(preps) == 1, "Should have one coordinated prepositional phrases"
         coord = preps[0]
         assert isinstance(coord, ConjunctionPhrase), "Coordinated PP should be ConjunctionPhrase"

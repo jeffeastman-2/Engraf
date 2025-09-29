@@ -8,12 +8,12 @@ class VerbPhrase():
         self.verb = None
         self.vector = VectorSpace()
         self.noun_phrase = None
-        self.preps = []
-        self.adjective_complement = []  # Changed to list for multiple adjectives
+        self.prepositions = []
+        self.adjective_complements = []  # Changed to list for multiple adjectives
         self.amount = None  # For handling measurements like "45 degrees"
 
     def __repr__(self):
-        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase}, PPs={self.preps}, adjective_complement={self.adjective_complement}, amount={self.amount})"
+        return f"VerbPhrase(verb={self.verb}, noun_phrase={self.noun_phrase}, PPs={self.prepositions}, adjective_complement={self.adjective_complements}, amount={self.amount})"
 
     def to_vector(self) -> VectorSpace:
         # Combine verb meaning with its object’s vector (if present)
@@ -48,12 +48,12 @@ class VerbPhrase():
 
     def apply_pp(self, pp_obj):
         debug_print(f"✅ VP applying PP: {pp_obj}")
-        self.preps.append(pp_obj)
+        self.prepositions.append(pp_obj)
 
     def apply_adjective(self, tok):
-        self.adjective_complement.append(tok.word)
+        self.adjective_complements.append(tok.word)
         debug_print(f"✅ VP applying adjective complement: {tok.word}")
-        debug_print(f"✅ Current adjective complements: {self.adjective_complement}")
+        debug_print(f"✅ Current adjective complements: {self.adjective_complements}")
 
     def is_imperative(self):
         return self.vector.scalar_projection("action") > 0.5
@@ -63,11 +63,11 @@ class VerbPhrase():
 
     def printString(self):
         str = self.verb
-        if self.preps:
-            for pp in self.preps:
+        if self.prepositions:
+            for pp in self.prepositions:
                 str += f" ({pp.printString()})"
-        if self.adjective_complement:
-            adjectives = " ".join(self.adjective_complement)
+        if self.adjective_complements:
+            adjectives = " ".join(self.adjective_complements)
             str += f" ({adjectives})"
         if self.noun_phrase:
             str += f" [{self.noun_phrase.printString()}]"
@@ -79,14 +79,14 @@ class VerbPhrase():
         """Deep equality comparison for VerbPhrase objects."""
         if not isinstance(other, VerbPhrase):
             return False
-        if len(self.preps) != len(other.preps):
+        if len(self.prepositions) != len(other.prepositions):
             return False
-        for this_prep, other_prep in zip(self.preps, other.preps):
+        for this_prep, other_prep in zip(self.prepositions, other.prepositions):
             if not this_prep.equals(other_prep):
                 return False  
-        if len(self.adjective_complement) != len(other.adjective_complement):
+        if len(self.adjective_complements) != len(other.adjective_complements):
             return False
-        for this_adj, other_adj in zip(self.adjective_complement, other.adjective_complement):
+        for this_adj, other_adj in zip(self.adjective_complements, other.adjective_complements):
             if this_adj != other_adj:
                 return False
         return (

@@ -73,7 +73,7 @@ class Layer3SemanticGrounder:
             spatial_score = score / len(nps) if nps else 0.0
             return spatial_score
         else:    
-            preps = grounded_np.preps
+            preps = grounded_np.prepositions
             if not preps:
                 return 1.0  # No PPs to validate        
             spatial_score = self._validate_prep_spatial_relationships(grounded_np, preps)

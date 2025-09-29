@@ -17,57 +17,23 @@ Layer 3 job: Determine which PPSO attends to which SO/PPSO based on scene validi
 """
 
 import unittest
-from engraf.lexer.vocabulary_builder import vector_from_word
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.visualizer.scene.scene_object import SceneObject
-
+from tests.latn.dummy_test_scene import DummyTestScene
 
 class TestLayer3SpatialValidation(unittest.TestCase):
     """Test Layer 3 spatial validation and attention resolution."""
     
     def setUp(self):
-        """Set up complex scene for Layer 3 spatial validation tests."""
-        self.scene = SceneModel()
+        """Set up a dummy scene for spatial validation tests.
         
-        # Create scene objects with distinct vectors
-        box_vector = vector_from_word("box")
-        table_vector = vector_from_word("table")
-        pyramid_vector = vector_from_word("pyramid")
-        sphere_vector = vector_from_word("sphere")
-        
-        self.box = SceneObject("box", box_vector, object_id="box-1")
-        self.table = SceneObject("table", table_vector, object_id="table-1")
-        self.pyramid = SceneObject("pyramid", pyramid_vector, object_id="pyramid-1")
-        self.sphere = SceneObject("sphere", sphere_vector, object_id="sphere-1")
-
-        self.box.position = {"x":0, "y":1, "z":0}      # Box is above the table
-        self.table.position = {"x":0, "y":0, "z":0}    # Table is reference
-        self.pyramid.position = {"x":-2, "y":0, "z":0} # Table is right of the pyramid  
-        self.sphere.position = {"x":-2, "y":2, "z":0}  # Pyramid is under the sphere
-        # Update vector positions to match
-        self.box.vector['locX'], self.box.vector['locY'], self.box.vector['locZ'] = 0, 1, 0
-        self.table.vector['locX'], self.table.vector['locY'], self.table.vector['locZ'] = 0, 0, 0
-        self.pyramid.vector['locX'], self.pyramid.vector['locY'], self.pyramid.vector['locZ'] = 2, 0, 0
-        self.sphere.vector['locX'], self.sphere.vector['locY'], self.sphere.vector['locZ'] = 0, -2, 0
-
-        # Set reasonable scale values for spatial calculations
-        for obj in [self.box, self.table, self.pyramid, self.sphere]:
-            obj.vector['scaleX'] = 1.0
-            obj.vector['scaleY'] = 1.0 
-            obj.vector['scaleZ'] = 1.0
-        
-        # Add all objects to scene
-        self.scene.add_object(self.box)
-        self.scene.add_object(self.table)
-        self.scene.add_object(self.pyramid) 
-        self.scene.add_object(self.sphere)
-        
+        Scene contains:
+        - box (above table)
+        - table (reference object)
+        - pyramid (left of table)
+        - sphere (above pyramid)    
+        """
+        self.scene = DummyTestScene().scene
         # Set up Layer 3 executor with scene
-        self.layer3_executor = LATNLayerExecutor(self.scene)
-        
-        # Test sentence with spatial_location prepositions (including multi-word "right of")
-    
+
     def test_simple_pp_attachment(self):
         """Test simple Layer 3 PP attachment without complex chains."""
         sentence = "move the box above the table to [3,4,5]"    

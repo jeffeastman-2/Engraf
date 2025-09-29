@@ -286,7 +286,7 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
                     # Handle attachment to a NP
                     if target_token.isa("NP"):
                         np_obj = target_token.phrase
-                        np_obj.preps.append(pp_token.phrase)
+                        np_obj.prepositions.append(pp_token.phrase)
                     # Handle attachment to a PP (attach to its NP)
                     elif target_token.isa("PP"):
                         pp_obj = target_token.phrase
