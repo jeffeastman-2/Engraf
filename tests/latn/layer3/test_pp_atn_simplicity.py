@@ -12,7 +12,7 @@ because it works directly with NounPhrase tokens from Layer 2.
 import pytest
 from engraf.lexer.token_stream import TokenStream
 from engraf.atn.subnet_pp import run_pp
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_best as tokenize
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 from engraf.pos.noun_phrase import NounPhrase
 

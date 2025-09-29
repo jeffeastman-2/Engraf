@@ -171,9 +171,9 @@ class NounPhrase():
     
     def printString(self):
         str = ""
-        if self.grounding and self.grounding.get('scene_object'):
-            scene_obj = self.grounding['scene_object']
-            str = f"<{scene_obj.entity_id}>"
+        if self.grounding and self.grounding.get('scene_objects'):
+            scene_objs = self.grounding['scene_objects']
+            str = f"<{' '.join(obj.entity_id for obj in scene_objs)}>"
         else:
             str = f"{' '.join(self.get_consumed_words())}"
         if self.preps:

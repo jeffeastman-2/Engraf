@@ -20,7 +20,7 @@ def test_coordinated_pp():
     assert len(main_hyp.tokens) == 1, f"Should have exactly 1 token, got {len(main_hyp.tokens)}"
     main_pp = main_hyp.tokens[0]
     assert main_pp.word == "CONJ-PP", "First token should be a CONJ-PP"
-    parts = list(main_pp.phrase.flatten())
+    parts = list(main_pp.phrase.phrases)
     assert len(parts) == 3, f"CONJ-PP should have 3 parts, got {len(parts)}"
     assert all(isinstance(part, PrepositionalPhrase) for part in parts), "All parts should be PrepositionalPhrase instances"
     assert parts[0].preposition == "above", f"First PP should be 'above', got '{parts[0].preposition}'"

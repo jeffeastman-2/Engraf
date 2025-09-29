@@ -66,10 +66,10 @@ def build_vp_atn(vp: VerbPhrase, ts: TokenStream):
 def _extract_np_from_token(np_token):
     """Extract or create a NounPhrase object from an NP token."""
     from engraf.pos.noun_phrase import NounPhrase
-    
-    if np_token._original_np is not None:
-        return np_token._original_np
-    
+
+    if np_token.phrase is not None:
+        return np_token.phrase
+
     # Create a simple NounPhrase from the token
     np = NounPhrase()
     if hasattr(np_token, 'word') and np_token.word.startswith("NP("):
@@ -85,9 +85,9 @@ def _extract_pp_from_token(pp_token):
     """Extract or create a PrepositionalPhrase object from a PP token."""
     from engraf.pos.prepositional_phrase import PrepositionalPhrase
     
-    if pp_token._original_pp is not None:
-        return pp_token._original_pp
-    
+    if pp_token.phrase is not None:
+        return pp_token.phrase
+
     # Create a simple PrepositionalPhrase from the token
     pp = PrepositionalPhrase()
     if hasattr(pp_token, 'word') and pp_token.word.startswith("PP("):

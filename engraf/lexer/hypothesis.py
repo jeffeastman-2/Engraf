@@ -67,7 +67,7 @@ class TokenizationHypothesis:
             print(f"{self.spaces}[{i}] {token.word} = {token.non_zero_dims()}")
 
     def printPP(self, i, token):
-        original_pp = token._original_pp
+        original_pp = token.phrase
         if original_pp:
             str = original_pp.printString()
             if token.isa("conj"):

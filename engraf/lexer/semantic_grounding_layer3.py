@@ -63,28 +63,28 @@ class Layer3SemanticGrounder:
     def validate_grounded_np(self, grounded_np):
         """Validate a grounded NP's PP attachments using spatial reasoning."""
         if not grounded_np:
-            return 1.0  # No grounding to validate        
+            return 0.0  # No grounding to validate        
         if isinstance(grounded_np, ConjunctionPhrase):   
             nps = grounded_np.phrases
             score = 0.0
             for np in nps:
                 if np.grounding:
-                    spatial_score = min(spatial_score, self.validate_grounded_np(np))
                     score += self.validate_grounded_np(np)
-                else:
-                    continue
             spatial_score = score / len(nps) if nps else 0.0
             return spatial_score
         else:    
             preps = grounded_np.preps
             if not preps:
-                return 0.0  # No PPs to validate        
+                return 1.0  # No PPs to validate        
             spatial_score = self._validate_prep_spatial_relationships(grounded_np, preps)
             debug_print(f"🔍 Spatial validation: NP '{grounded_np.noun}' → score {spatial_score:.2f}")
             # Recursively validate nested PPs
             if grounded_np.preps:
                 sub_score = 0.0
                 for pp in grounded_np.preps:
+                    prep_vector = pp.vector
+                    if not (prep_vector.isa("spatial_location") or prep_vector.isa("spatial_proximity")):
+                        return 0.0  # Cannot validate non-spatial prepositions
                     g_np = pp.noun_phrase
                     sub_score += self.validate_grounded_np(g_np)
                 sub_score += sub_score / len(grounded_np.preps)
@@ -93,26 +93,42 @@ class Layer3SemanticGrounder:
             return spatial_score
    
     def _validate_spatial_attachments(self, attachment_hypotheses):
-        """Pass 2: Validate PP attachments using spatial reasoning and return valid hypotheses."""
+        """Validate PP attachments using spatial reasoning and return valid hypotheses.
+            A hypothesis is valid if all its grounded NPs have PPs with valid spatial relationships.
+            Should also cull PPs with invalid groundings within them
+        """
         validated = []    
         x = 0    
         for hypothesis in attachment_hypotheses:
             x += 1       # for debugging
-            spatial_score = 1.0     
+            spatial_score = 1.0   
+            num_gnps = 0  
             for i, token in enumerate(hypothesis.tokens):
+                pString = token.phrase.printString() if token.phrase else "None"
+                debug_print(f"Evaluating {pString}")
                 if token.isa("NP"):
                     if token.isa("conj"):
-                        continue  # Skip conjunctions
-                    grounded_np = token._grounded_phrase 
-                    if not grounded_np:
-                        continue
-                    spatial_score = self.validate_grounded_np(grounded_np)
+                        for np in token.phrase.phrases:
+                            grounded_np = np 
+                            if not grounded_np or not grounded_np.grounding:
+                                continue
+                            num_gnps +=1
+                            spatial_score += self.validate_grounded_np(grounded_np)
+                    else:
+                        grounded_np = token.phrase 
+                        if not grounded_np or not grounded_np.grounding:
+                            continue
+                        num_gnps +=1
+                        spatial_score += self.validate_grounded_np(grounded_np)
                 elif token.isa("PP"):
-                    pp = token._original_pp
+                    pp = token.phrase
                     grounded_np = pp.noun_phrase
-                    spatial_score = self.validate_grounded_np(grounded_np)
+                    if not grounded_np :
+                        continue
+                    num_gnps +=1
+                    spatial_score += self.validate_grounded_np(grounded_np)
 
-            if spatial_score >= 0.75:  # Threshold for valid spatial relationship
+            if spatial_score - num_gnps >= 1.0:  # Threshold for valid spatial relationship
                 validated.append(hypothesis)  # Valid
 
         # Sort by confidence (best first)
@@ -143,15 +159,29 @@ class Layer3SemanticGrounder:
         """Validate a proposed relationships using spatial reasoning."""
         score = 0.0
         for pp_obj in pp_objs:
-            prep = pp_obj.vector
-            debug_print(f"🔍 Validating PP '{prep}' for NP '{target_np.noun}'")
-            obj1 = target_np.grounding.get('scene_object') if target_np.grounding else None
-            obj2 = pp_obj.noun_phrase.grounding.get('scene_object') if pp_obj.noun_phrase.grounding else None
-            if obj1 is None or obj2 is None:
-                debug_print(f"❌ Cannot validate spatial relationship: missing grounding")
-                return 0.0
-            score += SpatialValidator.validate_spatial_relationship(prep, obj1, obj2)
-            debug_print(f"🔍 Spatial score for '{prep}': {score:.2f}")            
+            prep_vector = pp_obj.vector
+            if not (prep_vector.isa("spatial_location") or prep_vector.isa("spatial_proximity")):
+                return 0.0  # Cannot validate non-spatial prepositions
+            debug_print(f"🔍 Validating PP '{prep_vector.word}' for NP '{target_np.noun}'")
+            obj1 = target_np.grounding.get('scene_objects') if target_np.grounding else None
+            pp_np = pp_obj.noun_phrase
+            if isinstance(pp_np, ConjunctionPhrase):
+                np_score = 0.0
+                for np in pp_np.phrases:
+                    obj2 = np.grounding.get('scene_objects') if np.grounding else None
+                    if obj1 is None or obj2 is None:
+                        debug_print(f"❌ Cannot validate spatial relationship: missing grounding")
+                        continue
+                    np_score += SpatialValidator.validate_spatial_relationship(prep_vector, obj1, obj2)
+                    debug_print(f"🔍 Spatial score for '{prep_vector}': {np_score:.2f}")
+                score += np_score/len(pp_np.phrases) if pp_np.phrases else 0.0
+            else:
+                obj2 = pp_np.grounding.get('scene_object') if pp_np.grounding else None
+                if obj1 is None or obj2 is None:
+                    debug_print(f"❌ Cannot validate spatial relationship: missing grounding")
+                    return 0.0
+                score += SpatialValidator.validate_spatial_relationship(prep_vector, obj1, obj2)
+                debug_print(f"🔍 Spatial score for '{prep_vector}': {score:.2f}")            
         return score/len(pp_objs) if pp_objs else 0.0
 
     def _extract_object_name_from_np(self, np_part: str):

@@ -17,7 +17,7 @@ def build_pp_atn(pp:PrepositionalPhrase, ts:TokenStream):
     def apply_grounded_np(pp_obj, tok):
         # Use grounded phrase if available (from Layer 2 semantic grounding), otherwise original NP
         try:
-            grounded_phrase = tok._grounded_phrase
+            grounded_phrase = tok.phrase
             if grounded_phrase is not None:
                 pp_obj.apply_np(grounded_phrase)
                 return

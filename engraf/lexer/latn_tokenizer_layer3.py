@@ -126,13 +126,12 @@ def find_pp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                         # Successfully parsed another PP - create/extend coordination
                         if isinstance(best_pp, PrepositionalPhrase):
                             # Convert to ConjunctionPhrase
-                            coord_pp = ConjunctionPhrase(conj_token, left=best_pp, right=pp2_result)
+                            coord_pp = ConjunctionPhrase(conj_token, phrases=[best_pp, pp2_result])
                             coord_pp.vector["plural"] = 1.0
                             best_pp = coord_pp
                         elif isinstance(best_pp, ConjunctionPhrase):
                             # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_pp.right, right=pp2_result)
-                            best_pp.right = new_coord
+                            best_pp.phrases.append(pp2_result)
 
                         # Update best_end to include the newly parsed PP
                         best_end = i + ts.position - 1
@@ -286,17 +285,13 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
                     target_token = new_hypothesis.tokens[target_idx]
                     # Handle attachment to a NP
                     if target_token.isa("NP"):
-                        np_obj = target_token._original_np
-                        np_obj.preps.append(pp_token._original_pp)
-                        # if the NP is grounded, update its grounded NP's preps as well
-                        if target_token._grounded_phrase:
-                            target_token._grounded_phrase.preps.append(pp_token._original_pp)
+                        np_obj = target_token.phrase
+                        np_obj.preps.append(pp_token.phrase)
                     # Handle attachment to a PP (attach to its NP)
                     elif target_token.isa("PP"):
-                        pp_obj = target_token._original_pp
+                        pp_obj = target_token.phrase
                         np_obj = pp_obj.noun_phrase
-                        np_obj.preps.append(pp_token._original_pp)
-
+                        np_obj.preps.append(pp_token.phrase)
                     # Remove the PP token since it's now bound for identification
                     tokens_to_remove.add(pp_idx)
             

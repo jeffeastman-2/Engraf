@@ -135,15 +135,25 @@ class SpatialValidator:
             pp_token: PP token containing spatial features (VectorSpace with locX, locY, locZ) or preposition string
             obj1: Reference object (obj2 is positioned relative to obj1)
             obj2: Object being positioned relative to obj1
-            
+        If any of the relationships fail, the overall validation fails.    
         Returns:
-            float: Validation score between 0.0 and 1.0
+            float: Validation score either 0.0 or 1.0
         """
+        if not isinstance(pp_token, VectorSpace):
+            return 0.0
+        for o1 in obj1:
+            for o2 in obj2:
+                if SpatialValidator.validate_single_relationship(pp_token, o1, o2) == 0.0:
+                    return 0.0
+        return 1.0 
+
+    @staticmethod
+    def validate_single_relationship(pp_token, obj1, obj2) -> float:
         try:
             # Get positions 
             pos1 = obj1.position                
             pos2 = obj2.position
-            
+
             dx, dy, dz = pos1['x'] - pos2['x'], pos1['y'] - pos2['y'], pos1['z'] - pos2['z']
             px = pp_token['locX']
             py = pp_token['locY']  

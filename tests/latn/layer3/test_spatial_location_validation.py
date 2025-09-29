@@ -60,11 +60,11 @@ def test_above_relationships(test_objects, prep):
     pp_token = create_pp_token(prep)
     
     # Correct: object is above reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['above_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj']], [test_objects['center']])
     assert score == 1.0, f"'{prep}' should validate when object is above reference"
     
     # Incorrect: object is below reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['wrong_above'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['wrong_above']], [test_objects['center']])
     assert score == 0.0, f"'{prep}' should fail when object is below reference"
 
 
@@ -74,11 +74,11 @@ def test_below_relationships(test_objects, prep):
     pp_token = create_pp_token(prep)
     
     # Correct: object is below reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['below_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['below_obj']], [test_objects['center']])
     assert score == 1.0, f"'{prep}' should validate when object is below reference"
     
     # Incorrect: object is above reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['above_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj']], [test_objects['center']])
     assert score == 0.0, f"'{prep}' should fail when object is above reference"
 
 
@@ -88,11 +88,11 @@ def test_right_relationships(test_objects, prep):
     pp_token = create_pp_token(prep)
     
     # Correct: object is to the right of reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['right_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['right_obj']], [test_objects['center']])
     assert score == 1.0, f"'{prep}' should validate when object is right of reference"
     
     # Incorrect: object is to the left of reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['wrong_right'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['wrong_right']], [test_objects['center']])
     assert score == 0.0, f"'{prep}' should fail when object is left of reference"
 
 
@@ -102,11 +102,11 @@ def test_left_relationships(test_objects, prep):
     pp_token = create_pp_token(prep)
     
     # Correct: object is to the left of reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['left_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['left_obj']], [test_objects['center']])
     assert score == 1.0, f"'{prep}' should validate when object is left of reference"
     
     # Incorrect: object is to the right of reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['right_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['right_obj']], [test_objects['center']])
     assert score == 0.0, f"'{prep}' should fail when object is right of reference"
 
 
@@ -116,11 +116,11 @@ def test_front_relationships(test_objects, prep):
     pp_token = create_pp_token(prep)
     
     # Correct: object is in front of reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['front_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['front_obj']], [test_objects['center']])
     assert score == 1.0, f"'{prep}' should validate when object is in front of reference"
     
     # Incorrect: object is behind reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['behind_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['behind_obj']], [test_objects['center']])
     assert score == 0.0, f"'{prep}' should fail when object is behind reference"
 
 
@@ -130,11 +130,11 @@ def test_behind_relationships(test_objects, prep):
     pp_token = create_pp_token(prep)
     
     # Correct: object is behind reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['behind_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['behind_obj']], [test_objects['center']])
     assert score == 1.0, f"'{prep}' should validate when object is behind reference"
     
     # Incorrect: object is in front of reference
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['front_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['front_obj']], [test_objects['center']])
     assert score == 0.0, f"'{prep}' should fail when object is in front of reference"
 
 
@@ -142,18 +142,18 @@ def test_up_down_relationships(test_objects):
     """Test 'up' and 'down' adverb/prepositions."""
     # Up (locY=1.0)
     pp_token = create_pp_token('up')
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['above_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj']], [test_objects['center']])
     assert score == 1.0, "'up' should validate when object is above reference"
     
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['below_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['below_obj']], [test_objects['center']])
     assert score == 0.0, "'up' should fail when object is below reference"
     
     # Down (locY=-1.0)
     pp_token = create_pp_token('down')
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['below_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['below_obj']], [test_objects['center']])
     assert score == 1.0, "'down' should validate when object is below reference"
     
-    score = SpatialValidator.validate_spatial_relationship(pp_token, test_objects['above_obj'], test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj']], [test_objects['center']])
     assert score == 0.0, "'down' should fail when object is above reference"
 
 
@@ -163,17 +163,17 @@ def test_dot_product_edge_cases(test_objects):
     
     # Same position (dot product = 0) should fail
     same_pos = MockSceneObject("same", 0.0, 0.0, 0.0)
-    score = SpatialValidator.validate_spatial_relationship(pp_token, same_pos, test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [same_pos], [test_objects['center']])
     assert score == 0.0, "Same position should fail spatial validation"
     
     # Diagonal position (positive Y component) should pass
     diagonal_up = MockSceneObject("diagonal", 1.0, 1.0, 1.0)
-    score = SpatialValidator.validate_spatial_relationship(pp_token, diagonal_up, test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [diagonal_up], [test_objects['center']])
     assert score == 1.0, "Diagonal up position should pass 'above' validation"
     
     # Diagonal position (negative Y component) should fail
     diagonal_down = MockSceneObject("diagonal", 1.0, -1.0, 1.0)
-    score = SpatialValidator.validate_spatial_relationship(pp_token, diagonal_down, test_objects['center'])
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [diagonal_down], [test_objects['center']])
     assert score == 0.0, "Diagonal down position should fail 'above' validation"
 
 
@@ -193,3 +193,33 @@ def test_vocabulary_consistency(prep):
     # Should have non-zero spatial vector component
     spatial_magnitude = abs(pp_token['locX']) + abs(pp_token['locY']) + abs(pp_token['locZ'])
     assert spatial_magnitude > 0.0, f"'{prep}' should have non-zero spatial vector"
+
+@pytest.mark.parametrize("prep", ['above', 'over'])
+def test_multiple_above_relationships(test_objects, prep):
+    """Test 'above' and 'over' prepositions (locY=1.0)."""
+    pp_token = create_pp_token(prep)
+    
+    # Correct: objects are above reference
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj'], test_objects['above_obj']], [test_objects['center']])
+    assert score == 1.0, f"'{prep}' should validate when objects are above reference"
+    
+    # Incorrect: objects are below reference
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['wrong_above'], test_objects['above_obj']], [test_objects['center']])
+    assert score == 0.0, f"'{prep}' should fail when objects are below reference"
+
+    # Correct: object is above references
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj']], [test_objects['center'], test_objects['center']])
+    assert score == 1.0, f"'{prep}' should validate when object is above all references"
+    
+    # Incorrect: object is below references
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj']], [test_objects['center'], test_objects['above_obj']])
+    assert score == 0.0, f"'{prep}' should fail when object is below all references"
+
+        # Correct: objects are above all reference
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['above_obj'], test_objects['above_obj']], [test_objects['center'], test_objects['center']])
+    assert score == 1.0, f"'{prep}' should validate when objects are above all references"
+    
+    # Incorrect: objects are below all references
+    score = SpatialValidator.validate_spatial_relationship(pp_token, [test_objects['wrong_above'], test_objects['above_obj']], [test_objects['center'], test_objects['center']])
+    assert score == 0.0, f"'{prep}' should fail when objects are below all references"
+
