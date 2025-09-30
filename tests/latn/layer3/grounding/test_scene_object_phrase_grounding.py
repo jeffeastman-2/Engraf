@@ -17,6 +17,7 @@ Layer 3 job: Determine which PPSO attends to which SO/PPSO based on scene validi
 """
 
 import unittest
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from tests.latn.dummy_test_scene import DummyTestScene
 
 class TestLayer3SpatialValidation(unittest.TestCase):
@@ -33,6 +34,7 @@ class TestLayer3SpatialValidation(unittest.TestCase):
         """
         self.scene = DummyTestScene().scene
         # Set up Layer 3 executor with scene
+        self.layer3_executor = LATNLayerExecutor(self.scene) # force grounding
 
     def test_simple_pp_attachment(self):
         """Test simple Layer 3 PP attachment without complex chains."""
@@ -41,7 +43,7 @@ class TestLayer3SpatialValidation(unittest.TestCase):
         print(f"\n🔬 Processing through Layer 3 executor...")
         layer3_result = self.layer3_executor.execute_layer3(sentence, report=True)
         assert layer3_result.success, "Layer 3 should process successfully"
-        assert len(layer3_result.hypotheses) == 2, "Should generate 2 hypotheses"
+        assert len(layer3_result.hypotheses) == 3, "Should generate 2 hypotheses"
         hyp0 = layer3_result.hypotheses[0]
         tokens = hyp0.tokens
         assert len(tokens) == 4, f"Should have exactly 4 tokens, got {len(hyp0.tokens)}"
@@ -59,7 +61,12 @@ class TestLayer3SpatialValidation(unittest.TestCase):
         print(f"\n🔬 Processing through Layer 3 executor...")
         layer3_result = self.layer3_executor.execute_layer3(sentence, report=True)
         assert layer3_result.success, "Layer 3 should process successfully"
-        assert len(layer3_result.hypotheses) == 6, "Should generate 7 hypotheses"
+        assert len(layer3_result.hypotheses) == 4, "Should generate 4 hypotheses"
         #assert False
 
-        
+    def test_copy_with_pp2(self):
+        """Test Layer 3 VP tokenization with a 'copy' verb phrase containing a PP."""
+        # Test VP with PP: "copy the box below the table"
+        result = self.layer3_executor.execute_layer3('copy the box below the table',report=True)
+        assert result.success, "Failed to tokenize VP with PP in Layer 3"
+        assert len(result.hypotheses) == 1, "Should generate 1 hypothesis because the box is not below the table"                

@@ -208,13 +208,13 @@ def find_coordination_hypotheses(tokens: List[VectorSpace]) -> List[List[tuple]]
         return a.__repr__() != b.__repr__()
 
     # Hypothesis 1: Current greedy algorithm (local coordination)
-    greedy_sequences = find_np_sequences(tokens, False)
+    greedy_sequences = find_np_sequences(tokens, True)
     hypotheses.append(greedy_sequences)
     
     # Hypothesis 2: Phrase-level coordination (respecting PP boundaries)
-    phrase_sequences = find_np_sequences(tokens, True)
-    if _is_different(phrase_sequences, greedy_sequences):  # Only add if different
-        hypotheses.append(phrase_sequences)
+    #phrase_sequences = find_np_sequences(tokens, True)
+    #if _is_different(phrase_sequences, greedy_sequences):  # Only add if different
+    #    hypotheses.append(phrase_sequences)
     
     return hypotheses
 

@@ -202,13 +202,13 @@ def find_coordination_hypotheses(tokens: List[VectorSpace]) -> List[List[tuple]]
     from engraf.lexer.latn_layer_executor import is_different_phrase_sequence
 
     # Hypothesis 1: Current greedy algorithm (local coordination)
-    greedy_sequences = find_vp_sequences(tokens, False)
+    greedy_sequences = find_vp_sequences(tokens, True)
     hypotheses.append(greedy_sequences)
 
     # Hypothesis 2: Phrase-level coordination (respecting VP boundaries)
-    phrase_sequences = find_vp_sequences(tokens, True)
-    if is_different_phrase_sequence(phrase_sequences, greedy_sequences):  # Only add if different
-        hypotheses.append(phrase_sequences)
+    #phrase_sequences = find_vp_sequences(tokens, True)
+    #if is_different_phrase_sequence(phrase_sequences, greedy_sequences):  # Only add if different
+    #    hypotheses.append(phrase_sequences)
     
     return hypotheses
 

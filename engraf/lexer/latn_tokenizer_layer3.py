@@ -201,7 +201,7 @@ def find_coordination_hypotheses(tokens: List[VectorSpace]) -> List[List[tuple]]
     from engraf.lexer.latn_layer_executor import is_different_phrase_sequence
 
     # Hypothesis 1: Current greedy algorithm (local coordination)
-    greedy_sequences = find_pp_sequences(tokens, False)
+    greedy_sequences = find_pp_sequences(tokens, True)
     hypotheses.append(greedy_sequences)
     
     # Hypothesis 2: Phrase-level coordination (respecting PP boundaries)
@@ -291,7 +291,7 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
                     elif target_token.isa("PP"):
                         pp_obj = target_token.phrase
                         np_obj = pp_obj.noun_phrase
-                        np_obj.preps.append(pp_token.phrase)
+                        np_obj.prepositions.append(pp_token.phrase)
                     # Remove the PP token since it's now bound for identification
                     tokens_to_remove.add(pp_idx)
             

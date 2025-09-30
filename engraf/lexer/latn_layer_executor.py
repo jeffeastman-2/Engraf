@@ -24,6 +24,7 @@ from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder, Layer
 from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer3GroundingResult
 from engraf.lexer.semantic_grounding_layer4 import Layer4SemanticGrounder, Layer4GroundingResult
 from engraf.lexer.semantic_grounding_layer5 import Layer5SemanticGrounder, Layer5GroundingResult
+from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
@@ -144,11 +145,12 @@ class LATNLayerExecutor:
                 description=f"Layer 1 failed: {e}"
             )
     
-    def execute_layer2(self, sentence: str, report = False) -> Layer2Result:
+    def execute_layer2(self, sentence: str, tokenize_only: bool = False, report: bool = False) -> Layer2Result:
         """Execute Layer 2: NP tokenization (requires Layer 1).
         
         Args:
             sentence: Input sentence to process
+            tokenize_only: Whether to only tokenize without grounding
             report: Whether to generate a report
 
         Returns:
@@ -176,7 +178,7 @@ class LATNLayerExecutor:
                 self.enumerate_hypotheses(layer2_hypotheses, layer="2t")
 
             # Semantic grounding with hypothesis multiplication (if enabled)
-            if self.layer2_grounder:
+            if not tokenize_only and self.layer2_grounder:
                 grounded_hypotheses, all_grounding_results = self.layer2_grounder.ground_layer2(
                     layer2_hypotheses=layer2_hypotheses
                 )
@@ -226,11 +228,12 @@ class LATNLayerExecutor:
                 description=f"Layer 2 failed: {e}"
             )
     
-    def execute_layer3(self, sentence: str, report = False) -> Layer3Result:
+    def execute_layer3(self, sentence: str, tokenize_only: bool = False, report: bool = False) -> Layer3Result:
         """Execute Layer 3: PP tokenization (requires Layer 1-2c).
         
         Args:
             sentence: Input sentence to process
+            tokenize_only: Whether to only tokenize without grounding
             report: Whether to generate a report
 
         Returns:
@@ -262,7 +265,7 @@ class LATNLayerExecutor:
             prepositional_phrases = self.layer3_grounder.extract_prepositional_phrases(layer3_hypotheses) if self.layer3_grounder else []
             
             # Layer 3 grounding - process PP attachments with spatial validation
-            if self.layer3_grounder:
+            if not tokenize_only and self.layer3_grounder:
                 # Process PP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer3_grounder.ground_layer3(layer3_hypotheses)
                 if report:
@@ -304,11 +307,12 @@ class LATNLayerExecutor:
                 description=f"Layer 3 failed: {e}"
             )
 
-    def execute_layer4(self, sentence: str, report: bool = False) -> Layer4Result:
+    def execute_layer4(self, sentence: str, tokenize_only: bool = False, report: bool = False) -> Layer4Result:
         """Execute Layer 4: VP tokenization and semantic grounding (requires Layer 1-3).
         
         Args:
             sentence: Input sentence to process
+            tokenize_only: Whether to only tokenize without grounding
             report: Whether to generate a report
             
         Returns:
@@ -336,13 +340,11 @@ class LATNLayerExecutor:
                 print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses")
                 self.enumerate_hypotheses(layer4_hypotheses, layer="4t")
 
-            verb_phrases = []
             final_hypotheses = []
 
-            if self.layer4_grounder:
+            if not tokenize_only and self.layer4_grounder:
                 # Process VP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer4_grounder.ground_layer4(layer4_hypotheses)
-                verb_phrases = [vp for hyp in grounded_hypotheses for vp in self.layer4_grounder.extract_verb_phrases(hyp)]
                 if report:
                     print(f"Layer 4 grounding produced {len(grounded_hypotheses)} hypotheses")
                     self.enumerate_hypotheses(grounded_hypotheses, layer="4g")
@@ -354,6 +356,10 @@ class LATNLayerExecutor:
             
             layer4_confidence = layer4_hypotheses[0].confidence if layer4_hypotheses else layer3_result.confidence
             overall_confidence = (layer3_result.confidence + layer4_confidence) / 2
+            verb_phrases = []
+            for hyp in final_hypotheses:
+                vps = extract_verb_phrases(hyp)
+                verb_phrases.extend(vps)
             
             return Layer4Result(
                 layer3_result=layer3_result,
@@ -374,11 +380,12 @@ class LATNLayerExecutor:
                 description=f"Layer 4 failed: {e}"
             )
 
-    def execute_layer5(self, sentence: str, report: bool = False) -> Layer5Result:
+    def execute_layer5(self, sentence: str, tokenize_only: bool = False, report: bool = False) -> Layer5Result:
         """Execute Layer 5: Sentence tokenization + execution (requires Layer 1-4).
         
         Args:
             sentence: Input sentence to process
+            tokenize_only: Whether to only tokenize without grounding
             report: Whether to generate a report
             
         Returns:
@@ -406,7 +413,7 @@ class LATNLayerExecutor:
                 self.enumerate_hypotheses(layer5_hypotheses, layer="5t")
 
             # Semantic grounding/execution (if enabled)
-            if self.layer5_grounder:
+            if not tokenize_only and self.layer5_grounder:
                 grounded_hypotheses = self.layer5_grounder.ground_layer5(layer5_hypotheses)
                 if report:
                     print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
@@ -516,6 +523,27 @@ def extract_sentence_phrases(layer5_hypotheses: List[TokenizationHypothesis]) ->
                 sentence_phrases.append(token.phrase)
 
     return sentence_phrases
+
+def extract_verb_phrases(hypothesis: TokenizationHypothesis) -> List[VerbPhrase]:
+    """Extract VerbPhrase objects from a Layer 4 hypothesis.
+
+    Args:
+        layer4_hypothesis: Layer 4 tokenization hypothesis
+
+    Returns:
+        List of VerbPhrase objects found in the hypothesis
+    """
+    verb_phrases = []
+    
+    for token in hypothesis.tokens:
+        vp = token.phrase if hasattr(token, 'phrase') else None
+        if vp and isinstance(vp, VerbPhrase):
+            verb_phrases.append(vp)
+        elif vp and isinstance(vp, ConjunctionPhrase):
+            for part in vp.phrases:
+                if isinstance(part, VerbPhrase):
+                    verb_phrases.append(part)
+    return verb_phrases
 
 def tokenize_best(sentence):
     """Tokenize a sentence using the current vocabulary."""

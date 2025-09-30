@@ -63,16 +63,18 @@ class VerbPhrase():
 
     def printString(self):
         str = self.verb
-        if self.prepositions:
-            for pp in self.prepositions:
-                str += f" ({pp.printString()})"
-        if self.adjective_complements:
-            adjectives = " ".join(self.adjective_complements)
-            str += f" ({adjectives})"
         if self.noun_phrase:
             str += f" [{self.noun_phrase.printString()}]"
+        if self.prepositions:
+            str += " -> ("
+            for pp in self.prepositions:
+                str += f"({pp.printString()})"
+            str += ")"
+        if self.adjective_complements:
+            adjectives = " ".join(self.adjective_complements)
+            str += f" => ({adjectives})"
         if self.amount:
-            str += f" [{self.amount.printString()}]"
+            str += f" == [{self.amount.printString()}]"
         return str
 
     def equals(self, other):

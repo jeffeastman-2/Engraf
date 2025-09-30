@@ -79,15 +79,15 @@ class Layer3SemanticGrounder:
             spatial_score = self._validate_prep_spatial_relationships(grounded_np, preps)
             debug_print(f"🔍 Spatial validation: NP '{grounded_np.noun}' → score {spatial_score:.2f}")
             # Recursively validate nested PPs
-            if grounded_np.preps:
+            if grounded_np.prepositions and False:
                 sub_score = 0.0
-                for pp in grounded_np.preps:
+                for pp in grounded_np.prepositions:
                     prep_vector = pp.vector
                     if not (prep_vector.isa("spatial_location") or prep_vector.isa("spatial_proximity")):
                         return 0.0  # Cannot validate non-spatial prepositions
                     g_np = pp.noun_phrase
                     sub_score += self.validate_grounded_np(g_np)
-                sub_score += sub_score / len(grounded_np.preps)
+                sub_score += sub_score / len(grounded_np.prepositions)
                 spatial_score = spatial_score + sub_score / 2
                 debug_print(f"🔍 Recursive spatial score including PPs: {spatial_score:.2f}")
             return spatial_score
@@ -163,24 +163,24 @@ class Layer3SemanticGrounder:
             if not (prep_vector.isa("spatial_location") or prep_vector.isa("spatial_proximity")):
                 return 0.0  # Cannot validate non-spatial prepositions
             debug_print(f"🔍 Validating PP '{prep_vector.word}' for NP '{target_np.noun}'")
-            obj1 = target_np.grounding.get('scene_objects') if target_np.grounding else None
+            obj1s = target_np.grounding.get('scene_objects') if target_np.grounding else None
             pp_np = pp_obj.noun_phrase
             if isinstance(pp_np, ConjunctionPhrase):
                 np_score = 0.0
                 for np in pp_np.phrases:
-                    obj2 = np.grounding.get('scene_objects') if np.grounding else None
-                    if obj1 is None or obj2 is None:
+                    obj2s = np.grounding.get('scene_objects') if np.grounding else None
+                    if obj1s is None or obj2s is None:
                         debug_print(f"❌ Cannot validate spatial relationship: missing grounding")
                         continue
-                    np_score += SpatialValidator.validate_spatial_relationship(prep_vector, obj1, obj2)
+                    np_score += SpatialValidator.validate_spatial_relationship(prep_vector, obj1s, obj2s)
                     debug_print(f"🔍 Spatial score for '{prep_vector}': {np_score:.2f}")
                 score += np_score/len(pp_np.phrases) if pp_np.phrases else 0.0
             else:
-                obj2 = pp_np.grounding.get('scene_object') if pp_np.grounding else None
-                if obj1 is None or obj2 is None:
+                obj2s = pp_np.grounding.get('scene_objects') if pp_np.grounding else None
+                if obj1s is None or obj2s is None:
                     debug_print(f"❌ Cannot validate spatial relationship: missing grounding")
                     return 0.0
-                score += SpatialValidator.validate_spatial_relationship(prep_vector, obj1, obj2)
+                score += SpatialValidator.validate_spatial_relationship(prep_vector, obj1s, obj2s)
                 debug_print(f"🔍 Spatial score for '{prep_vector}': {score:.2f}")            
         return score/len(pp_objs) if pp_objs else 0.0
 

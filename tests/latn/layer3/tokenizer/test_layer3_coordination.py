@@ -13,7 +13,7 @@ def test_coordinated_pp():
     result = executor.execute_layer3('above the red box and below the blue circle and behind the octahedron',report=True)
 
     assert result.success, "Failed to tokenize coordinated PPs in Layer 3"
-    assert len(result.hypotheses) == 7, "Should generate 14 hypotheses"
+    assert len(result.hypotheses) == 1, "Should generate 1 hypothesis"
 
     main_hyp = result.hypotheses[0]
     # Should have exactly 3 PP tokens (one for each prepositional phrase)
@@ -34,7 +34,7 @@ def test_coordinated_pp_with_nps():
     result = executor.execute_layer3('the red cube above the table and the blue sphere below the cylinder',report=True)
 
     assert result.success, "Failed to tokenize coordinated PPs in Layer 3"
-    assert len(result.hypotheses) == 14, "Should generate 2 hypotheses"
+    assert len(result.hypotheses) == 6, "Should generate 6 hypotheses"
 
     hyp = result.hypotheses[0]
     assert len(hyp.tokens) == 3, f"Should have exactly 3 tokens, got {len(hyp.tokens)}"

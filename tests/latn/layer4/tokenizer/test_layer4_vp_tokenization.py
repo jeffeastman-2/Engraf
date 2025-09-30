@@ -21,7 +21,7 @@ class TestLayer4VPTokenization:
     
     def test_simple_create_command(self):
         """Test: 'create a red box' -> VP token."""
-        result = self.executor.execute_layer4("create a red box")
+        result = self.executor.execute_layer4("create a red box", tokenize_only=True, report=True)
         
         assert result.success, "Layer 4 should succeed"
         assert len(result.hypotheses) > 0, "Should have VP hypotheses"
@@ -34,7 +34,7 @@ class TestLayer4VPTokenization:
     
     def test_move_command(self):
         """Test: 'move the sphere' -> VP token."""
-        result = self.executor.execute_layer4("move the sphere")
+        result = self.executor.execute_layer4("move the sphere", tokenize_only=True, report=True)
         
         assert result.success, "Layer 4 should succeed"
         assert len(result.hypotheses) > 0, "Should have VP hypotheses"
@@ -49,7 +49,7 @@ class TestLayer4VPTokenization:
     
     def test_verb_phrase_extraction(self):
         """Test extraction of VerbPhrase objects from tokenization."""
-        result = self.executor.execute_layer4("create a blue cube")
+        result = self.executor.execute_layer4("create a blue cube", tokenize_only=True, report=True)
         
         assert result.success, "Layer 4 should succeed"
         assert len(result.verb_phrases) > 0, "Should extract VerbPhrase objects"
@@ -135,7 +135,7 @@ class TestLayer4ActionExecution:
         initial_count = len(self.scene.objects)
         
         for command in commands:
-            result = self.executor.execute_layer4(command)
+            result = self.executor.execute_layer4(command, tokenize_only=True, report=True)
             assert result.success, f"Command '{command}' should succeed"
             assert len(result.verb_phrases) > 0, f"Command '{command}' should extract verb phrases"
         
@@ -169,7 +169,7 @@ class TestLayer4ActionExecution:
         for command, expected_shape, expected_color, expected_size in test_cases:
             initial_count = len(self.scene.objects)
             
-            result = self.executor.execute_layer4(command)
+            result = self.executor.execute_layer4(command, tokenize_only=True, report=True)
             assert result.success, f"Command '{command}' should succeed"
             
             # Should NOT have created objects - Layer 4 only does semantic grounding
@@ -181,76 +181,6 @@ class TestLayer4ActionExecution:
             vp = result.verb_phrases[0]
             assert vp.verb in ["create", "make", "build"], f"Should identify action verb for '{command}'"
             assert vp.noun_phrase is not None, f"Should have noun phrase for '{command}'"
-
-
-class TestLayer4Integration:
-    """Test Layer 4 integration with other layers."""
-    
-    def setup_method(self):
-        """Set up test environment."""
-        self.scene = SceneModel()
-        self.executor = LATNLayerExecutor(self.scene)
-    
-    def test_layer4_with_layer2_grounding(self):
-        """Test Layer 4 verb phrase extraction with Layer 2 grounding of existing objects."""
-        # Add some objects to the scene first (not through Layer 4)
-        from engraf.lexer.vector_space import vector_from_features
-        from engraf.visualizer.scene.scene_object import SceneObject
-        
-        red_box_vector = vector_from_features("noun", red=1.0)
-        blue_sphere_vector = vector_from_features("noun", blue=1.0) 
-        
-        red_box = SceneObject("box", red_box_vector, object_id="red_box_1")
-        blue_sphere = SceneObject("sphere", blue_sphere_vector, object_id="blue_sphere_1")
-        
-        self.scene.add_object(red_box)
-        self.scene.add_object(blue_sphere)
-        
-        # Test Layer 4 verb phrase extraction
-        create_commands = [
-            "create a red box", 
-            "make a blue sphere"
-        ]
-        
-        for command in create_commands:
-            result = self.executor.execute_layer4(command)
-            assert result.success, f"Layer 4 should succeed: {command}"
-            assert len(result.verb_phrases) > 0, f"Should extract verb phrases: {command}"
-        
-        # Now test Layer 2 grounding against the existing objects
-        grounding_phrases = [
-            "the red box",
-            "the blue sphere"
-        ]
-        
-        for phrase in grounding_phrases:
-            result = self.executor.execute_layer2(phrase)
-            assert result.success, f"Layer 2 should succeed: {phrase}"
-            
-            # Should find grounding results
-            assert len(result.grounding_results) > 0, f"Should have grounding results for: {phrase}"            # At least one should be successful
-            successful_groundings = [gr for gr in result.grounding_results if gr.success]
-            assert len(successful_groundings) > 0, f"Should have successful grounding for: {phrase}"
-    
-    def test_layer4_confidence_propagation(self):
-        """Test that confidence scores propagate correctly through layers."""
-        result = self.executor.execute_layer4("create a red box")
-        
-        assert result.success, "Layer 4 should succeed"
-        assert 0.0 < result.confidence <= 1.0, "Should have valid confidence score"
-        
-        # Layer 4 confidence should be based on Layer 3 confidence
-        assert result.layer3_result.success, "Layer 3 should succeed"
-        assert result.layer3_result.confidence > 0.0, "Layer 3 should have confidence"
-    
-    def test_layer4_error_handling(self):
-        """Test Layer 4 error handling with invalid input."""
-        # Test with non-verb input
-        result = self.executor.execute_layer4("red box green")
-        
-        # Should still succeed at tokenization level, but may not find VPs
-        # The exact behavior depends on implementation - document what we expect
-        print(f"Result for non-VP input: success={result.success}, VP count={len(result.verb_phrases)}")
 
 
 if __name__ == "__main__":

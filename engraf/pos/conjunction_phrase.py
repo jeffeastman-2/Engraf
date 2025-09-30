@@ -5,7 +5,7 @@ class ConjunctionPhrase:
         self.conjunction = tok.word
         self.vector = tok
         self.phrases = phrases # NPs or PPs or VPs or SPs
-        self.preps = []  # Add this for PP attachments
+        self.prepositions = []  # Add this for PP attachments
 
 
     def __repr__(self):
@@ -17,10 +17,10 @@ class ConjunctionPhrase:
     def printString(self):
         """Print the string representation of the conjunction phrase."""
         parts = [f"{item.printString()}" for item in self.phrases]
-        str =  "(" + f" {self.conjunction} ".join(parts) + ")"
-        if self.preps:
+        str =  "{" + f" *{self.conjunction}* ".join(parts) + "}"
+        if self.prepositions:
             str = '(' + str
-            str += " " + " ".join(prep.printString() for prep in self.preps) + ")"
+            str += " " + " ".join(prep.printString() for prep in self.prepositions) + ")"
         return str
     
     def equals(self, other):

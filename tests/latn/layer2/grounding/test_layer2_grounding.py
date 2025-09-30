@@ -327,7 +327,7 @@ class TestLayer2Grounding:
         assert result.success, "Layer 2 should process successfully"
         
         # Expect 1 hypothesis with coordinated NP
-        assert len(result.hypotheses) == 2, f"Should generate 2 hypotheses, got {len(result.hypotheses)}"
+        assert len(result.hypotheses) == 1, f"Should generate 1 hypothesis, got {len(result.hypotheses)}"
         
         best_hypothesis = result.hypotheses[0]
         

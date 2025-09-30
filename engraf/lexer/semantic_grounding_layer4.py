@@ -34,31 +34,14 @@ class Layer4SemanticGrounder:
     
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
-    
-    def extract_verb_phrases(self, hypothesis: TokenizationHypothesis) -> List[VerbPhrase]:
-        """Extract VerbPhrase objects from a Layer 4 hypothesis.
-
-        Args:
-            layer4_hypothesis: Layer 4 tokenization hypothesis
-
-        Returns:
-            List of VerbPhrase objects found in the hypothesis
-        """
-        verb_phrases = []
         
-        for token in hypothesis.tokens:
-            vp = token._original_vp if hasattr(token, '_original_vp') else None
-            if vp and isinstance(vp, VerbPhrase):
-                verb_phrases.append(vp)
-            elif vp and isinstance(vp, ConjunctionPhrase):
-                for part in vp.phrases:
-                    if isinstance(part, VerbPhrase):
-                        verb_phrases.append(part)
-        return verb_phrases
-    
     def validate_vp_with_np(self, vp: VerbPhrase, np: NounPhrase) -> bool:
         vp_has_pp  = len(vp.prepositions) > 0
         vp_has_adj = len(vp.adjective_complements) > 0
+        vp_has_amount = vp.amount is not None
+        if (vp_has_adj and vp_has_pp) or (vp_has_adj and vp_has_amount) or (vp_has_pp and vp_has_amount):
+            # multiple vp complements not allowed
+            return False
         np_preps_have_spatial_pp = False
         for prep in np.prepositions:
             if prep.vector.isa("spatial_location") or prep.vector.isa("spatial_proximity"):
@@ -107,7 +90,15 @@ class Layer4SemanticGrounder:
         # PP (on/in/above) is allowed but not required.
         if vp.vector.isa("create"):
             if np.grounding:
-                return False
+                is_ok = False
+                if vp_has_pp:
+                    if vp.prepositions[0].vector.isa("spatial_location") or vp.prepositions[0].vector.isa("spatial_proximity"):
+                        # grounded NP with spatial PP - probably a location specifier, not object type
+                        # unground the NP and allow further processing
+                        np.grounding = None
+                        is_ok = True
+                if not is_ok:
+                    return False
             if vp_has_adj:
                 return False
             # PP optional for placement; both "draw a cube" and "draw a cube on the table" are ok.
