@@ -198,4 +198,9 @@ class NounPhrase():
             getattr(self, 'plural', False) == getattr(other, 'plural', False) and
             getattr(self, 'amount', None) == getattr(other, 'amount', None)
         )
-
+    
+    def evaluate_boolean_function(self, func):
+        return func(self)
+    
+    def add_prepositional_phrase(self, prep):
+        self.prepositions.append(prep)

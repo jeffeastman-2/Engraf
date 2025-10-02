@@ -110,4 +110,6 @@ class SentencePhrase():
         else:
             return f"{predicate_str}"
 
+    def evaluate_boolean_function(self, func):
+        return func(self)
 

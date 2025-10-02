@@ -15,10 +15,9 @@ class TestLATNLayer4VPCoordination:
     - pyramid (left of table)
     - sphere (above pyramid)    
         """
-
-
+    
     def test_create_vp(self):
-        """Test Layer 4 VP tokenization with a simple 'create' verb phrase."""
+        """Test Layer 4 VP grounding with a simple 'create' verb phrase."""
         executor = LATNLayerExecutor(self.scene) # force grounding
 
         # Test simple VP: "draw a red box"
@@ -36,7 +35,7 @@ class TestLATNLayer4VPCoordination:
         assert "box" in vp.phrase.noun_phrase.noun, "VP should contain the noun 'box'"
 
     def test_create_with_pp(self):
-        """Test Layer 4 VP tokenization with a 'create' verb phrase containing a PP."""
+        """Test Layer 4 VP grounding with a 'create' verb phrase containing a PP."""
         executor = LATNLayerExecutor(self.scene) # force grounding  
         # Test VP with PP: "draw a red cube above the table"
         result = executor.execute_layer4('draw a red cube above the table',report=True)
@@ -44,7 +43,7 @@ class TestLATNLayer4VPCoordination:
         assert len(result.hypotheses) == 1, "Should generate 1 hypothesis"
 
     def test_copy_vp(self):
-        """Test Layer 4 VP tokenization with a simple 'create' verb phrase."""
+        """Test Layer 4 VP grounding with a simple 'create' verb phrase."""
         executor = LATNLayerExecutor(self.scene) # force grounding
 
         # Test simple VP: "copy the box"
@@ -62,7 +61,7 @@ class TestLATNLayer4VPCoordination:
         assert "box" in vp.phrase.noun_phrase.noun, "VP should contain the noun 'box'"
 
     def test_copy_vp_ungrounded_np(self):
-        """Test Layer 4 VP tokenization with a simple 'create' verb phrase."""
+        """Test Layer 4 VP grounding with a simple 'create' verb phrase."""
         executor = LATNLayerExecutor(self.scene) # force grounding
 
         # Test simple VP: "copy a red cube"
@@ -73,7 +72,7 @@ class TestLATNLayer4VPCoordination:
         # No valid hypotheses because "copy" requires a grounded NP
 
     def test_copy_with_pp(self):
-        """Test Layer 4 VP tokenization with a 'copy' verb phrase containing a PP."""
+        """Test Layer 4 VP grounding with a 'copy' verb phrase containing a PP."""
         executor = LATNLayerExecutor(self.scene) # force grounding  
         # Test VP with PP: "copy the box above the table"
         result = executor.execute_layer4('copy the box above the table',report=True)
@@ -81,7 +80,7 @@ class TestLATNLayer4VPCoordination:
         assert len(result.hypotheses) == 2, "Should generate 2 hypotheses"
     
     def test_copy_with_pp2(self):
-        """Test Layer 4 VP tokenization with a 'copy' verb phrase containing a PP."""
+        """Test Layer 4 VP grounding with a 'copy' verb phrase containing a PP."""
         executor = LATNLayerExecutor(self.scene) # force grounding  
         # Test VP with PP: "copy the box below the table"
         result = executor.execute_layer4('copy the box below the table',report=True)

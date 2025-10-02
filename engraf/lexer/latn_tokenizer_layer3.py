@@ -194,7 +194,7 @@ def find_coordination_hypotheses(tokens: List[VectorSpace]) -> List[List[tuple]]
         tokens: Input token sequence
         
     Returns:
-        List of hypothesis alternatives, each containing NP sequences
+        List of hypothesis alternatives, each containing PP sequences
     """
     hypotheses = []
 
@@ -205,9 +205,9 @@ def find_coordination_hypotheses(tokens: List[VectorSpace]) -> List[List[tuple]]
     hypotheses.append(greedy_sequences)
     
     # Hypothesis 2: Phrase-level coordination (respecting PP boundaries)
-    phrase_sequences = find_pp_sequences(tokens, True)
-    if is_different_phrase_sequence(phrase_sequences, greedy_sequences):  # Only add if different
-        hypotheses.append(phrase_sequences)
+    #phrase_sequences = find_pp_sequences(tokens, True)
+    #if is_different_phrase_sequence(phrase_sequences, greedy_sequences):  # Only add if different
+    #    hypotheses.append(phrase_sequences)
     
     return hypotheses
 
@@ -257,10 +257,10 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
                 pp_positions.append(i)
                 
                 # Find all preceding NP/PP tokens as potential attachment targets
-                targets = [None]
+                targets = [None]  # None = no attachment
                 for j in range(i):
                     prev_token = hypothesis.tokens[j]
-                    if prev_token.isa("NP")or prev_token.isa("PP"):
+                    if prev_token.isa("NP") or prev_token.isa("PP"):
                         targets.append(j)
 
                 attachment_options.append(targets)  # None = no attachment
@@ -286,12 +286,12 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
                     # Handle attachment to a NP
                     if target_token.isa("NP"):
                         np_obj = target_token.phrase
-                        np_obj.prepositions.append(pp_token.phrase)
+                        np_obj.add_prepositional_phrase(pp_token.phrase)
                     # Handle attachment to a PP (attach to its NP)
                     elif target_token.isa("PP"):
                         pp_obj = target_token.phrase
                         np_obj = pp_obj.noun_phrase
-                        np_obj.prepositions.append(pp_token.phrase)
+                        np_obj.add_prepositional_phrase(pp_token.phrase)
                     # Remove the PP token since it's now bound for identification
                     tokens_to_remove.add(pp_idx)
             
@@ -299,15 +299,10 @@ def _generate_pp_attachment_combinations(layer3_hypotheses):
             new_hypothesis.tokens = [token for i, token in enumerate(new_hypothesis.tokens)
                                    if i not in tokens_to_remove]
 
-            # Update confidence based on attachment complexity
-            num_attachments = len([t for t in combination if t is not None])
-            attachment_penalty = num_attachments * 0.05
-            new_hypothesis.confidence = max(0.1, hypothesis.confidence - attachment_penalty)
-            
-            # Update description to reflect attachment pattern
-            if num_attachments > 0:
-                new_hypothesis.description += f" ({num_attachments} PP attachments)"
-            
+            # Update confidence based on token complexity
+            num_tokens = len(new_hypothesis.tokens)
+            new_hypothesis.confidence =  hypothesis.confidence / num_tokens if num_tokens > 0 else hypothesis.confidence
+                        
             all_combinations.append(new_hypothesis)
     
     return all_combinations

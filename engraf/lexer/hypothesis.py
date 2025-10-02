@@ -91,7 +91,7 @@ class TokenizationHypothesis:
 
     def printSentence(self, i, token):
         """Print a sentence token."""
-        original_sp = token._original_sp
+        original_sp = token.phrase
         if original_sp:
             str = original_sp.printString()
             if token.isa("conj"):

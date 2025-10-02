@@ -97,3 +97,6 @@ class VerbPhrase():
             self.amount == other.amount and
             getattr(self, 'vector', None) == getattr(other, 'vector', None)
         )
+
+    def evaluate_boolean_function(self, func):
+        return func(self)

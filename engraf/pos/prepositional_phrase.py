@@ -41,3 +41,6 @@ class PrepositionalPhrase():
             getattr(self, 'vector_text', None) == getattr(other, 'vector_text', None)
         )
 
+    def evaluate_boolean_function(self, func):
+        return func(self)
+

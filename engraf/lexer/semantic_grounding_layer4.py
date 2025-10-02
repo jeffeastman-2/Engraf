@@ -113,14 +113,8 @@ class Layer4SemanticGrounder:
         
     def validate_vp(self, vp: VerbPhrase) -> bool:
         np = vp.noun_phrase
-        if isinstance(np, ConjunctionPhrase):
-            for cnp in np.phrases:
-                if not self.validate_vp_with_np(vp, cnp):
-                    return False
-        else:
-            if not self.validate_vp_with_np(vp, np):
-                return False
-        return True
+        ok = np.evaluate_boolean_function(lambda np: self.validate_vp_with_np(vp, np))
+        return ok
 
     def ground_layer4(self, hypotheses: List[TokenizationHypothesis]) -> List[Layer4GroundingResult]:
         """Semantically ground verb phrases by analyzing their meaning and scene context.

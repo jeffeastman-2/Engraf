@@ -174,7 +174,7 @@ class LATNLayerExecutor:
             layer2_hypotheses = latn_tokenize_layer2(layer1_result.hypotheses)
 
             if(report):
-                print(f"Layer 2 tokenization produced {len(layer2_hypotheses)} hypotheses")
+                print(f"Layer 2 tokenization produced {len(layer2_hypotheses)} hypotheses  for: '{sentence}'")
                 self.enumerate_hypotheses(layer2_hypotheses, layer="2t")
 
             # Semantic grounding with hypothesis multiplication (if enabled)
@@ -204,7 +204,7 @@ class LATNLayerExecutor:
             overall_confidence = (layer1_result.confidence + layer2_confidence) / 2
 
             if(report):
-                print(f"Layer 2 grounding produced {len(grounded_hypotheses)} hypotheses")
+                print(f"Layer 2 grounding produced {len(grounded_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(grounded_hypotheses, layer="2g")
             
             return Layer2Result(
@@ -258,7 +258,7 @@ class LATNLayerExecutor:
             # Execute Layer 3 PP tokenization
             layer3_hypotheses = latn_tokenize_layer3(layer2_result.hypotheses)
             if report:
-                print(f"Layer 3 tokenization produced {len(layer3_hypotheses)} hypotheses")
+                print(f"Layer 3 tokenization produced {len(layer3_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer3_hypotheses, layer="3t")
 
             # Extract PrepositionalPhrase objects
@@ -269,7 +269,7 @@ class LATNLayerExecutor:
                 # Process PP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer3_grounder.ground_layer3(layer3_hypotheses)
                 if report:
-                    print(f"Layer 3 grounding produced {len(grounded_hypotheses)} hypotheses")
+                    print(f"Layer 3 grounding produced {len(grounded_hypotheses)} hypotheses for: '{sentence}'")
                     self.enumerate_hypotheses(grounded_hypotheses, layer="3g")
 
                 # Use the grounded hypotheses as the final result
@@ -337,7 +337,7 @@ class LATNLayerExecutor:
             layer4_hypotheses = latn_tokenize_layer4(layer3_result.hypotheses)
 
             if report:
-                print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses")
+                print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer4_hypotheses, layer="4t")
 
             final_hypotheses = []
@@ -346,7 +346,7 @@ class LATNLayerExecutor:
                 # Process VP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer4_grounder.ground_layer4(layer4_hypotheses)
                 if report:
-                    print(f"Layer 4 grounding produced {len(grounded_hypotheses)} hypotheses")
+                    print(f"Layer 4 grounding produced {len(grounded_hypotheses)} hypotheses for: '{sentence}'")
                     self.enumerate_hypotheses(grounded_hypotheses, layer="4g")
                 # Use the grounded hypotheses as the final result
                 final_hypotheses = grounded_hypotheses
@@ -409,14 +409,14 @@ class LATNLayerExecutor:
             # Execute Layer 5 sentence tokenization
             layer5_hypotheses = latn_tokenize_layer5(layer4_result.hypotheses)
             if report:
-                print(f"Layer 5 tokenization produced {len(layer5_hypotheses)} hypotheses")
+                print(f"Layer 5 tokenization produced {len(layer5_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer5_hypotheses, layer="5t")
 
             # Semantic grounding/execution (if enabled)
             if not tokenize_only and self.layer5_grounder:
                 grounded_hypotheses = self.layer5_grounder.ground_layer5(layer5_hypotheses)
                 if report:
-                    print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses")
+                    print(f"Layer 5 grounding produced {len(grounded_hypotheses)} hypotheses for: '{sentence}'")
                     self.enumerate_hypotheses(grounded_hypotheses, layer="5g")
             else:
                 # No grounding - keep original hypotheses
