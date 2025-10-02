@@ -13,14 +13,9 @@ class TestLayer5ActionExecution:
     
     def test_create_action_execution(self):
         """Test that create commands are properly tokenized and grounded, but do NOT create objects."""
-        initial_count = len(self.scene.objects)
-        
+       
         result = self.executor.execute_layer5("create a red box")
         assert result.success, "Layer 5 should succeed"
-
-        # Should have created an object - Layer 5 creates objects
-        final_count = len(self.scene.objects)
-        assert final_count > initial_count, "Layer 5 should create objects"
 
         # Should have identified the verb phrase semantics
         assert len(result.sentence_phrases) > 0, "Should have extracted sentence phrases"
@@ -40,14 +35,8 @@ class TestLayer5ActionExecution:
         initial_count = len(self.scene.objects)
 
         for command in commands:
-            initial_count = len(self.scene.objects)
-
             result = self.executor.execute_layer5(command)
             assert result.success, f"Command '{command}' should succeed"
-
-            # Should have created objects - Layer 5 creates objects
-            final_count = len(self.scene.objects)
-            assert final_count > initial_count, f"Should create objects for '{command}'"
 
             # Should have extracted verb phrases with semantic information
             assert len(result.sentence_phrases) > 0, f"Should extract sentence phrases for '{command}'"
@@ -55,19 +44,12 @@ class TestLayer5ActionExecution:
             assert vp.verb in ["create", "make", "build"], f"Should identify action verb for '{command}'"
             assert vp.noun_phrase is not None, f"Should have noun phrase for '{command}'"
 
-        assert final_count > initial_count, "Layer 5 should create objects"
 
     def test_action_execution_disabled(self):
         """Test Layer 5 semantic grounding without action execution (which is the default)."""
-        initial_count = len(self.scene.objects)
 
         result = self.executor.execute_layer5("create a red box")
-
         assert result.success, "Layer 5 should succeed"
-
-        # Should have created an object - Layer 5 always creates objects
-        final_count = len(self.scene.objects)
-        assert final_count > initial_count, "Layer 5 should create objects"
 
         # Should have identified verb phrase semantics
         assert len(result.sentence_phrases) > 0, "Should have extracted sentence phrases"
@@ -81,15 +63,10 @@ class TestLayer5ActionExecution:
         ]
         
         for command, expected_shape, expected_color, expected_size in test_cases:
-            initial_count = len(self.scene.objects)
             
             result = self.executor.execute_layer5(command)
             assert result.success, f"Command '{command}' should succeed"
             
-            # Should have created objects - Layer 5 creates objects
-            final_count = len(self.scene.objects)
-            assert final_count > initial_count, f"Should create objects for '{command}'"
-
             # Should have extracted verb phrases with semantic information
             assert len(result.sentence_phrases) > 0, f"Should extract sentence phrases for '{command}'"
             vp = result.sentence_phrases[0].predicate

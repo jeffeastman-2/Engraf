@@ -54,11 +54,11 @@ class Layer4SemanticGrounder:
         if vp.vector.isa("style") or (vp.vector.isa("transform") and not (
             vp.vector.isa("move") or vp.vector.isa("rotate") or vp.vector.isa("scale")
         )):
-            if not np.grounding:            # must operate on an existing object
-                return False
-            if not vp_has_adj:                 # need an adjective/state complement (e.g., red, rough)
-                return False
-            return True
+            if np.grounding and vp_has_adj:  # must operate on an existing object and needs adjective complement
+                return True
+
+        # TODO: refactor the below so that verbs may have multiple senses (e.g., "make" can be transform, style or create)
+        # and we can try multiple interpretations e.g. "make the box red" -> style, "make a box on the table" -> create
 
         # --- MOTION / ORIENTATION / SIZE: move, rotate, scale (incl. x/y/zrotate) ---
         # Expect: grounded NP + PP (to/by/around/etc.). Adjective complements not appropriate here.
@@ -108,8 +108,8 @@ class Layer4SemanticGrounder:
                 return False
             return True
 
-        # Fallback: accept if no specific constraints apply.
-        return True
+        # Fallback: fail if no specific constraints apply.
+        return False
         
     def validate_vp(self, vp: VerbPhrase) -> bool:
         np = vp.noun_phrase

@@ -25,7 +25,7 @@ class SentencePhrase():
         self.vector = tok  # Store the vector representation of the quoted word
 
     def apply_subject_token(self, token):
-        self.apply_subject(token._original_np)
+        self.apply_subject(token.phrase)
 
     def apply_subject(self, subj):
         debug_print(f"✅ => Applying sentence subject {subj} \n      to {self}")
@@ -37,7 +37,7 @@ class SentencePhrase():
             self.subject.phrases.append(subj)
  
     def apply_predicate_token(self, token):
-        self.apply_predicate(token._original_vp)
+        self.apply_predicate(token.phrase)
 
     def apply_predicate(self, pred):
         debug_print(f"✅ => Applying sentence predicate {pred} \n      to {self}")

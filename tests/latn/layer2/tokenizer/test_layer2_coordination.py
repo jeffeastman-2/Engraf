@@ -20,7 +20,7 @@ def test_adverb_adjective_in_coordinated_np():
 
 def test_coordinated_np_and_vp():
     """Test Layer 2 NP tokenization with coordinated noun phrases containing VPs"""
-    executor = LATNLayerExecutor(DummyTestScene().scene) 
+    executor = LATNLayerExecutor(DummyTestScene().get_scene1()) 
     
     # Test coordinated NPs: "delete the sphere and the table and move the box to [3,3,3]"
     result = executor.execute_layer2('delete the sphere and the table and move the box to [3,3,3]',report=True)

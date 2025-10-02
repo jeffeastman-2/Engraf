@@ -128,27 +128,30 @@ class SpatialValidator:
         return new_x, new_y, new_z
     
     @staticmethod
-    def validate_spatial_relationship(pp_token, obj1, obj2) -> float:
+    def validate_spatial_relationship(pp_token, obj1s, obj2s) -> list[bool]:
         """Validate a spatial relationship between two objects using proper spatial calculations.
         
         Args:
             pp_token: PP token containing spatial features (VectorSpace with locX, locY, locZ) or preposition string
-            obj1: Reference object (obj2 is positioned relative to obj1)
-            obj2: Object being positioned relative to obj1
-        If any of the relationships fail, the overall validation fails.    
+            obj1s: Reference objects (obj2s are positioned relative to obj1s)
+            obj2s: Objects being positioned relative to obj1s
         Returns:
-            float: Validation score either 0.0 or 1.0
+            list[bool]: Validation for each obj1 against all
         """
+        results = []
         if not isinstance(pp_token, VectorSpace):
-            return 0.0
-        for o1 in obj1:
-            for o2 in obj2:
-                if SpatialValidator.validate_single_relationship(pp_token, o1, o2) == 0.0:
-                    return 0.0
-        return 1.0 
+            return [False]
+        for o1 in obj1s:
+            all_valid = True
+            for o2 in obj2s:
+                if not SpatialValidator.validate_single_relationship(pp_token, o1, o2):
+                    all_valid = False
+                    break
+            results.append(all_valid)
+        return results
 
     @staticmethod
-    def validate_single_relationship(pp_token, obj1, obj2) -> float:
+    def validate_single_relationship(pp_token, obj1, obj2) -> bool:
         try:
             # Get positions 
             pos1 = obj1.position                
@@ -162,11 +165,11 @@ class SpatialValidator:
             if pp_token.isa("spatial_location"):
                 # spatial relationships: prepositions affecting object positioning
                 dot = (dx * px + dy * py + dz * pz)
-                return 1.0 if dot > 0 else 0.0
+                return True if dot > 0 else False
             elif pp_token.isa("spatial_proximity"):
                 # proximity relationships: near (+), at (specific), in (containment)
                 distance = (dx*dx + dy*dy + dz*dz) ** 0.5
-                return 1.0 if distance < 1.0 else 0.0
-            else: return 0.0
+                return True if distance < 1.0 else False
+            else: return False
         except Exception:
-            return 0.0
+            return False

@@ -5,7 +5,7 @@ from tests.latn.dummy_test_scene import DummyTestScene
 
 class TestLATNLayer4VPCoordination:
 
-    scene = DummyTestScene().scene
+    scene = DummyTestScene().get_scene1()
 
     """Set up a dummy scene for spatial validation tests.
     

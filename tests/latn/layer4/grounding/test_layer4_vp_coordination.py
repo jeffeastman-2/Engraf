@@ -52,7 +52,7 @@ def test_coordinated_vp_with_pps():
     - pyramid (left of table)
     - sphere (above pyramid)    
     """
-    executor = LATNLayerExecutor(DummyTestScene().scene) # force grounding 
+    executor = LATNLayerExecutor(DummyTestScene().get_scene1()) # force grounding 
 
     # Test coordinated VPs: "draw a red cube above the table and color the sphere above the pyramid green'"
     result = executor.execute_layer4('draw a red cube above the table and color the sphere above the pyramid green',report=True)
@@ -73,7 +73,7 @@ def test_coordinated_vp_with_coordinated_pps():
     - sphere (above pyramid)    
     """
     #assert False
-    executor = LATNLayerExecutor(DummyTestScene().scene) # force grounding
+    executor = LATNLayerExecutor(DummyTestScene().get_scene1()) # force grounding
     # Test coordinated VPs: "draw a red cube above the table and the sphere and color the sphere above the pyramid green'"
     result = executor.execute_layer4('draw a red cube above the table and color the sphere above the pyramid green',report=True)
 
@@ -96,7 +96,7 @@ def test_coordinated_vp_with_coordinated_pps_and_nps():
     - sphere (above pyramid)    
     """
     #assert False
-    executor = LATNLayerExecutor(DummyTestScene().scene) # force grounding
+    executor = LATNLayerExecutor(DummyTestScene().get_scene1()) # force grounding
     # Test coordinated VPs: "draw a red cube and a green cube above the table and the sphere and color the sphere above the pyramid green'"
     result = executor.execute_layer4('draw a red cube and a green cube above the table and the sphere and color the sphere above the pyramid green',report=True)
 
@@ -109,7 +109,7 @@ def test_coordinated_vp_with_coordinated_pps_and_nps():
 
 def test_coordinated_vp_with_coordinated_pps_and_location():                    
     #assert False
-    executor = LATNLayerExecutor(DummyTestScene().scene) # force grounding
+    executor = LATNLayerExecutor(DummyTestScene().get_scene1()) # force grounding
 
     # Test coordinated VPs: "draw a very tall box at [0,1,0] and rotate the table by 90 degrees"
     result = executor.execute_layer4('draw a very tall box at [3,1,0] and rotate the table by 90 degrees',report=True)
