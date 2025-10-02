@@ -83,7 +83,7 @@ class TestLATNLayerExecutor:
         # Check grounding worked
         grounding_result = result.grounding_results[0]
         assert grounding_result.success
-        assert grounding_result.resolved_object.object_id == "red_box_1"
+        assert grounding_result.resolved_objects[0].object_id == "red_box_1"
     
     def test_execute_layer3(self):
         """Test Layer 3 execution (includes all lower layers)."""
