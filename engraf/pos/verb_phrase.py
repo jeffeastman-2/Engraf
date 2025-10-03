@@ -38,6 +38,13 @@ class VerbPhrase():
     def apply_conjunction(self, tok):
         self.verb = (f"{self.verb} {tok.word}")
 
+    def apply_negation(self, tok):
+        if self.verb is None:
+            self.verb = tok.word
+        else:
+            self.verb = (f"{tok.word} {self.verb}")
+        self.vector += tok
+
     def apply_np(self, np):
         self.noun_phrase = np
 

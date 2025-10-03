@@ -116,9 +116,11 @@ def find_vp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                 best_end = i + ts.position - 1
                 
                 # Check for conjunctions to build coordinated VPs
-                while build_conjunctions and ts.peek() and ts.peek().isa("conj"):
+                while build_conjunctions and ts.peek() and (ts.peek().isa("conj") or ts.peek().isa("comma")):
                     # There's a conjunction! Try to parse another VP
                     conj_token = ts.next()  # consume the conjunction
+                    while conj_token.isa("comma") and ts.peek().isa("conj"):
+                        conj_token = ts.next()  # consume the conjunction after comma
                     vp2 = VerbPhrase()
                     vp2_start, vp2_end = build_vp_atn(vp2, ts)
                     vp2_result = run_atn(vp2_start, vp2_end, ts, vp2)
@@ -131,6 +133,12 @@ def find_vp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                             coord_vp.vector["plural"] = 1.0
                             best_vp = coord_vp
                         elif isinstance(best_vp, ConjunctionPhrase):
+                            if best_vp.vector.isa("comma"):
+                                best_vp.vector["comma"] = 0.0
+                                best_vp.vector += conj_token.vector
+                            if (best_vp.vector.isa("and") and conj_token.isa("or")) \
+                                or (best_vp.vector.isa("or") and conj_token.isa("and")):
+                                raise ValueError("Mixed conjunctions 'and' and 'or' not supported in coordination")
                             best_vp.phrases.append(vp2_result)
 
                         # Update best_end to include the newly parsed VP

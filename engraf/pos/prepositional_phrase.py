@@ -15,8 +15,18 @@ class PrepositionalPhrase():
         return f"PrepositionalPhrase(preposition={self.preposition!r}, noun_phrase={self.noun_phrase!r})"
 
     def apply_preposition(self, tok):
-        self.preposition = tok.word
-        self.vector = tok
+        if self.preposition is None:
+            self.preposition = tok.word
+        else:
+            self.preposition = (f"{self.preposition} {tok.word}")
+        self.vector += tok
+        
+    def apply_negation(self, tok):
+        if self.preposition is None:
+            self.preposition = tok.word
+        else:
+            self.preposition = (f"{tok.word} {self.preposition}")
+        self.vector += tok
 
     def apply_vector(self, tok):
         self.vector += tok

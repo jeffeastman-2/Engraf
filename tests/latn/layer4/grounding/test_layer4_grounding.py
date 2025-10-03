@@ -1,7 +1,7 @@
 import pytest
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.visualizer.scene.scene_model import SceneModel
 from tests.latn.dummy_test_scene import DummyTestScene
+from engraf.pos.verb_phrase import VerbPhrase
 
 class TestLATNLayer4VPCoordination:
 
@@ -85,4 +85,23 @@ class TestLATNLayer4VPCoordination:
         # Test VP with PP: "copy the box below the table"
         result = executor.execute_layer4('copy the box below the table',report=True)
         assert result.success, "Failed to tokenize VP with PP in Layer 4"
-        assert len(result.hypotheses) == 1, "Should generate 1 hypothesis"        
+        assert len(result.hypotheses) == 1, "Should generate 1 hypothesis"    
+
+    def test_interrogative_vp(self):   
+        """Test: 'is a box on the table' -> SP token."""
+        executor = LATNLayerExecutor(self.scene) # force grounding  
+        result = executor.execute_layer4("is a box on the table", report=True)
+
+        assert result.success, "Layer 4 should succeed"
+        assert len(result.hypotheses) > 0, "Should have hypotheses"
+        
+        hyp = result.hypotheses[0]
+        vp = hyp.tokens[0].phrase
+        assert isinstance(vp, VerbPhrase), "Should be VerbPhrase object"
+        assert vp.vector.isa("tobe"), "VP should be 'tobe'"
+        assert vp.noun_phrase is not None, "VP should have NP"
+        assert "box" in vp.noun_phrase.noun, "VP NP should be 'box'"
+        assert len(vp.prepositions) == 1, "VP should have 1 PP"
+        assert vp.prepositions[0].preposition == "on", "PP should be 'on'"
+        assert vp.prepositions[0].noun_phrase is not None, "PP should have NP"
+        assert "table" in vp.prepositions[0].noun_phrase.noun, "PP NP should be 'table'"

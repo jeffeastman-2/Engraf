@@ -115,9 +115,11 @@ def find_pp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                 best_end = i + ts.position - 1
                 
                 # Check for conjunctions to build coordinated NPs
-                while build_conjunctions and ts.peek() and ts.peek().isa("conj"):
+                while build_conjunctions and ts.peek() and (ts.peek().isa("conj") or ts.peek().isa("comma")):
                     # There's a conjunction! Try to parse another NP
                     conj_token = ts.next()  # consume the conjunction
+                    while conj_token.isa("comma") and ts.peek().isa("conj"):
+                        conj_token = ts.next()  # consume the conjunction after comma
                     pp2 = PrepositionalPhrase()
                     pp2_start, pp2_end = build_pp_atn(pp2, ts)
                     pp2_result = run_atn(pp2_start, pp2_end, ts, pp2)
@@ -130,7 +132,12 @@ def find_pp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                             coord_pp.vector["plural"] = 1.0
                             best_pp = coord_pp
                         elif isinstance(best_pp, ConjunctionPhrase):
-                            # Extend existing coordination by chaining
+                            if best_pp.vector.isa("comma"):
+                                best_pp.vector["comma"] = 0.0
+                                best_pp.vector += conj_token.vector
+                            if (best_pp.vector.isa("and") and conj_token.isa("or")) \
+                                or (best_pp.vector.isa("or") and conj_token.isa("and")):
+                                raise ValueError("Mixed conjunctions 'and' and 'or' not supported in coordination")
                             best_pp.phrases.append(pp2_result)
 
                         # Update best_end to include the newly parsed PP

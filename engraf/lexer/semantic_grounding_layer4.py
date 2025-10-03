@@ -107,14 +107,25 @@ class Layer4SemanticGrounder:
             if not vp_has_pp and np_preps_have_spatial_pp:
                 return False
             return True
-
+        if vp.vector.isa("tobe"):
+            # "is" can be used with or without NP
+            if vp_has_adj and np.grounding:
+                return True
+            if vp_has_pp and np.grounding:
+                return True
+            if not vp_has_adj and not vp_has_pp and np.grounding:
+                # simple "is" with grounded NP, e.g. "the box is"
+                return True
+            return False
         # Fallback: fail if no specific constraints apply.
         return False
         
     def validate_vp(self, vp: VerbPhrase) -> bool:
         np = vp.noun_phrase
-        ok = np.evaluate_boolean_function(lambda np: self.validate_vp_with_np(vp, np))
-        return ok
+        if np:
+            ok = np.evaluate_boolean_function(lambda np: self.validate_vp_with_np(vp, np)) 
+            return ok
+        return vp.vector.isa("tobe")  # allow "tobe" without NP (e.g. "is above the table")
 
     def ground_layer4(self, hypotheses: List[TokenizationHypothesis]) -> List[Layer4GroundingResult]:
         """Semantically ground verb phrases by analyzing their meaning and scene context.

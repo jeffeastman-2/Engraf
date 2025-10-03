@@ -6,6 +6,8 @@ def is_noun(tok): return tok is not None and tok.isa("noun")
 def is_verb(tok): return tok is not None and tok.isa("verb")
 def is_tobe(tok): return tok is not None and tok.isa("tobe")
 def is_preposition(tok): return tok is not None and tok.isa("prep")
+def is_negation(tok): return tok is not None and tok.isa("neg")
+def is_punctuation(tok): return tok is not None and tok.isa("punct")
 def is_number(tok): return tok is not None and tok["number"] > 0.0
 def is_none(tok): return tok is None
 def is_vector(tok): return tok is not None and tok.isa("vector")

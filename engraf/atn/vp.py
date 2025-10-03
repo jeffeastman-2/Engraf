@@ -1,7 +1,8 @@
 from engraf.atn.core import ATNState
 from engraf.lexer.token_stream import TokenStream
 from engraf.utils.predicates import is_adverb, is_verb, is_none, is_np_token, \
-    is_pp_token, is_conjunction_no_consume, any_of, is_tobe, is_adjective, is_conjunction_only, is_anything_no_consume
+    is_pp_token, is_conjunction_no_consume, any_of, is_tobe, is_adjective, \
+        is_conjunction_only, is_anything_no_consume, is_negation
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.atn.core import ATNState, noop
 
@@ -30,6 +31,7 @@ def build_vp_atn(vp: VerbPhrase, ts: TokenStream):
     after_verb.add_arc(is_anything_no_consume, noop, after_tobe)  # Allow VP to end after verb if nothing follows
 
     # After VERB: look for NP tokens (created by Layer 2)
+    after_tobe.add_arc(is_negation, lambda _, tok: vp.apply_negation(tok), after_tobe)
     after_tobe.add_arc(is_np_token, lambda _, tok: vp.apply_np(_extract_np_from_token(tok)), after_np)
     # ... or PP tokens created by Layer 3 (e.g., "is above the cube")
     after_tobe.add_arc(is_pp_token, lambda _, tok: vp.apply_pp(_extract_pp_from_token(tok)), after_pp)      

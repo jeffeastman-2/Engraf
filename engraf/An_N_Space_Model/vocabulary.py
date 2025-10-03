@@ -166,9 +166,14 @@ SEMANTIC_VECTOR_SPACE = {
     'time': vector_from_features("noun"),
     
     # Conjunctions
-    'and': vector_from_features("conj"),
-    'or': vector_from_features("disj"),
-    ',': vector_from_features("conj disj"),
+    'and': vector_from_features("conj and"),
+    'or': vector_from_features("conj or"),
+
+    # Punctuation
+    ',': vector_from_features("punct comma"),
+    '.': vector_from_features("punct period"),
+    '?': vector_from_features("punct question"),
+    '!': vector_from_features("punct exclaim"),
 
     # Negation
     'not': vector_from_features("neg"),

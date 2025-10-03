@@ -1,5 +1,5 @@
 from engraf.lexer.token_stream import TokenStream
-from engraf.utils.predicates import is_preposition, is_noun_phrase_token
+from engraf.utils.predicates import is_preposition, is_noun_phrase_token,is_negation    
 from engraf.atn.core import ATNState
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 
@@ -12,6 +12,7 @@ def build_pp_atn(pp:PrepositionalPhrase, ts:TokenStream):
 
     # PREP
     start.add_arc(is_preposition, lambda _, tok: pp.apply_preposition(tok), after_prep)
+    start.add_arc(is_negation, lambda _, tok: pp.apply_negation(tok), start)
     
     # Handle NounPhrase tokens from Layer 2 - preserve grounded scene objects
     def apply_grounded_np(pp_obj, tok):

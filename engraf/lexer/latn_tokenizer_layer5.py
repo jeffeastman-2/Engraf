@@ -115,9 +115,11 @@ def find_sp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                 best_end = i + ts.position - 1
                 
                 # Check for conjunctions to build coordinated NPs
-                while build_conjunctions and ts.peek() and ts.peek().isa("conj"):
+                while build_conjunctions and ts.peek() and (ts.peek().isa("conj") or ts.peek().isa("comma")):
                     # There's a conjunction! Try to parse another NP
                     conj_token = ts.next()  # consume the conjunction
+                    while conj_token.isa("comma") and ts.peek().isa("conj"):
+                        conj_token = ts.next()  # consume the conjunction after comma
                     sp2 = SentencePhrase()
                     sp2_start, sp2_end = build_sentence_atn(sp2, ts)
                     sp2_result = run_atn(sp2_start, sp2_end, ts, sp2)
@@ -130,9 +132,13 @@ def find_sp_sequences(tokens: List[VectorSpace], build_conjunctions: bool = Fals
                             coord_sp.vector["plural"] = 1.0
                             best_sp = coord_sp
                         elif isinstance(best_sp, ConjunctionPhrase):
-                            # Extend existing coordination by chaining
-                            new_coord = ConjunctionPhrase(conj_token, left=best_sp.right, right=sp2_result)
-                            best_sp.right = new_coord
+                            if best_sp.vector.isa("comma"):
+                                best_sp.vector["comma"] = 0.0
+                                best_sp.vector += conj_token.vector
+                            if (best_sp.vector.isa("and") and conj_token.isa("or")) \
+                                or (best_sp.vector.isa("or") and conj_token.isa("and")):
+                                raise ValueError("Mixed conjunctions 'and' and 'or' not supported in coordination")
+                            best_sp.phrases.append(sp2_result)
 
                         # Update best_end to include the newly parsed SP
                         best_end = i + ts.position - 1

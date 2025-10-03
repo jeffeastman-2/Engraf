@@ -2,7 +2,8 @@ import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
-    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_vector, is_conjunction, is_number, is_unknown
+    is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_vector, \
+        is_conjunction, is_number, is_unknown, is_negation, is_punctuation
 from engraf.atn.core import ATNState, noop
 from engraf.pos.noun_phrase import NounPhrase
 
@@ -96,6 +97,18 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     noun.add_arc(any_of(is_verb, is_tobe, is_adjective, is_preposition), noop, end)
     # NOUN → END (when determiner is encountered - don't consume, starts new NP)
     noun.add_arc(is_determiner, noop, end)
+    # NOUN → END (when pronoun is encountered - don't consume, starts new NP)
+    noun.add_arc(is_pronoun, noop, end)
+    # NOUN → END (when number is encountered - don't consume, starts new NP)
+    noun.add_arc(is_number, noop, end)
+    # NOUN → END (when adverb is encountered - don't consume, likely modifies verb)
+    noun.add_arc(is_adverb, noop, end)
+    # NOUN → END (when vector is encountered - don't consume, likely a separate NP)
+    noun.add_arc(is_vector, noop, end)
+    # NOUN → END (when negation token is encountered - don't consume, likely a separate NP)
+    noun.add_arc(is_negation, noop, end)
+    # NOUN → END (when punctuation is encountered - don't consume)
+    noun.add_arc(is_punctuation, noop, end)
     # Terminate on unknown tokens after nouns - this is the key fix
     noun.add_arc(is_unknown, noop, end)
 

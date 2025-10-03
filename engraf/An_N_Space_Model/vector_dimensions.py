@@ -23,8 +23,9 @@ VECTOR_DIMENSIONS = [
     "vector",    # coordinate/vector literal marker
     "singular",  # singular number agreement
     "plural",    # plural number agreement
-    "conj",      # conjunctions (and)
-    "disj",      # disjunctions (or)
+    "conj",      # conjunctions (and, or)
+    "or",        # (or)
+    "and",       # (and)
     "neg",       # negation (not, no)
     "modal",     # modal verbs (can, could, may, might, must, shall, should, will, would)
     "question",  # question markers (who, what, where, when, why,
@@ -69,7 +70,10 @@ VECTOR_DIMENSIONS = [
     "directional_target",    # directional movement: to (+), from (-)
     "directional_agency",    # agency/means: by (+), with (accompaniment)
     "relational_possession", # possession/part-of: of (belongs to, part of)
-    "relational_comparison"  # comparison baseline: than (comparison reference)
+    "relational_comparison",  # comparison baseline: than (comparison reference)
+
+    # Punctuation (not used in vectors but useful for tokenization)
+    "punct","comma", "period", "exclaim", "question"
 ]
 
 # Semantic dimension categories for masking during similarity comparisons
