@@ -107,3 +107,10 @@ class VerbPhrase():
 
     def evaluate_boolean_function(self, func):
         return func(self)
+
+    def descriptive_word(self):
+        return f"VP({self.verb})"
+
+    @staticmethod
+    def phrase_type():
+        return "VP"

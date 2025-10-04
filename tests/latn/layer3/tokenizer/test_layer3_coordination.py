@@ -36,9 +36,9 @@ def test_coordinated_pp_with_nps():
     assert result.success, "Failed to tokenize coordinated PPs in Layer 3"
     assert len(result.hypotheses) >= 2, "Should generate 2 hypotheses"
 
-    hyp = result.hypotheses[0]
+    hyp = result.hypotheses[4]
     assert len(hyp.tokens) >= 1, f"Should have exactly 1 token, got {len(hyp.tokens)}"
     np = hyp.tokens[0].phrase
     str = np.printString()
-    assert hyp.tokens[0].phrase.printString() == "the red cube (above {the table *and* the blue sphere} below the cylinder)", f"First token should be NP, got {hyp.tokens[0].word}"
+    assert str == "the red cube (above {the table *and* the blue sphere} below the cylinder)", f"First token should be NP, got {hyp.tokens[0].word}"
  

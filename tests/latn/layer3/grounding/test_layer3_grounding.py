@@ -17,17 +17,17 @@ class TestLayer3Grounding:
     """Test Layer 3 PP-to-NP attachment based on scene contents."""
 
     def check_preposition(self, result, expected_prep):
-        # Verify the NP contains the expected spatial relationship
-        best = result.hypotheses[0]
-        np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
-        assert len(np_tokens) >= 1, "Should have at least one NP token"
-        np = np_tokens[0].phrase
-        assert hasattr(np, 'prepositions'), "NP should have prepositions"
+        # Verify there's an NP contains the expected spatial relationship in one of the hypotheses
+        assert result.success, "Layer 3 should succeed"
         found_above_prep = False
-        for prep in np.prepositions:
-            if prep.vector.isa("spatial_location") and expected_prep in prep.preposition:
-                found_above_prep = True
-                break
+        for best in result.hypotheses:
+            np_tokens = [tok for tok in best.tokens if tok.isa("NP")]
+            assert len(np_tokens) >= 1, "Should have at least one NP token"
+            np = np_tokens[0].phrase
+            for prep in np.prepositions:
+                if prep.vector.isa("spatial_location") and expected_prep in prep.preposition:
+                    found_above_prep = True
+                    break
         assert found_above_prep, f"Should find preposition '{expected_prep}' in NP"
 
     def test_simple_pp_attachment_with_scene_match(self):

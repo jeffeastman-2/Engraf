@@ -54,3 +54,9 @@ class PrepositionalPhrase():
     def evaluate_boolean_function(self, func):
         return func(self)
 
+    def descriptive_word(self):
+        return f"PP({self.preposition})"
+
+    @staticmethod
+    def phrase_type():
+        return "PP"

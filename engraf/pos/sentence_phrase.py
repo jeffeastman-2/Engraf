@@ -113,3 +113,9 @@ class SentencePhrase():
     def evaluate_boolean_function(self, func):
         return func(self)
 
+    def descriptive_word(self):
+        return f"SP(sentence)"
+
+    @staticmethod
+    def phrase_type():
+        return "SP"

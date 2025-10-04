@@ -12,14 +12,16 @@ Refactored for clean separation of concerns:
 - Coordination logic → this executor (lightweight)
 """
 
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional
 from dataclasses import dataclass
 
+from engraf.atn.np import build_np_atn
+from engraf.atn.pp import build_pp_atn
+from engraf.atn.sentence import build_sentence_atn
+from engraf.atn.vp import build_vp_atn
+from engraf.lexer.latn_tokenizer import LATNLayerTokenizer
 from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1, TokenizationHypothesis
-from engraf.lexer.latn_tokenizer_layer2 import latn_tokenize_layer2
-from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
-from engraf.lexer.latn_tokenizer_layer4 import latn_tokenize_layer4
-from engraf.lexer.latn_tokenizer_layer5 import latn_tokenize_layer5
+from engraf.lexer.latn_tokenizer_layer3 import generate_pp_attachment_combinations
 from engraf.lexer.semantic_grounding_layer2 import Layer2SemanticGrounder, Layer2GroundingResult
 from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer3GroundingResult
 from engraf.lexer.semantic_grounding_layer4 import Layer4SemanticGrounder, Layer4GroundingResult
@@ -31,6 +33,14 @@ from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.verb_phrase import VerbPhrase
 from engraf.pos.sentence_phrase import SentencePhrase
 
+
+@dataclass
+class LayerResult:
+    """Result of Layer execution (lexical tokenization)."""
+    hypotheses: List[TokenizationHypothesis]
+    success: bool
+    confidence: float
+    description: str = ""
 
 @dataclass
 class Layer1Result:
@@ -71,6 +81,7 @@ class Layer4Result:
     layer3_result: Layer3Result
     hypotheses: List[TokenizationHypothesis]
     verb_phrases: List[VerbPhrase]
+    grounding_results: List[Layer4GroundingResult]
     success: bool
     confidence: float
     description: str = ""
@@ -112,7 +123,7 @@ class LATNLayerExecutor:
             report: Whether to generate a report
 
         Returns:
-            Layer1Result with tokenization hypotheses
+            LayerResult with tokenization hypotheses
         """
         try:
             hypotheses = latn_tokenize_layer1(sentence)
@@ -122,7 +133,7 @@ class LATNLayerExecutor:
                     hypotheses=[],
                     success=False,
                     confidence=0.0,
-                    description=f"Layer 1 tokenization failed for: '{sentence}'"
+                    description=f"Layer 2tokenization failed for: '{sentence}'"
                 )
             
             # Use confidence from best hypothesis
@@ -171,7 +182,8 @@ class LATNLayerExecutor:
             )
         try:
             # Execute Layer 2 NP tokenization
-            layer2_hypotheses = latn_tokenize_layer2(layer1_result.hypotheses)
+            tokenizer = LATNLayerTokenizer(layer=2, atn_builder=build_np_atn, nonterminal_type_builder=NounPhrase)
+            layer2_hypotheses = tokenizer.latn_tokenize_layer(layer1_result.hypotheses)
 
             if(report):
                 print(f"Layer 2 tokenization produced {len(layer2_hypotheses)} hypotheses  for: '{sentence}'")
@@ -256,7 +268,13 @@ class LATNLayerExecutor:
         
         try:
             # Execute Layer 3 PP tokenization
-            layer3_hypotheses = latn_tokenize_layer3(layer2_result.hypotheses)
+            tokenizer = LATNLayerTokenizer(layer=3, atn_builder=build_pp_atn, nonterminal_type_builder=PrepositionalPhrase)
+            layer3_hypotheses = tokenizer.latn_tokenize_layer(layer2_result.hypotheses)
+
+            # Generate PP attachment combinations to handle multiple PPs
+            layer3_hypotheses = generate_pp_attachment_combinations(layer3_hypotheses) 
+
+
             if report:
                 print(f"Layer 3 tokenization produced {len(layer3_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer3_hypotheses, layer="3t")
@@ -328,20 +346,23 @@ class LATNLayerExecutor:
                     layer3_result=layer3_result,
                     hypotheses=[],
                     verb_phrases=[],
+                    grounding_results=[],
                     success=False,
                     confidence=0.0,
                     description=f"Layer 4 failed due to Layer 3 failure: {layer3_result.description}"
                 )
             
             # Execute Layer 4 VP tokenization
-            layer4_hypotheses = latn_tokenize_layer4(layer3_result.hypotheses)
+            tokenizer = LATNLayerTokenizer(layer=4, atn_builder=build_vp_atn, nonterminal_type_builder=VerbPhrase)
+            layer4_hypotheses = tokenizer.latn_tokenize_layer(layer3_result.hypotheses)
 
             if report:
                 print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer4_hypotheses, layer="4t")
 
             final_hypotheses = []
-
+            grounded_hypotheses = []
+            # Layer 4 grounding - process VP attachments with semantic validation
             if not tokenize_only and self.layer4_grounder:
                 # Process VP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer4_grounder.ground_layer4(layer4_hypotheses)
@@ -365,6 +386,7 @@ class LATNLayerExecutor:
                 layer3_result=layer3_result,
                 hypotheses=final_hypotheses,
                 verb_phrases=verb_phrases,
+                grounding_results=grounded_hypotheses,
                 success=True,
                 confidence=overall_confidence,
                 description=f"Layer 4 processed {len(verb_phrases)} verb phrases"
@@ -375,6 +397,7 @@ class LATNLayerExecutor:
                 layer3_result=layer3_result,
                 hypotheses=[],
                 verb_phrases=[],
+
                 success=False,
                 confidence=0.0,
                 description=f"Layer 4 failed: {e}"
@@ -407,7 +430,9 @@ class LATNLayerExecutor:
                 )
             
             # Execute Layer 5 sentence tokenization
-            layer5_hypotheses = latn_tokenize_layer5(layer4_result.hypotheses)
+            tokenizer = LATNLayerTokenizer(layer=5, atn_builder=build_sentence_atn, nonterminal_type_builder=SentencePhrase)
+            layer5_hypotheses = tokenizer.latn_tokenize_layer(layer4_result.hypotheses)
+
             if report:
                 print(f"Layer 5 tokenization produced {len(layer5_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer5_hypotheses, layer="5t")

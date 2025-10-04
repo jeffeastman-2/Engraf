@@ -204,3 +204,10 @@ class NounPhrase():
     
     def add_prepositional_phrase(self, prep):
         self.prepositions.append(prep)
+
+    def descriptive_word(self):
+        return f"NP({self.get_original_text()})"
+
+    @staticmethod
+    def phrase_type():
+        return "NP"
