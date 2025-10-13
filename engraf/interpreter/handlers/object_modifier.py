@@ -55,12 +55,12 @@ class ObjectModifier:
                     print(f"🔧 bool(vp.adjective_complement): {bool(vp.adjective_complements)}")
                 
                 # Handle transform verbs (move, rotate, scale, ...) using vector space
-                if vp.vector.isa('transform') and vp.noun_phrase:
+                if vp.vector.isa('transform'):
                     print(f"🔧 Taking transform verb path with noun_phrase")
-                    if vp.noun_phrase.preps:
+                    if vp.prepositions:
                         print(f"🔧 Processing prepositional phrases")
                         # Process prepositional phrases using semantic dimensions
-                        for pp in vp.noun_phrase.preps:
+                        for pp in vp.prepositions:
                             # Check for movement using directional_target dimension OR spatial relationships
                             if hasattr(pp, 'vector') and (pp.vector.isa('directional_target') or pp.vector.isa('spatial_location')):
                                 self._apply_movement(scene_entity, pp)
@@ -218,7 +218,7 @@ class ObjectModifier:
         from engraf.utils.spatial_validation import SpatialValidator
         
         new_x, new_y, new_z = SpatialValidator.calculate_spatial_position(
-            moving_obj, ref_obj, preposition, preposition_vector
+            moving_obj, ref_obj, preposition_vector
         )
         
         print(f"🔧 Calculated position for preposition={preposition}: [{new_x}, {new_y}, {new_z}]")
@@ -313,13 +313,13 @@ class ObjectModifier:
     def _apply_rotation(self, scene_obj: SceneObject, vp: VerbPhrase, verb: str):
         """Apply rotation to an object based on verb phrase and rotation verb."""
         print(f"🔧 _apply_rotation called with scene_obj: {scene_obj.name}, verb: {verb}")
-        print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
+        print(f"🔧 vp.prepositions: {vp.prepositions}")
         
         # The prepositional phrases are correctly attached to the noun phrase in the VerbPhrase
         # Access them directly without hasattr check
-        if vp.noun_phrase and vp.noun_phrase.preps:
-            print(f"🔧 Found {len(vp.noun_phrase.preps)} prepositional phrases")
-            for pp in vp.noun_phrase.preps:
+        if vp.prepositions:
+            print(f"🔧 Found {len(vp.prepositions)} prepositional phrases")
+            for pp in vp.prepositions:
                 print(f"🔧 Processing PP with vector dimensions")
                 # Use semantic dimensions instead of hardcoded preposition strings
                 if hasattr(pp, 'vector') and pp.vector.isa('directional_agency') and hasattr(pp.noun_phrase, 'vector'):

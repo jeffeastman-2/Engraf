@@ -9,6 +9,7 @@ Refactored for better maintainability and separation of concerns.
 """
 
 from typing import Dict, Any, Union, Optional
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.lexer.token_stream import TokenStream, tokenize
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.pos.sentence_phrase import SentencePhrase
@@ -81,35 +82,31 @@ class SentenceInterpreter:
             Dict containing execution results and metadata
         """
         try:
-            # Step 0: Check for temporal navigation commands
+            # Step 1: Check for temporal navigation commands
             sentence_lower = sentence.lower().strip()
             if "go back in time" in sentence_lower:
                 return self.go_back_in_time()
             elif "go forward in time" in sentence_lower:
                 return self.go_forward_in_time()
             
-            # Step 1: Tokenize the sentence
-            tokens = tokenize(sentence)
-            if not tokens:
-                return self.scene_manager.create_result(False, "Empty sentence", sentence)
+            # Step 2: Parse the sentence using LATN
+            result = LATNLayerExecutor().execute_layer5(sentence)
+            if result.success and result.hypotheses:
+                best_hypothesis = result.hypotheses[0]
             
-            # Step 2: Parse the sentence using ATN
-            ts = TokenStream(tokens)
-            parsed_sentence = run_sentence(ts)
-            
-            if parsed_sentence is None:
+            if best_hypothesis is None or len(best_hypothesis.tokens)!=1 :
                 return self.scene_manager.create_result(False, "Failed to parse sentence", sentence)
             
             # Store the parsed sentence for access in transform methods
-            self._current_sentence_parsed = parsed_sentence
+            self._current_sentence_parsed = best_hypothesis.tokens[0].phrase
             
             # Step 3: Validate semantic agreement with scene state
-            is_valid, error_msg = self.semantic_validator.validate_command(parsed_sentence, sentence)
+            is_valid, error_msg = self.semantic_validator.validate_command(self._current_sentence_parsed, sentence)
             if not is_valid:
                 return self.scene_manager.create_result(False, error_msg, sentence)
             
             # Step 4: Execute the parsed sentence
-            result = self._execute_sentence(parsed_sentence, sentence)
+            result = self._execute_sentence(self._current_sentence_parsed, sentence)
             
             # Step 5: Update the visual scene
             if result['success']:
@@ -165,6 +162,16 @@ class SentenceInterpreter:
         except Exception as e:
             return self.scene_manager.create_result(False, f"Error executing sentence: {str(e)}", original_sentence)
     
+    def _execute_single_predicate(self, predicate: VerbPhrase, result) -> bool:
+            phrase_result = self._execute_verb_phrase(predicate)
+            result['objects_created'].extend(phrase_result.get('objects_created', []))
+            result['objects_modified'].extend(phrase_result.get('objects_modified', []))
+            result['actions_performed'].extend(phrase_result.get('actions_performed', []))
+            success = phrase_result.get('success', True)
+            result['success'] = result['success'] and success
+            return success
+
+
     def _execute_predicate(self, predicate: Union[VerbPhrase, ConjunctionPhrase]) -> Dict[str, Any]:
         """Execute a predicate (verb phrase or conjunction of verb phrases)."""
         result = {
@@ -174,26 +181,8 @@ class SentenceInterpreter:
             'actions_performed': []
         }
         
-        if isinstance(predicate, ConjunctionPhrase):
-            # Handle conjunction of predicates (e.g., "draw a cube and move it")
-            left_result = self._execute_predicate(predicate.left)
-            right_result = self._execute_predicate(predicate.right)
-            
-            # If either side fails, the whole predicate fails
-            result['success'] = left_result.get('success', True) and right_result.get('success', True)
-            
-            # Merge results
-            result['objects_created'].extend(left_result.get('objects_created', []))
-            result['objects_created'].extend(right_result.get('objects_created', []))
-            result['objects_modified'].extend(left_result.get('objects_modified', []))
-            result['objects_modified'].extend(right_result.get('objects_modified', []))
-            result['actions_performed'].extend(left_result.get('actions_performed', []))
-            result['actions_performed'].extend(right_result.get('actions_performed', []))
-            
-        elif isinstance(predicate, VerbPhrase):
-            # Handle single verb phrase
-            result = self._execute_verb_phrase(predicate)
-        
+        predicate.evaluate_boolean_function(lambda phrase: self._execute_single_predicate(phrase, result))
+
         return result
     
     def _execute_verb_phrase(self, vp: VerbPhrase) -> Dict[str, Any]:
@@ -258,6 +247,15 @@ class SentenceInterpreter:
             objects = self.object_creator.extract_objects_from_np(vp.noun_phrase)
             
             for obj_info in objects:
+                if vp.noun_phrase and vp.prepositions:
+                    for prep in vp.prepositions:
+                        obj_info['prepositional_phrases'] = []
+                        if prep.vector.isa('spatial_proximity'): 
+                            obj_info['prepositional_phrases'].append(prep)
+                            break  
+                        else:
+                            continue
+
                 obj_id = self.object_creator.create_scene_object(obj_info)
                 if obj_id:
                     created_objects.append(obj_id)
@@ -278,8 +276,8 @@ class SentenceInterpreter:
         """Handle modification verbs using the ObjectModifier."""
         print(f"🔧 _handle_modification_verb called with verb: {vp.verb}")
         print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
-        if vp.noun_phrase and vp.noun_phrase.preps:
-            print(f"🔧 vp.noun_phrase.preps: {vp.noun_phrase.preps}")
+        if vp.noun_phrase and vp.prepositions:
+            print(f"🔧 vp.prepositions: {vp.prepositions}")
         else:
             print(f"🔧 No prepositional phrases found")
         

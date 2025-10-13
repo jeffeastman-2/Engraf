@@ -78,7 +78,6 @@ class SpatialValidator:
         Args:
             moving_obj: Object being positioned
             ref_obj: Reference object for spatial relationship
-            preposition: Preposition string (for logging)
             preposition_vector: VectorSpace with locX, locY, locZ direction factors
             
         Returns:

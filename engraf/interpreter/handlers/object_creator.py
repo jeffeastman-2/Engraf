@@ -27,21 +27,17 @@ class ObjectCreator:
         """
         self.scene = scene
         self.object_counter_ref = object_counter_ref
+
+    def create_object_from_np(self, np: NounPhrase, objects):
+        obj_info = self._extract_single_object_info(np)
+        if obj_info:
+            objects.append(obj_info)
+        return True
     
     def extract_objects_from_np(self, np: Union[NounPhrase, ConjunctionPhrase]) -> List[Dict[str, Any]]:
         """Extract object information from a noun phrase or conjunction."""
-        objects = []
-        
-        if isinstance(np, ConjunctionPhrase):
-            # Handle conjunctions (e.g., "a cube and a sphere")
-            objects.extend(np.phrases)
-        
-        elif isinstance(np, NounPhrase):
-            # Extract object information from single noun phrase
-            obj_info = self._extract_single_object_info(np)
-            if obj_info:
-                objects.append(obj_info)
-        
+        objects = []       
+        np.evaluate_boolean_function(lambda phrase: self.create_object_from_np(phrase, objects))
         return objects
     
     def _extract_single_object_info(self, np: NounPhrase) -> Optional[Dict[str, Any]]:

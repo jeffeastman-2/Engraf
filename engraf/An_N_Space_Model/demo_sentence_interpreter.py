@@ -52,7 +52,7 @@ def demo_basic_commands():
         "draw a very tall box at [0,1,0] and rotate it by 90 degrees",
         "group them",
         "move it to [5,5,5]",
-        "draw a red cube at [0, 0, 0]",
+        "draw a red cube",
         "move it to [2, 3, 4]",
         "make it bigger",
         "color it blue",
