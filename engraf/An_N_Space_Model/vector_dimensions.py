@@ -29,7 +29,6 @@ VECTOR_DIMENSIONS = [
     "neg",       # negation (not, no)
     "modal",     # modal verbs (can, could, may, might, must, shall, should, will, would)
     "question",  # question markers (who, what, where, when, why,
-    "tobe",      # to-be verb marker (duplicate - consider removing)
     "unit",      # measurement units (degree, meter, pixel)
     
     # Verb inflection forms

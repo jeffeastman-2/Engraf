@@ -11,7 +11,6 @@ The beauty of Layer 3 is that the PP ATN becomes incredibly simple:
 """
 
 import pytest
-from engraf.lexer.latn_tokenizer_layer3 import latn_tokenize_layer3
 from engraf.lexer.vector_space import vector_from_features
 
 
