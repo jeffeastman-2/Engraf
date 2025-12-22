@@ -35,10 +35,14 @@ class PrepositionalPhrase():
         self.noun_phrase = np
 
     def printString(self):
+        """Return a string representation of the prepositional phrase.
+        
+        Delegates to the noun phrase's printString() method for Layer-6-friendly
+        formatting. Falls back to vector info if no noun phrase.
+        """
         if self.noun_phrase:
-            return f"{self.preposition} {self.noun_phrase.printString() if self.noun_phrase else ''}"
+            return f"{self.preposition} {self.noun_phrase.printString()}"
         return f"{self.preposition} + {self.vector.non_zero_dims()}"
-
 
     def equals(self, other):
         """Deep equality comparison for PrepositionalPhrase objects."""

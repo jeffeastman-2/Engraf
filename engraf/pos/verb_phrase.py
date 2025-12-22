@@ -69,20 +69,25 @@ class VerbPhrase():
         return self.verb and self.verb.scalar_projection(intent) > threshold
 
     def printString(self):
-        str = self.verb
+        """Return a string representation of the verb phrase.
+        
+        Delegates to child phrases' printString() methods for Layer-6-friendly
+        formatting. Properly handles grounded noun phrases with object IDs.
+        """
+        out = self.verb or "<verb>"
         if self.noun_phrase:
-            str += f" [{self.noun_phrase.printString()}]"
+            out += f" [{self.noun_phrase.printString()}]"
         if self.prepositions:
-            str += " -> ("
+            out += " -> ("
             for pp in self.prepositions:
-                str += f"({pp.printString()})"
-            str += ")"
+                out += f"({pp.printString()})"
+            out += ")"
         if self.adjective_complements:
             adjectives = " ".join(self.adjective_complements)
-            str += f" => ({adjectives})"
+            out += f" => ({adjectives})"
         if self.amount:
-            str += f" == [{self.amount.printString()}]"
-        return str
+            out += f" == [{self.amount.printString()}]"
+        return out
 
     def equals(self, other):
         """Deep equality comparison for VerbPhrase objects."""

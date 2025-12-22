@@ -170,15 +170,35 @@ class NounPhrase():
         return (0, len(self.consumed_tokens))  # Placeholder - would use actual positions
     
     def printString(self):
-        str = ""
-        if self.grounding and self.grounding.get('scene_objects'):
-            scene_objs = self.grounding['scene_objects']
-            str = f"<{' '.join(obj.entity_id for obj in scene_objs)}>"
-        else:
-            str = f"{' '.join(self.get_consumed_words())}"
+        """Return a string for logging that is Layer-6 friendly.
+
+        If the NP is grounded to scene objects, prefer to show object IDs
+        in angle brackets (e.g. <sphere_1>). Falls back to entity_id or name
+        if `object_id` is not present. Otherwise returns the consumed words.
+        Prepositional attachments are appended in parentheses.
+        """
+        out = ""
+        grounding = self.grounding
+        if grounding:
+            # Prefer 'scene_objects' (plural) which Layer-6 structural uses
+            if 'scene_objects' in grounding and grounding['scene_objects']:
+                scene_objs = grounding['scene_objects']
+                ids = []
+                for obj in scene_objs:
+                    oid = getattr(obj, 'object_id', None) or getattr(obj, 'entity_id', None) or getattr(obj, 'name', None)
+                    ids.append(str(oid))
+                out = f"<{ ' '.join(ids) } >".replace('  ', ' ')
+            # Backwards-compatible single object key
+            elif 'scene_object' in grounding and grounding['scene_object']:
+                obj = grounding['scene_object']
+                oid = getattr(obj, 'object_id', None) or getattr(obj, 'entity_id', None) or getattr(obj, 'name', None)
+                out = f"<{oid}>"
+        if not out:
+            out = ' '.join(self.get_consumed_words())
+
         if self.prepositions:
-            str = f"{str} ({' '.join(prep.printString() for prep in self.prepositions)})"
-        return str
+            out = f"{out} ({' '.join(prep.printString() for prep in self.prepositions)})"
+        return out
          
 
     def equals(self, other):

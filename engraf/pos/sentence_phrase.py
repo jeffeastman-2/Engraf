@@ -102,7 +102,11 @@ class SentencePhrase():
 
 
     def printString(self):
-        """Print a string representation of the sentence."""
+        """Return a string representation of the sentence.
+        
+        Delegates to subject and predicate's printString() methods for
+        Layer-6-friendly formatting with grounded object IDs preserved.
+        """
         subject_str = self.subject.printString() if self.subject else None
         predicate_str = self.predicate.printString() if self.predicate else "[No Predicate]"
         if subject_str:

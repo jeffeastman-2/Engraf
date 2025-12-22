@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """
-LATN Tokenization Hypothesis
+LATN Tokenization Hypothesis with Layer-6 Structural Support
 
 This module defines a unified hypothesis class for all layers of the 
-LATN (Layer-Aware Tokenization Network) system.
+LATN (Layer-Aware Tokenization Network) system, including Layer-6 LLM integration.
+
+Layer-6 uses a STRUCTURAL-ONLY representation where:
+- Tokens are purely structural markers: [NP, ]NP, [VP, ]VP, etc.
+- ALL semantics flow through 76-dim vectors (not token strings)
+- Grounding IDs attach to closing brackets
+- Individual words (the, red, sphere) are NOT included
 """
 
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple
 from dataclasses import dataclass, field
+import numpy as np
 
 # Import moved here to avoid circular imports
 from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
@@ -18,16 +25,27 @@ from engraf.pos.noun_phrase import NounPhrase
 
 @dataclass
 class TokenizationHypothesis:
-    """Unified tokenization hypothesis for all LATN layers.
+    """Unified tokenization hypothesis for all LATN layers with Layer-6 support.
     
-    This provides a consistent interface across Layer 1, 2, 3, and 4.
-    The replacements field is used only for debugging/analysis to track
-    what transformations each layer performed.
+    This provides a consistent interface across Layer 1, 2, 3, 4, and 5.
+    
+    The tokens field maintains LATN's compact representation (existing behavior).
+    
+    The layer6_* fields maintain a STRUCTURAL representation where:
+    - Tokens are structural markers only: [NP, ]NP, [VP, ]VP, [PP, ]PP, [SP, ]SP
+    - No individual words (the, red, sphere, above, etc.)
+    - All semantic content in 76-dim vectors
+    - SceneObject references on closing brackets
     """
     tokens: List[VectorSpace]
     confidence: float
     description: str
-    replacements: List[tuple] = field(default_factory=list)  # For debugging: (start_idx, end_idx, new_token)
+    replacements: List[tuple] = field(default_factory=list)  # For debugging
+    
+    # Layer-6 structural representation (NEW)
+    layer6_tokens: List[str] = field(default_factory=list)  # Pure structure: [NP, ]NP, etc.
+    layer6_vectors: List[np.ndarray] = field(default_factory=list)  # 76-dim semantic vectors
+    layer6_scene_refs: List[Optional[Any]] = field(default_factory=list)  # SceneObject references
     
     def __len__(self):
         """Return the number of tokens in this hypothesis."""
@@ -53,6 +71,179 @@ class TokenizationHypothesis:
         """Get the word strings for all tokens."""
         return [token.word for token in self.tokens]
 
+    # ========== Layer-6 Support Methods (Structural Approach) ==========
+    
+    def initialize_layer6_structural(self):
+        """Initialize Layer-6 with empty structural representation.
+        
+        Called after Layer-1. Unlike the verbose approach, we start with
+        an empty layer6 representation that gets built up as phrases form.
+        
+        Layer-1 tokens don't appear in Layer-6 - only the phrase structures
+        that emerge in Layers 2-5.
+        """
+        self.layer6_tokens = []
+        self.layer6_vectors = []
+        self.layer6_scene_refs = []
+    
+    def add_layer6_phrase(
+        self, 
+        phrase_type: str,
+        phrase_vector: np.ndarray,
+        scene_object: Optional[Any] = None
+    ):
+        """Add a complete phrase structure to Layer-6 representation.
+        
+        This adds: [PHRASE_TYPE, ]PHRASE_TYPE as a complete unit.
+        
+        Args:
+            phrase_type: "NP", "PP", "VP", or "SP"
+            phrase_vector: The composite 76-dim vector for this phrase
+            scene_object: Optional SceneObject reference (for grounded NPs)
+        
+        Example:
+            For an NP "the red sphere" grounded to sphere_1:
+            - Adds tokens: ["[NP", "]NP"]
+            - Adds vectors: [opening_marker_vec, full_np_vector]
+            - Adds refs: [None, sphere_1]
+        """
+        # Create opening marker
+        open_marker = f"[{phrase_type}"
+        open_vector = self._create_marker_vector(phrase_type, is_opening=True)
+        
+        # Create closing marker - this carries the full phrase semantics
+        close_marker = f"]{phrase_type}"
+        close_vector = phrase_vector.copy()  # The composite vector!
+        
+        # Add opening marker
+        self.layer6_tokens.append(open_marker)
+        self.layer6_vectors.append(open_vector)
+        self.layer6_scene_refs.append(None)
+        
+        # Add closing marker with semantics and grounding
+        self.layer6_tokens.append(close_marker)
+        self.layer6_vectors.append(close_vector)
+        self.layer6_scene_refs.append(scene_object)
+    
+    def wrap_layer6_with_phrase(
+        self,
+        start_idx: int,
+        end_idx: int,
+        phrase_type: str,
+        phrase_vector: np.ndarray,
+        scene_object: Optional[Any] = None
+    ):
+        """Wrap existing Layer-6 content with a new phrase structure.
+        
+        Used when a phrase contains other phrases (e.g., PP contains NP,
+        VP contains NP and PP, etc.)
+        
+        Args:
+            start_idx: Starting index in layer6_tokens to wrap
+            end_idx: Ending index in layer6_tokens to wrap (inclusive)
+            phrase_type: "PP", "VP", or "SP"
+            phrase_vector: The composite 76-dim vector for this phrase
+            scene_object: Optional SceneObject reference
+        
+        Example:
+            Before: ["[NP", "]NP"]
+            After wrapping with PP: ["[PP", "[NP", "]NP", "]PP"]
+        """
+        # Create markers
+        open_marker = f"[{phrase_type}"
+        open_vector = self._create_marker_vector(phrase_type, is_opening=True)
+        
+        close_marker = f"]{phrase_type}"
+        close_vector = phrase_vector.copy()
+        
+        # Insert opening marker at start
+        self.layer6_tokens.insert(start_idx, open_marker)
+        self.layer6_vectors.insert(start_idx, open_vector)
+        self.layer6_scene_refs.insert(start_idx, None)
+        
+        # Insert closing marker at end (adjusted for insertion)
+        close_idx = end_idx + 2  # +1 for the opening marker, +1 for after end_idx
+        self.layer6_tokens.insert(close_idx, close_marker)
+        self.layer6_vectors.insert(close_idx, close_vector)
+        self.layer6_scene_refs.insert(close_idx, scene_object)
+    
+    def _create_marker_vector(self, phrase_type: str, is_opening: bool) -> np.ndarray:
+        """Create a 76-dimensional vector for a structural marker.
+        
+        Args:
+            phrase_type: "NP", "PP", "VP", or "SP"
+            is_opening: True for "[NP", False for "]NP"
+        
+        Returns:
+            76-dimensional numpy array (mostly zeros, structural marker only)
+        """
+        vec = np.zeros(len(VECTOR_DIMENSIONS))
+        
+        # Set the appropriate dimension for this phrase type
+        if phrase_type in VECTOR_DIMENSIONS:
+            idx = VECTOR_DIMENSIONS.index(phrase_type)
+            vec[idx] = 1.0 if is_opening else -1.0
+        
+        return vec
+    
+    def get_layer6_representation(self) -> Tuple[List[str], List[np.ndarray], List[Optional[Any]]]:
+        """Get the complete Layer-6 representation.
+        
+        Returns:
+            Tuple of (structural_tokens, semantic_vectors, scene_references)
+        """
+        return (self.layer6_tokens, self.layer6_vectors, self.layer6_scene_refs)
+    
+    def print_layer6_tokens(self):
+        """Print the Layer-6 structural representation with vector info."""
+        print("Layer-6 Structural Sequence:")
+        for i, (token, vec, scene_ref) in enumerate(zip(
+            self.layer6_tokens, 
+            self.layer6_vectors, 
+            self.layer6_scene_refs
+        )):
+            # Show non-zero dimensions in vector
+            non_zero = np.nonzero(vec)[0]
+            if len(non_zero) > 0 and len(non_zero) <= 5:
+                dims = [VECTOR_DIMENSIONS[idx] for idx in non_zero[:5]]
+                vec_str = f"dims={dims}"
+            else:
+                vec_str = f"nnz={len(non_zero)}"
+            
+            ref_str = f" -> {scene_ref.object_id}" if scene_ref else ""
+            print(f"  [{i:2d}] {token:6s} ({vec_str}){ref_str}")
+    
+    def layer6_to_string(self) -> str:
+        """Convert Layer-6 representation to a string for LLM input.
+        
+        Returns:
+            Space-separated structural tokens with object references.
+            Example: "[SP [VP [NP]NP<sphere_1> [PP[NP]NP<cube_1>]PP ]VP ]SP"
+        """
+        result = []
+        for token, scene_ref in zip(self.layer6_tokens, self.layer6_scene_refs):
+            if scene_ref:
+                result.append(f"{token}<{scene_ref.object_id}>")
+            else:
+                result.append(token)
+        return " ".join(result)
+    
+    def layer6_vocabulary(self) -> set:
+        """Return the minimal vocabulary needed for Layer-6 structural tokens.
+        
+        This is typically just: [NP, ]NP, [PP, ]PP, [VP, ]VP, [SP, ]SP
+        plus special tokens like <SEP>, <BOS>, <EOS>, <OBJ>
+        """
+        return {
+            "[NP", "]NP",
+            "[PP", "]PP", 
+            "[VP", "]VP",
+            "[SP", "]SP",
+            "<SEP>", "<BOS>", "<EOS>", "<OBJ>"
+        }
+    
+    # ========== Existing Methods (Unchanged) ==========
+    
     spaces = "        "
 
     def printNP(self, i, token):
@@ -102,7 +293,31 @@ class TokenizationHypothesis:
             print(f"{self.spaces}[{i}] {token.word}")
 
     def print_tokens(self):
-        """Print all tokens, each on a new line. Useful for demo examples."""
+        """Print the Layer-6 structural tokenization followed by compact tokens.
+
+        This prints the new Layer-6 representation first (structural markers
+        with any attached grounding IDs), then falls back to the existing
+        per-token compact diagnostic output to aid debugging.
+        """
+        # Print Layer-6 structural string (if present)
+        if self.layer6_tokens:
+            print("--- Layer-6 Structural String ---")
+            try:
+                print(self.layer6_to_string())
+            except Exception:
+                # Defensive fallback
+                print("(unable to render layer6 string)")
+            print()
+
+            # Print detailed Layer-6 token listing
+            try:
+                self.print_layer6_tokens()
+            except Exception:
+                pass
+
+            print()  # separator
+
+        # Then print the traditional compact token diagnostics
         for i, token in enumerate(self.tokens):
             if (token).isa("NP") :
                 self.printNP(i,token)
@@ -115,7 +330,7 @@ class TokenizationHypothesis:
             else:
                 print(f"{self.spaces}[{i}] {token}")
 
-    def print_detailed(token): #
+    def print_detailed(token): 
         if hasattr(token, '_grounded_phrase') and token._grounded_phrase:
             grounded_phrase = token._grounded_phrase
             grounding_info = grounded_phrase.grounding
