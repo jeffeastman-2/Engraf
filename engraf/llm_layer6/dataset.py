@@ -6,10 +6,13 @@ Loads JSONL examples and creates batches with proper tokenization.
 """
 
 import json
+import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from typing import Dict, List, Tuple
+
+from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 
 
 # Structural vocabulary for Layer-6 tokens
@@ -281,3 +284,116 @@ def create_dataloaders(jsonl_path: str,
     print(f"Train: {len(train_set)} examples, Val: {len(val_set)} examples")
     
     return train_loader, val_loader, dataset.text_tokenizer
+
+
+# On-the-fly synthetic dataset for Layer-6 LLM
+class SyntheticLayer6Dataset(Dataset):
+    """
+    Generates synthetic training examples on-the-fly using vocabulary.
+    Creates random scenes with nouns, adjectives, adverbs, and spatial prepositions.
+    
+    NOTE: For more comprehensive dataset generation with LATN processing,
+    use the synthetic_generator module instead:
+        from engraf.llm_layer6.synthetic_generator import generate_synthetic_dataset
+    """
+    
+    def __init__(self, num_examples=1000, num_scene_objects=10, max_output_length=15):
+        self.num_examples = num_examples
+        self.num_scene_objects = num_scene_objects
+        self.max_output_length = max_output_length
+        
+        # Import vocabulary from synthetic_generator for consistency
+        from engraf.llm_layer6.synthetic_generator import (
+            SHAPE_NOUNS, COLOR_ADJECTIVES, SIZE_ADJECTIVES, 
+            INTENSITY_ADVERBS, ALL_SPATIAL_PREPS, ACTION_VERBS
+        )
+        
+        self.nouns = SHAPE_NOUNS
+        self.adjectives = COLOR_ADJECTIVES + SIZE_ADJECTIVES
+        self.adverbs = INTENSITY_ADVERBS
+        self.spatial_preps = ALL_SPATIAL_PREPS
+        self.action_verbs = ACTION_VERBS
+        
+        # Verb to gerund mapping
+        self.verb_to_gerund = {
+            'move': 'Moving',
+            'place': 'Placing', 
+            'position': 'Positioning'
+        }
+
+    def __len__(self):
+        return self.num_examples
+
+    def _generate_scene_object(self):
+        """Generate a single random scene object description."""
+        noun = random.choice(self.nouns)
+        adj = random.choice(self.adjectives)
+        # Optionally add adverb
+        if random.random() < 0.3:
+            adv = random.choice(self.adverbs)
+            return f"{adv} {adj} {noun}"
+        return f"{adj} {noun}"
+
+    def _generate_example(self, obj1_desc, obj2_desc, prep, sentence_type):
+        """Generate a sentence and answer based on sentence type.
+        
+        Args:
+            obj1_desc: Description of first object
+            obj2_desc: Description of second object
+            prep: Spatial preposition
+            sentence_type: 'imperative', 'declarative', or 'interrogative'
+        
+        Returns:
+            Tuple of (sentence, answer)
+        """
+        if sentence_type == 'imperative':
+            verb = random.choice(self.action_verbs)
+            sentence = f"{verb} the {obj1_desc} {prep} the {obj2_desc}"
+            gerund = self.verb_to_gerund.get(verb, verb.capitalize() + 'ing')
+            answer = f"{gerund} the {obj1_desc} {prep} the {obj2_desc}."
+        elif sentence_type == 'declarative':
+            sentence = f"the {obj1_desc} is {prep} the {obj2_desc}"
+            # Random true/false for training diversity
+            if random.random() > 0.5:
+                answer = f"The {obj1_desc} is {prep} the {obj2_desc}."
+            else:
+                answer = f"The {obj1_desc} is not {prep} the {obj2_desc}."
+        else:  # interrogative
+            sentence = f"is the {obj1_desc} {prep} the {obj2_desc}"
+            if random.random() > 0.5:
+                answer = f"Yes, the {obj1_desc} is {prep} the {obj2_desc}."
+            else:
+                answer = f"No, the {obj1_desc} is not {prep} the {obj2_desc}."
+        
+        return sentence, answer
+
+    def __getitem__(self, idx):
+        # Seed for reproducibility if needed
+        random.seed(idx)
+        
+        # Generate scene objects
+        objects = [self._generate_scene_object() for _ in range(self.num_scene_objects)]
+        
+        # Pick two objects and a spatial preposition
+        obj1, obj2 = random.sample(objects, 2)
+        prep = random.choice(self.spatial_preps)
+        
+        # Randomly choose sentence type
+        sentence_type = random.choice(['imperative', 'declarative', 'interrogative'])
+        
+        # Generate sentence and answer
+        question, answer = self._generate_example(obj1, obj2, prep, sentence_type)
+        
+        # Tokenize (character-level for now)
+        input_ids = torch.tensor([ord(c) for c in question[:self.max_output_length * 5]], dtype=torch.long)
+        target_ids = torch.tensor([ord(c) for c in answer], dtype=torch.long)
+        
+        return {
+            'input_ids': input_ids,
+            'target_ids': target_ids,
+            'question': question,
+            'answer': answer,
+            'sentence_type': sentence_type,
+            'scene_objects': objects
+        }
+

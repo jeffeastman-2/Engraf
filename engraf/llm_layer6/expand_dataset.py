@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.llm_layer6.dataset_generator_l5_v2 import process_question_through_layer5, populate_layer6_from_sentence_phrase
+from engraf.llm_layer6.synthetic_generator import process_through_layer5, populate_layer6_from_sentence_phrase
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
 
 
@@ -89,7 +89,7 @@ def expand_dataset(source_file, output_file, num_variations=3):
                 answer = answer_template.format(obj1=obj1, obj2=obj2, prep=prep)
                 
                 try:
-                    hyp = process_question_through_layer5(executor, question, scene)
+                    hyp = process_through_layer5(executor, question, scene)
                     
                     if hyp and hyp.layer6_tokens:
                         pair = create_training_pair_from_hyp(hyp, answer)
