@@ -91,6 +91,7 @@ class SentenceInterpreter:
             
             # Step 2: Parse the sentence using LATN
             result = LATNLayerExecutor().execute_layer5(sentence)
+            best_hypothesis = None
             if result.success and result.hypotheses:
                 best_hypothesis = result.hypotheses[0]
             

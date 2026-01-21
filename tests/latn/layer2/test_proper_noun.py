@@ -1,6 +1,6 @@
 import pytest
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_best as tokenize
 from engraf.lexer.vector_space import vector_from_features
 
 

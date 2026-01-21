@@ -15,9 +15,11 @@ def test_complex_sentence():
     hypo_0 = result.hypotheses[0]
     assert len(hypo_0.tokens) == 1, "Hypothesis should 1 token"
     sent = hypo_0.tokens[0].phrase
-    assert isinstance(sent, ConjunctionPhrase), "Token should be a ConjunctionPhrase"
-    parts = [sp for sp in sent.flatten()]
-    assert len(parts) == 2, "Should have two coordinated NPs"
+    # The predicate contains the ConjunctionPhrase of verb phrases
+    assert isinstance(sent.predicate, ConjunctionPhrase), \
+        f"Predicate should be a ConjunctionPhrase, got {type(sent.predicate)}"
+    parts = sent.predicate.phrases
+    assert len(parts) == 2, f"Should have two coordinated VPs, got {len(parts)}"
 
 def test_comparative_sentence():
     """Test parsing 'make them more transparent than the purple circle at [3, 3, 3]'"""

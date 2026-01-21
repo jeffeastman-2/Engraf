@@ -14,7 +14,7 @@ from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_best as tokenize
 from engraf.atn.subnet_sentence import run_sentence
 from engraf.interpreter.semantic_validator import SemanticAgreementValidator
 

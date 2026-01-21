@@ -403,19 +403,15 @@ class TestRendererIntegration:
     
     def test_render_scene_with_transforms(self):
         """Test rendering a scene with transformed objects."""
-        # Create object with transformation
+        # Create object with transformation via vector dimensions
         vector = self.create_mock_vector(
             locX=1.0, locY=2.0, locZ=3.0,
             scaleX=2.0, scaleY=2.0, scaleZ=2.0,
-            red=1.0, green=0.0, blue=0.0
+            red=1.0, green=0.0, blue=0.0,
+            rotX=45.0, rotY=0.0, rotZ=0.0  # Add rotation transform
         )
         
         obj = SceneObject("cube", vector)
-        
-        # Add transformation matrix to modifiers
-        transform = TransformMatrix.translation(1, 2, 3)
-        obj.modifiers.append(transform)
-        
         self.scene.add_object(obj)
         
         # Render the scene

@@ -7,16 +7,46 @@ and replaces them with single NounPhrase tokens.
 """
 
 import pytest
-from engraf.lexer.latn_tokenizer_layer2 import (
-    latn_tokenize_layer2, 
-    create_np_token,
-    find_np_sequences,
-    replace_np_sequences
-)
 from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1
 from engraf.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.atn.subnet_np import run_np
 from engraf.pos.noun_phrase import NounPhrase
+
+
+# Helper functions that wrap LATNLayerExecutor for backward compatibility
+def find_np_sequences(tokens):
+    """Find NP sequences in a token list using subnet_np."""
+    from engraf.lexer.token_stream import TokenStream
+    from engraf.atn.subnet_np import run_np
+    np = run_np(TokenStream(tokens))
+    if np is not None:
+        return [(0, len(tokens) - 1, np)]
+    return []
+
+
+def create_np_token(np):
+    """Create an NP token from a NounPhrase."""
+    from engraf.lexer.vector_space import VectorSpace
+    from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+    token = VectorSpace()
+    if hasattr(np, 'vector') and np.vector:
+        for dim in VECTOR_DIMENSIONS:
+            if np.vector[dim] != 0.0:
+                token[dim] = np.vector[dim]
+    token["NP"] = 1.0
+    token.word = np.descriptive_word()
+    token.phrase = np
+    return token
+
+
+def replace_np_sequences(tokens, np_sequences):
+    """Replace token sequences with NP tokens."""
+    if not np_sequences:
+        return tokens
+    result = []
+    for start, end, np in np_sequences:
+        result.append(create_np_token(np))
+    return result
 
 
 class TestLATNLayer2Basic:

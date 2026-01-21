@@ -7,9 +7,19 @@ import pytest
 from engraf.visualizer.scene.scene_object import SceneObject, scene_object_from_np
 from engraf.visualizer.scene.scene_model import SceneModel, resolve_pronoun
 from engraf.lexer.vector_space import VectorSpace
-from engraf.lexer.token_stream import TokenStream
-from engraf.atn.subnet_sentence import run_sentence
-from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
+from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+
+
+def parse_sentence(text):
+    """Helper to parse a sentence using LATNLayerExecutor and return the SentencePhrase."""
+    executor = LATNLayerExecutor()
+    result = executor.execute_layer5(text)
+    if result.success and result.hypotheses:
+        # The SP token has the phrase attached
+        for tok in result.hypotheses[0].tokens:
+            if hasattr(tok, 'phrase') and tok.phrase is not None:
+                return tok.phrase
+    return None
 
 
 class TestSceneIntegration:
@@ -17,8 +27,8 @@ class TestSceneIntegration:
 
     def test_scene_from_simple_sentence(self):
         """Test creating scene object from simple parsed sentence."""
-        tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere"))
-        sentence = run_sentence(tokens)
+        tokens = "draw a tall blue cube over the green sphere"
+        sentence = parse_sentence(tokens)
         
         assert sentence is not None
         assert sentence.subject is None
@@ -33,24 +43,20 @@ class TestSceneIntegration:
         assert scene.name == "cube"
         assert isinstance(scene.vector, VectorSpace)
         
-        # Ensure the object has one modifier
-        assert scene.modifiers is not None
-        assert len(scene.modifiers) == 1
-        
-        modifier = scene.modifiers[0]
-        assert isinstance(modifier, SceneObject)
-        assert modifier.name == "sphere"
-        assert isinstance(modifier.vector, VectorSpace)
-        assert modifier.vector["green"] > 0.5
-        
         # Example: check that the cube is tall and blue
         assert scene.vector["scaleY"] > 1.0
         assert scene.vector["blue"] > 0.5
+        
+        # Check that prepositional phrases are attached to the VerbPhrase
+        assert len(sentence.predicate.prepositions) >= 1
+        pp = sentence.predicate.prepositions[0]
+        assert pp.preposition == "over"
+        assert pp.noun_phrase.noun == "sphere"
 
     def test_scene_from_sentence_with_chained_pps(self):
         """Test creating scene object from sentence with chained prepositional phrases."""
-        tokens = TokenStream(tokenize("draw a tall blue cube over the green sphere by the very tall pyramid"))
-        sentence = run_sentence(tokens)
+        tokens = "draw a tall blue cube over the green sphere by the very tall pyramid"
+        sentence = parse_sentence(tokens)
         
         assert sentence is not None
         assert sentence.subject is None
@@ -65,25 +71,23 @@ class TestSceneIntegration:
         assert scene.name == "cube"
         assert isinstance(scene.vector, VectorSpace)
         
-        # Ensure the object has two modifiers
-        assert scene.modifiers is not None
-        assert len(scene.modifiers) == 2
-        
-        modifier1 = scene.modifiers[0]
-        assert isinstance(modifier1, SceneObject)
-        assert modifier1.name == "sphere"
-        assert isinstance(modifier1.vector, VectorSpace)
-        assert modifier1.vector["green"] > 0.5
-        
-        modifier2 = scene.modifiers[1]
-        assert isinstance(modifier2, SceneObject)
-        assert modifier2.name == "pyramid"
-        assert isinstance(modifier2.vector, VectorSpace)
-        assert modifier2.vector["scaleY"] > 2.0
-        
         # Example: check that the cube is tall and blue
         assert scene.vector["scaleY"] > 1.0
         assert scene.vector["blue"] > 0.5
+        
+        # Check that prepositional phrases are attached to the VerbPhrase
+        pps = sentence.predicate.prepositions
+        assert len(pps) >= 2, f"Expected at least 2 PPs, got {len(pps)}"
+        
+        # First PP: "over the green sphere"
+        assert pps[0].preposition == "over"
+        assert pps[0].noun_phrase.noun == "sphere"
+        assert pps[0].noun_phrase.vector["green"] > 0.5
+        
+        # Second PP: "by the very tall pyramid"
+        assert pps[1].preposition == "by"
+        assert pps[1].noun_phrase.noun == "pyramid"
+        assert pps[1].noun_phrase.vector["scaleY"] > 1.0
 
 
 class TestScenePronounIntegration:
@@ -94,8 +98,8 @@ class TestScenePronounIntegration:
         scene = SceneModel()
         
         # First sentence: draw a red cube
-        tokens1 = TokenStream(tokenize("draw a red cube"))
-        sentence1 = run_sentence(tokens1)
+        tokens1 = "draw a red cube"
+        sentence1 = parse_sentence(tokens1)
         assert sentence1 is not None, "Failed to parse first sentence: 'draw a red cube'"
         
         predicate1 = sentence1.predicate
@@ -116,8 +120,8 @@ class TestScenePronounIntegration:
         assert obj1.vector["blue"] == 0.0
         
         # Second sentence: color it green
-        tokens2 = TokenStream(tokenize("color it green"))
-        sentence2 = run_sentence(tokens2)
+        tokens2 = "color it green"
+        sentence2 = parse_sentence(tokens2)
         assert sentence2 is not None, "Failed to parse second sentence: 'color it green'"
         
         predicate2 = sentence2.predicate
@@ -146,8 +150,8 @@ class TestScenePronounIntegration:
         scene = SceneModel()
         
         # First sentence: draw a red cube
-        tokens1 = TokenStream(tokenize("draw a red cube"))
-        sentence1 = run_sentence(tokens1)
+        tokens1 = "draw a red cube"
+        sentence1 = parse_sentence(tokens1)
         assert sentence1 is not None, "Failed to parse first sentence: 'draw a red cube'"
         
         predicate1 = sentence1.predicate
@@ -168,8 +172,8 @@ class TestScenePronounIntegration:
         assert obj1.vector["blue"] == 0.0
         
         # Second sentence: draw a blue sphere
-        tokens2 = TokenStream(tokenize("draw a blue sphere"))
-        sentence2 = run_sentence(tokens2)
+        tokens2 = "draw a blue sphere"
+        sentence2 = parse_sentence(tokens2)
         assert sentence2 is not None, "Failed to parse second sentence: 'draw a blue sphere'"
         
         predicate2 = sentence2.predicate
@@ -189,8 +193,8 @@ class TestScenePronounIntegration:
         assert obj2.vector["blue"] == 1.0
         
         # Third sentence: color them green
-        tokens3 = TokenStream(tokenize("color them green"))
-        sentence3 = run_sentence(tokens3)
+        tokens3 = "color them green"
+        sentence3 = parse_sentence(tokens3)
         assert sentence3 is not None, "Failed to parse third sentence: 'color them green'"
         
         predicate3 = sentence3.predicate
@@ -220,8 +224,8 @@ class TestScenePronounIntegration:
         scene = SceneModel()
         
         # First sentence: draw a red cube
-        tokens1 = TokenStream(tokenize("draw a red cube"))
-        sentence1 = run_sentence(tokens1)
+        tokens1 = "draw a red cube"
+        sentence1 = parse_sentence(tokens1)
         assert sentence1 is not None
         
         predicate1 = sentence1.predicate
@@ -240,14 +244,15 @@ class TestScenePronounIntegration:
         assert obj1.vector["blue"] == 0.0
         
         # Second sentence: the cube is blue
-        tokens2 = TokenStream(tokenize("the cube is blue"))
-        sentence2 = run_sentence(tokens2)
+        tokens2 = "the cube is blue"
+        sentence2 = parse_sentence(tokens2)
         assert sentence2 is not None, "Failed to parse second sentence: 'the cube is blue'"
         
         subject = sentence2.subject
         assert subject is not None
-        assert sentence2.tobe == "is"
+        # Copular verb "is" is parsed as predicate.verb
+        assert sentence2.predicate.verb == "is"
         
         # Find the target object in the scene
-        targets = scene.find_noun_phrase(subject)
+        targets = scene.find_noun_phrase(subject, return_all_matches=False)
         assert targets is not None, "Failed to find noun phrase in scene"

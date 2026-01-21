@@ -50,23 +50,26 @@ class TestObjectMovement(unittest.TestCase):
         self.interpreter.interpret('draw a red cube at [0, 0, 0]')
         self.interpreter.interpret('draw a big blue sphere at [3, 0, 0]')
         
-        # Test parsing of movement command
-        from engraf.atn.sentence import build_sentence_atn
-        from engraf.atn.core import run_atn
-        from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
-        from engraf.lexer.token_stream import TokenStream
-        from engraf.pos.sentence_phrase import SentencePhrase
+        # Test parsing of movement command using LATNLayerExecutor
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
         
         sentence = 'move the sphere above the cube'
-        tokens = tokenize(sentence)
-        token_stream = TokenStream(tokens)
-        sent = SentencePhrase()
-        start, end = build_sentence_atn(sent, token_stream)
-        parsed_sentence = run_atn(start, end, token_stream, sent)
+        executor = LATNLayerExecutor()
+        result = executor.execute_layer5(sentence)
+        
+        self.assertTrue(result.success, f"Failed to parse: {sentence}")
+        self.assertTrue(len(result.hypotheses) > 0)
+        
+        # Get the parsed sentence from the SP token
+        parsed_sentence = None
+        for tok in result.hypotheses[0].tokens:
+            if hasattr(tok, 'phrase') and tok.phrase is not None:
+                parsed_sentence = tok.phrase
+                break
         
         # Check that sentence parsed correctly
         self.assertIsNotNone(parsed_sentence)
-        self.assertEqual(parsed_sentence.predicate.verb, 'move')
+        self.assertEqual(parsed_sentence.predicate.verb.lower(), 'move')
         
         # Test object resolver
         vp = parsed_sentence.predicate
@@ -150,11 +153,7 @@ class TestObjectMovement(unittest.TestCase):
     
     def test_spatial_relationship_parsing(self):
         """Test that spatial relationships are parsed correctly."""
-        from engraf.atn.sentence import build_sentence_atn
-        from engraf.atn.core import run_atn
-        from engraf.lexer.latn_tokenizer import latn_tokenize_best as tokenize
-        from engraf.lexer.token_stream import TokenStream
-        from engraf.pos.sentence_phrase import SentencePhrase
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
         
         # Test different spatial prepositions
         spatial_commands = [
@@ -162,28 +161,34 @@ class TestObjectMovement(unittest.TestCase):
             'move the cube below the sphere'
         ]
         
+        executor = LATNLayerExecutor()
+        
         for command in spatial_commands:
             with self.subTest(command=command):
-                tokens = tokenize(command)
-                token_stream = TokenStream(tokens)
-                sent = SentencePhrase()
-                start, end = build_sentence_atn(sent, token_stream)
-                parsed_sentence = run_atn(start, end, token_stream, sent)
+                result = executor.execute_layer5(command)
                 
-                self.assertIsNotNone(parsed_sentence, f"Failed to parse: {command}")
-                self.assertEqual(parsed_sentence.predicate.verb, 'move')
+                self.assertTrue(result.success, f"Failed to parse: {command}")
+                self.assertTrue(len(result.hypotheses) > 0, f"No hypotheses for: {command}")
                 
-                # Check that we have a noun phrase with a prepositional phrase
-                noun_phrase = parsed_sentence.predicate.noun_phrase
-                self.assertIsNotNone(noun_phrase, f"No noun phrase found in: {command}")
+                # Get the parsed sentence from the SP token
+                parsed_sentence = None
+                for tok in result.hypotheses[0].tokens:
+                    if hasattr(tok, 'phrase') and tok.phrase is not None:
+                        parsed_sentence = tok.phrase
+                        break
                 
-                # The structure should include prepositional phrases
-                if hasattr(noun_phrase, 'PPs') and noun_phrase.PPs:
-                    # Check spatial preposition in the prepositional phrase
-                    pp = noun_phrase.PPs[0]
-                    spatial_preps = ['above', 'below', 'next', 'behind', 'to']
-                    self.assertIn(pp.preposition, spatial_preps, 
-                                f"Unexpected preposition '{pp.preposition}' in: {command}")
+                self.assertIsNotNone(parsed_sentence, f"Failed to get sentence: {command}")
+                self.assertEqual(parsed_sentence.predicate.verb.lower(), 'move')
+                
+                # Check that we have prepositional phrases
+                pps = parsed_sentence.predicate.prepositions
+                self.assertTrue(len(pps) > 0, f"No prepositional phrases in: {command}")
+                
+                # Check spatial preposition
+                pp = pps[0]
+                spatial_preps = ['above', 'below', 'next', 'behind', 'to']
+                self.assertIn(pp.preposition, spatial_preps, 
+                            f"Unexpected preposition '{pp.preposition}' in: {command}")
 
 
 class TestObjectResolver(unittest.TestCase):

@@ -85,10 +85,10 @@ class TestSceneModel:
                 self.noun = noun
                 self.vector = vector
         
-        result = scene.find_noun_phrase(MockNP("cube"))
+        result = scene.find_noun_phrase(MockNP("cube"), return_all_matches=False)
         assert result == cube
         
-        result = scene.find_noun_phrase(MockNP("sphere"))
+        result = scene.find_noun_phrase(MockNP("sphere"), return_all_matches=False)
         assert result == sphere
 
     def test_find_noun_phrase_not_found(self):
@@ -102,7 +102,7 @@ class TestSceneModel:
                 self.noun = noun
                 self.vector = vector
         
-        result = scene.find_noun_phrase(MockNP("nonexistent"))
+        result = scene.find_noun_phrase(MockNP("nonexistent"), return_all_matches=False)
         assert result is None
 
     def test_find_noun_phrase_by_vector_similarity(self):
@@ -130,7 +130,7 @@ class TestSceneModel:
                 self.noun = noun
                 self.vector = vector
         
-        result = scene.find_noun_phrase(MockNP("cube", search_vector))
+        result = scene.find_noun_phrase(MockNP("cube", search_vector), return_all_matches=False)
         assert result == red_cube  # Should find the red cube due to vector similarity
 
     def test_repr(self):

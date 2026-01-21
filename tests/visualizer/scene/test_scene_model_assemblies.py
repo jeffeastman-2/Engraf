@@ -296,7 +296,7 @@ class TestSceneModelWithAssemblies:
                 self.vector = vector
         
         np = MockNP("house")
-        found = scene.find_noun_phrase(np)
+        found = scene.find_noun_phrase(np, return_all_matches=False)
         
         # Should find assembly first (assemblies are searched before objects)
         assert found is assembly
@@ -319,7 +319,7 @@ class TestSceneModelWithAssemblies:
                 self.vector = vector
         
         np = MockNP("cube")
-        found = scene.find_noun_phrase(np)
+        found = scene.find_noun_phrase(np, return_all_matches=False)
         
         # Should find the cube inside the assembly
         assert found is cube
