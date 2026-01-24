@@ -397,3 +397,293 @@ class SyntheticLayer6Dataset(Dataset):
             'scene_objects': objects
         }
 
+
+class OnTheFlyLayer6Dataset(Dataset):
+    """
+    Generates Layer-6 training examples on-the-fly with full LATN processing.
+    
+    This dataset generates random scenes and sentences, processes them through
+    LATN L1-L5 to get real structural tokens and semantic vectors, and returns
+    properly formatted training examples.
+    
+    Unlike file-based datasets, this never materializes all examples to disk.
+    Each example is generated fresh during training, providing infinite variety.
+    
+    Args:
+        num_examples: Virtual dataset size (for epoch length)
+        objects_per_scene: Number of objects per generated scene
+        scene_cache_size: Number of scenes to cache (reuse scenes for efficiency)
+        sentences_per_scene: Sentences to generate per cached scene
+        max_structural_length: Max length for structural token sequences
+        max_target_length: Max length for target text
+        seed: Random seed (None for non-reproducible)
+    """
+    
+    def __init__(self,
+                 num_examples: int = 100000,
+                 objects_per_scene: int = 4,
+                 scene_cache_size: int = 100,
+                 sentences_per_scene: int = 1000,
+                 max_structural_length: int = 50,
+                 max_target_length: int = 50,
+                 seed: int = None):
+        
+        self.num_examples = num_examples
+        self.objects_per_scene = objects_per_scene
+        self.scene_cache_size = scene_cache_size
+        self.sentences_per_scene = sentences_per_scene
+        self.max_structural_length = max_structural_length
+        self.max_target_length = max_target_length
+        
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
+        
+        # Import from synthetic_generator
+        from engraf.llm_layer6.synthetic_generator import (
+            SHAPE_NOUNS, COLOR_ADJECTIVES, SIZE_ADJECTIVES,
+            INTENSITY_ADVERBS, ALL_SPATIAL_PREPS, ACTION_VERBS,
+            generate_random_scene, SentenceGenerator,
+            process_through_layer5, create_training_pair_from_hyp
+        )
+        
+        self.generate_random_scene = generate_random_scene
+        self.SentenceGenerator = SentenceGenerator
+        self.process_through_layer5 = process_through_layer5
+        self.create_training_pair_from_hyp = create_training_pair_from_hyp
+        
+        # Build text tokenizer from vocabulary
+        self._build_tokenizer(SHAPE_NOUNS, COLOR_ADJECTIVES, SIZE_ADJECTIVES,
+                              INTENSITY_ADVERBS, ALL_SPATIAL_PREPS, ACTION_VERBS)
+        
+        # Scene cache: list of (scene, executor, generator, sentences)
+        self._scene_cache = []
+        self._cache_idx = 0
+        
+        # Pre-warm cache with a few scenes
+        self._warm_cache(min(5, scene_cache_size))
+        
+        print(f"OnTheFlyLayer6Dataset initialized:")
+        print(f"  Virtual size: {num_examples} examples")
+        print(f"  Scene cache: {scene_cache_size} scenes")
+        print(f"  Vocabulary: {len(self.text_tokenizer.vocab)} words")
+    
+    def _build_tokenizer(self, nouns, colors, sizes, adverbs, preps, verbs):
+        """Build text tokenizer from known vocabulary."""
+        self.text_tokenizer = Layer6TextTokenizer()
+        
+        # All possible words in generated sentences
+        all_words = set()
+        
+        # Base vocabulary
+        all_words.update(nouns)
+        all_words.update(colors)
+        all_words.update(sizes)
+        all_words.update(adverbs)
+        all_words.update(preps)
+        all_words.update(verbs)
+        
+        # Grammar words
+        grammar_words = [
+            'the', 'is', 'are', 'a', 'an', 'of', 'to', 'in', 'on', 'at',
+            'yes', 'no', 'not', 'what', 'where', 'which', 'how',
+            'moving', 'placing', 'positioning',  # gerunds
+            'there', 'here', 'it', 'that', 'this'
+        ]
+        all_words.update(grammar_words)
+        
+        # Add punctuation as separate tokens
+        all_words.update(['.', '?', ',', '!'])
+        
+        # Fit tokenizer
+        self.text_tokenizer.fit(list(all_words))
+    
+    def _warm_cache(self, num_scenes: int):
+        """Pre-generate scenes and their sentence pools."""
+        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        
+        for _ in range(num_scenes):
+            scene = self.generate_random_scene(self.objects_per_scene)
+            executor = LATNLayerExecutor(scene)
+            generator = self.SentenceGenerator(scene)
+            
+            # Generate all possible sentences for this scene
+            all_sentences = generator.generate_all()
+            random.shuffle(all_sentences)
+            
+            self._scene_cache.append({
+                'scene': scene,
+                'executor': executor,
+                'sentences': all_sentences,
+                'sentence_idx': 0
+            })
+    
+    def _get_scene_and_sentence(self):
+        """Get a scene and next sentence from cache, rotating through scenes."""
+        # Rotate through cached scenes
+        cache_entry = self._scene_cache[self._cache_idx % len(self._scene_cache)]
+        
+        # Get next sentence from this scene
+        sentences = cache_entry['sentences']
+        sent_idx = cache_entry['sentence_idx']
+        
+        if sent_idx >= len(sentences):
+            # Exhausted this scene's sentences - regenerate scene
+            from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+            
+            scene = self.generate_random_scene(self.objects_per_scene)
+            executor = LATNLayerExecutor(scene)
+            generator = self.SentenceGenerator(scene)
+            all_sentences = generator.generate_all()
+            random.shuffle(all_sentences)
+            
+            self._scene_cache[self._cache_idx % len(self._scene_cache)] = {
+                'scene': scene,
+                'executor': executor,
+                'sentences': all_sentences,
+                'sentence_idx': 0
+            }
+            cache_entry = self._scene_cache[self._cache_idx % len(self._scene_cache)]
+            sent_idx = 0
+        
+        sentence, answer, obj_ids = cache_entry['sentences'][sent_idx]
+        cache_entry['sentence_idx'] = sent_idx + 1
+        
+        self._cache_idx += 1
+        
+        return cache_entry['scene'], cache_entry['executor'], sentence, answer, obj_ids
+    
+    def __len__(self):
+        return self.num_examples
+    
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        """Generate a single training example on-the-fly."""
+        max_attempts = 5
+        
+        for attempt in range(max_attempts):
+            try:
+                scene, executor, sentence, answer, obj_ids = self._get_scene_and_sentence()
+                
+                # Process through LATN
+                hyp = self.process_through_layer5(executor, sentence, scene)
+                
+                if hyp is None or not hyp.layer6_tokens:
+                    continue
+                
+                # Create training pair
+                pair = self.create_training_pair_from_hyp(hyp, answer)
+                
+                # Extract structural tokens
+                struct_tokens = pair['structural_tokens']
+                struct_ids = [STRUCTURAL_TOKEN_TO_ID.get(tok, STRUCTURAL_TOKEN_TO_ID['<PAD>']) 
+                              for tok in struct_tokens]
+                
+                # Extract semantic vectors
+                semantic_vecs = []
+                for vec in pair['semantic_vectors']:
+                    if isinstance(vec, (list, tuple)):
+                        vec_array = np.array(vec, dtype=np.float32)
+                        if len(vec_array) < 76:
+                            vec_array = np.pad(vec_array, (0, 76 - len(vec_array)))
+                        semantic_vecs.append(vec_array[:76])
+                    else:
+                        semantic_vecs.append(np.zeros(76, dtype=np.float32))
+                semantic_vecs = np.array(semantic_vecs, dtype=np.float32)
+                
+                # Grounding - simplified object ID encoding
+                grounding = pair['scene_grounding']
+                grounding_ids = [hash(obj_id) % 1000 if obj_id else 0 for obj_id in grounding]
+                
+                # Target text
+                target_ids = self.text_tokenizer.encode(answer, self.max_target_length)
+                
+                # Pad/truncate structural sequence
+                seq_len = len(struct_ids)
+                
+                if seq_len < self.max_structural_length:
+                    pad_len = self.max_structural_length - seq_len
+                    struct_ids.extend([STRUCTURAL_TOKEN_TO_ID['<PAD>']] * pad_len)
+                    semantic_vecs = np.vstack([semantic_vecs, np.zeros((pad_len, 76), dtype=np.float32)])
+                    grounding_ids.extend([0] * pad_len)
+                else:
+                    struct_ids = struct_ids[:self.max_structural_length]
+                    semantic_vecs = semantic_vecs[:self.max_structural_length]
+                    grounding_ids = grounding_ids[:self.max_structural_length]
+                
+                return {
+                    'structural_tokens': torch.tensor(struct_ids, dtype=torch.long),
+                    'semantic_vectors': torch.tensor(semantic_vecs, dtype=torch.float32),
+                    'grounding_ids': torch.tensor(grounding_ids, dtype=torch.long),
+                    'target_ids': torch.tensor(target_ids, dtype=torch.long),
+                    'question': sentence,
+                }
+                
+            except Exception as e:
+                continue
+        
+        # Fallback: return a minimal valid example
+        return {
+            'structural_tokens': torch.zeros(self.max_structural_length, dtype=torch.long),
+            'semantic_vectors': torch.zeros(self.max_structural_length, 76, dtype=torch.float32),
+            'grounding_ids': torch.zeros(self.max_structural_length, dtype=torch.long),
+            'target_ids': torch.zeros(self.max_target_length, dtype=torch.long),
+            'question': '',
+        }
+
+
+def create_onthefly_dataloaders(
+    num_train: int = 100000,
+    num_val: int = 5000,
+    batch_size: int = 32,
+    objects_per_scene: int = 4,
+    scene_cache_size: int = 100,
+    num_workers: int = 0,
+    seed: int = 42
+) -> Tuple[DataLoader, DataLoader, Layer6TextTokenizer]:
+    """Create train and validation dataloaders for on-the-fly generation.
+    
+    Args:
+        num_train: Number of training examples per epoch
+        num_val: Number of validation examples
+        batch_size: Batch size
+        objects_per_scene: Objects per generated scene
+        scene_cache_size: Number of scenes to cache
+        num_workers: DataLoader workers (0 for single-process)
+        seed: Random seed
+    
+    Returns:
+        (train_loader, val_loader, text_tokenizer)
+    """
+    train_dataset = OnTheFlyLayer6Dataset(
+        num_examples=num_train,
+        objects_per_scene=objects_per_scene,
+        scene_cache_size=scene_cache_size,
+        seed=seed
+    )
+    
+    val_dataset = OnTheFlyLayer6Dataset(
+        num_examples=num_val,
+        objects_per_scene=objects_per_scene,
+        scene_cache_size=max(10, scene_cache_size // 10),
+        seed=seed + 1  # Different seed for validation
+    )
+    
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=False,  # Dataset already randomizes
+        collate_fn=collate_batch,
+        num_workers=num_workers
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=collate_batch,
+        num_workers=num_workers
+    )
+    
+    print(f"Train: {num_train} examples/epoch, Val: {num_val} examples")
+    
+    return train_loader, val_loader, train_dataset.text_tokenizer

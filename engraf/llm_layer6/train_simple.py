@@ -2,10 +2,11 @@
 """
 Training script for Simplified Encoder-Only Layer-6 LLM.
 
-Key difference from previous version:
+Key features:
+- On-the-fly training data generation (no static files needed)
+- Generates ~100k examples per epoch from LATN L1-L5 processing
 - Much smaller model (fewer parameters)
-- Can actually learn from 43 examples
-- Focuses on structural tokens, ignores semantic vectors
+- Focuses on structural tokens with semantic vectors
 """
 
 import sys
@@ -19,7 +20,7 @@ from pathlib import Path
 import json
 
 from engraf.llm_layer6.model_simple import Layer6EncoderOnlySimple
-from engraf.llm_layer6.dataset import create_dataloaders
+from engraf.llm_layer6.dataset import create_dataloaders, create_onthefly_dataloaders
 
 
 def train_epoch(model, train_loader, optimizer, criterion, device, epoch):
@@ -127,12 +128,25 @@ def main(args):
     print(f"Device: {device}")
     print()
     
-    # Load data
-    print(f"Loading dataset from {args.dataset}...")
-    train_loader, val_loader, text_tokenizer = create_dataloaders(
-        args.dataset,
-        batch_size=args.batch_size
-    )
+    # Load data - prefer on-the-fly generation unless file specified
+    if args.dataset and Path(args.dataset).exists():
+        print(f"Loading dataset from file: {args.dataset}")
+        train_loader, val_loader, text_tokenizer = create_dataloaders(
+            args.dataset,
+            batch_size=args.batch_size
+        )
+    else:
+        print(f"Generating training data on-the-fly...")
+        print(f"  {args.num_train_examples:,} training examples per epoch")
+        print(f"  {args.num_val_examples:,} validation examples")
+        print(f"  {args.scene_cache_size} cached scenes")
+        train_loader, val_loader, text_tokenizer = create_onthefly_dataloaders(
+            num_train=args.num_train_examples,
+            num_val=args.num_val_examples,
+            batch_size=args.batch_size,
+            scene_cache_size=args.scene_cache_size,
+            seed=42
+        )
     print()
     
     # Create model
@@ -214,8 +228,26 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--dataset',
-        default='layer6_training_data_expanded.jsonl',
-        help='Path to training dataset (JSONL)'
+        default=None,
+        help='Path to training dataset (JSONL). If not provided, generates on-the-fly.'
+    )
+    parser.add_argument(
+        '--num_train_examples',
+        type=int,
+        default=100000,
+        help='Number of training examples per epoch (on-the-fly mode)'
+    )
+    parser.add_argument(
+        '--num_val_examples',
+        type=int,
+        default=5000,
+        help='Number of validation examples (on-the-fly mode)'
+    )
+    parser.add_argument(
+        '--scene_cache_size',
+        type=int,
+        default=100,
+        help='Number of scenes to cache for on-the-fly generation'
     )
     parser.add_argument(
         '--num_epochs',
@@ -226,7 +258,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--batch_size',
         type=int,
-        default=4,
+        default=32,
         help='Batch size for training'
     )
     parser.add_argument(
@@ -238,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--max_output_length',
         type=int,
-        default=15,
+        default=50,
         help='Maximum output sequence length'
     )
     
