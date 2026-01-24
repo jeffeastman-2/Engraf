@@ -27,6 +27,7 @@ if project_root not in sys.path:
 
 from engraf.interpreter.sentence_interpreter import SentenceInterpreter
 from engraf.visualizer.renderers.vpython_renderer import VPythonRenderer
+from engraf.llm_layer6.response_generator import Layer6ResponseGenerator
 
 
 def demo_basic_commands():
@@ -44,6 +45,7 @@ def demo_basic_commands():
     )
     
     interpreter = SentenceInterpreter(renderer=renderer)
+    layer6_gen = Layer6ResponseGenerator(interpreter.scene)
     
     # Demo sentences with positioning to spread objects out
     demo_sentences = [
@@ -79,6 +81,10 @@ def demo_basic_commands():
                     print(f"   🎬 Actions: {', '.join(result['actions_performed'])}")
             else:
                 print(f"   ❌ Failed: {result['message']}")
+            
+            # Print Layer-6 structural representation
+            layer6_gen.scene = interpreter.scene  # Update scene reference
+            layer6_gen.print_layer6(sentence)
                 
         except Exception as e:
             print(f"   💥 Error: {e}")
@@ -92,11 +98,14 @@ def demo_basic_commands():
     print("✅ Basic demo complete! Objects created in 3D scene.")
     print()
     
-    return interpreter
+    return interpreter, layer6_gen
 
 
-def interactive_mode(interpreter):
+def interactive_mode(interpreter, layer6_gen=None):
     """Run interactive mode for sentence interpretation."""
+    if layer6_gen is None:
+        layer6_gen = Layer6ResponseGenerator(interpreter.scene)
+    
     print("🎮 Interactive Mode")
     print("=" * 30)
     print("Enter natural language commands to create and modify 3D objects.")
@@ -179,6 +188,10 @@ def interactive_mode(interpreter):
                         print(f"   🎬 Actions: {', '.join(result['actions_performed'])}")
                 else:
                     print(f"❌ {result.get('message', 'Failed')}")
+                
+                # Print Layer-6 structural representation
+                layer6_gen.scene = interpreter.scene
+                layer6_gen.print_layer6(user_input)
             else:
                 print(f"✅ {result}")
             
@@ -199,12 +212,12 @@ def main():
     
     try:
         # Run basic demo
-        interpreter = demo_basic_commands()
+        interpreter, layer6_gen = demo_basic_commands()
         
         # Go directly to interactive mode
         print("🎮 Entering interactive mode...")
         print()
-        interactive_mode(interpreter)
+        interactive_mode(interpreter, layer6_gen)
         
     except ImportError as e:
         print(f"❌ Import Error: {e}")

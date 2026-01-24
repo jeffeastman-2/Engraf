@@ -6,7 +6,8 @@ VERB_INFLECTION_PATTERNS = [
     # Past participle patterns (for -ed ending)
     (r"(.+)ed$", "verb_past_part", lambda m: [m.group(1), m.group(1) + "e"]),  # called -> call, named -> name
     
-    # Present participle patterns (for -ing ending) 
+    # Present participle / gerund patterns (for -ing ending) 
+    # Sets verb_present_part; caller should also set gerund if used nominally
     (r"(.+)ing$", "verb_present_part", lambda m: [m.group(1), m.group(1) + "e"]),  # calling -> call, naming -> name
 ]
 
@@ -80,3 +81,72 @@ def is_verb_inflection(word):
     """
     _, _, found = find_root_verb(word)
     return found and word.lower() not in SEMANTIC_VECTOR_SPACE
+
+
+def verb_to_gerund(verb: str) -> str:
+    """
+    Convert a base verb to its gerund (-ing) form.
+    
+    Handles common English spelling rules:
+    - drop silent 'e': make -> making, create -> creating
+    - double final consonant after short vowel: run -> running, put -> putting
+    - verbs ending in 'ie': die -> dying, lie -> lying
+    - regular: draw -> drawing, move -> moving
+    
+    Args:
+        verb: Base form of verb (e.g., 'draw', 'make', 'run')
+        
+    Returns:
+        Gerund form (e.g., 'drawing', 'making', 'running')
+    """
+    verb = verb.lower().strip()
+    
+    if not verb:
+        return verb
+    
+    # Irregular/exception cases
+    irregular_gerunds = {
+        'begin': 'beginning',
+        'forget': 'forgetting', 
+        'occur': 'occurring',
+        'refer': 'referring',
+        'prefer': 'preferring',
+        'open': 'opening',  # Don't double 'n' despite CVC pattern
+    }
+    if verb in irregular_gerunds:
+        return irregular_gerunds[verb]
+    
+    # Verbs ending in 'ie' -> 'ying' (die -> dying, lie -> lying)
+    if verb.endswith('ie'):
+        return verb[:-2] + 'ying'
+    
+    # Verbs ending in 'ee' -> just add 'ing' (see -> seeing, free -> freeing)
+    if verb.endswith('ee'):
+        return verb + 'ing'
+    
+    # Verbs ending in silent 'e' -> drop 'e' and add 'ing'
+    # (make -> making, create -> creating, move -> moving)
+    if verb.endswith('e') and len(verb) > 1:
+        return verb[:-1] + 'ing'
+    
+    # Double final consonant for CVC pattern (consonant-vowel-consonant)
+    # Only for short one-syllable words ending in single consonant after single vowel
+    # Common cases: run -> running, put -> putting, sit -> sitting
+    vowels = 'aeiou'
+    if len(verb) >= 3:
+        last = verb[-1]
+        second_last = verb[-2]
+        third_last = verb[-3]
+        
+        # Don't double 'w', 'x', 'y'
+        # Only double if it's a short (typically one-syllable) word
+        # Multi-syllable words like 'color', 'position', 'open' don't double
+        if last not in vowels and last not in 'wxy':
+            if second_last in vowels and third_last not in vowels:
+                # Only double for short words (3-4 chars typically)
+                # This avoids doubling in longer words like 'color', 'enter', 'open'
+                if len(verb) <= 4:
+                    return verb + last + 'ing'
+    
+    # Regular case: just add 'ing'
+    return verb + 'ing'

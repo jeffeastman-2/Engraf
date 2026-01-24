@@ -34,7 +34,8 @@ VECTOR_DIMENSIONS = [
     # Verb inflection forms
     "verb_past",        # past tense verb form (called, named, created)
     "verb_past_part",   # past participle form (called, named, created)
-    "verb_present_part", # present participle/gerund form (calling, naming, creating)
+    "verb_present_part", # present participle form (is calling, is naming)
+    "gerund",           # gerund form - verb used as noun (drawing, rotating)
     
     # Comparative/superlative forms
     "comp",      # comparative forms (bigger, redder, taller)

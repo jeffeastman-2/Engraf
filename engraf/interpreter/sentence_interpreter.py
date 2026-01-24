@@ -153,8 +153,6 @@ class SentenceInterpreter:
             # Handle tobe sentences (e.g., "the cube is red")
             if hasattr(parsed_sentence, 'tobe') and parsed_sentence.tobe:
                 tobe_result = self.scene_manager.execute_tobe_sentence(parsed_sentence)
-                print(f"🔍 DEBUG: tobe_result type: {type(tobe_result)}")
-                print(f"🔍 DEBUG: tobe_result: {tobe_result}")
                 result.update(tobe_result)
             
             self._execution_history.append(result)

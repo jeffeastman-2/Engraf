@@ -9,7 +9,8 @@ Modules:
 - adapter: encoder/adapter skeleton to project LATN semantic vectors
 - dataset: PyTorch datasets for training (file-based and on-the-fly)
 - synthetic_generator: comprehensive synthetic data generation
+- response_generator: Layer-6 response generation for inference
 
 """
 
-__all__ = ["dataset_extractor", "adapter", "dataset", "synthetic_generator"]
+__all__ = ["dataset_extractor", "adapter", "dataset", "synthetic_generator", "response_generator"]
