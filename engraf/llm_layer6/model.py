@@ -11,19 +11,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from engraf.lexer.vector_space import VECTOR_LENGTH
+
+# Semantic vector dimension (from VECTOR_DIMENSIONS)
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH
+
 
 class Layer6Encoder(nn.Module):
     """Encodes Layer-6 structural tokens and semantic vectors.
     
     Combines:
     - Structural token embeddings ([NP, ]NP, [VP, ]VP, etc.)
-    - Semantic vectors (76-dim from LATN)
+    - Semantic vectors (SEMANTIC_VECTOR_DIM from LATN)
     - Scene grounding references (object_id strings)
     """
     
     def __init__(self, 
                  structural_vocab_size=12,
-                 semantic_dim=76,
+                 semantic_dim=SEMANTIC_VECTOR_DIM,
                  embedding_dim=256,
                  hidden_dim=512,
                  num_layers=2,
@@ -177,7 +182,7 @@ class Layer6LLM(nn.Module):
     def __init__(self,
                  text_vocab_size,
                  structural_vocab_size=12,
-                 semantic_dim=76,
+                 semantic_dim=SEMANTIC_VECTOR_DIM,
                  embedding_dim=256,
                  hidden_dim=512,
                  num_layers=2,

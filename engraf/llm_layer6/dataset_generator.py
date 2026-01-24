@@ -14,7 +14,11 @@ sys.path.insert(0, '/Users/jeff/Python/Engraf')
 
 from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
+from engraf.lexer.vector_space import VECTOR_LENGTH
 import itertools
+
+# Semantic vector dimension (from VECTOR_DIMENSIONS)
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH
 
 
 def generate_spatial_questions(scene):
@@ -192,7 +196,7 @@ def create_mock_hypothesis_for_question(question, answer, obj_ids, scene):
             # Add a mock NP phrase
             hyp.add_layer6_phrase(
                 phrase_type="NP",
-                phrase_vector=obj.vector.as_numpy_array() if hasattr(obj.vector, 'as_numpy_array') else np.zeros(76),
+                phrase_vector=obj.vector.as_numpy_array() if hasattr(obj.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM),
                 scene_object=obj
             )
     
@@ -202,14 +206,14 @@ def create_mock_hypothesis_for_question(question, answer, obj_ids, scene):
             start_idx=0,
             end_idx=len(hyp.layer6_tokens) - 1,
             phrase_type="VP",
-            phrase_vector=np.random.randn(76),
+            phrase_vector=np.random.randn(SEMANTIC_VECTOR_DIM),
             scene_object=None
         )
         hyp.wrap_layer6_with_phrase(
             start_idx=0,
             end_idx=len(hyp.layer6_tokens) - 1,
             phrase_type="SP",
-            phrase_vector=np.random.randn(76),
+            phrase_vector=np.random.randn(SEMANTIC_VECTOR_DIM),
             scene_object=None
         )
     

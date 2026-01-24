@@ -22,6 +22,10 @@ import json
 
 from engraf.llm_layer6.model import Layer6LLM
 from engraf.llm_layer6.dataset import create_dataloaders
+from engraf.lexer.vector_space import VECTOR_LENGTH
+
+# Semantic vector dimension (from VECTOR_DIMENSIONS)
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH
 
 
 def train_epoch(model, train_loader, optimizer, criterion, device, epoch):
@@ -157,7 +161,7 @@ def main():
     model = Layer6LLM(
         text_vocab_size=len(text_tokenizer.vocab),
         structural_vocab_size=12,
-        semantic_dim=76,
+        semantic_dim=SEMANTIC_VECTOR_DIM,
         embedding_dim=args.embedding_dim,
         hidden_dim=args.hidden_dim,
         num_layers=args.num_layers,
@@ -242,7 +246,7 @@ def main():
         'dropout': args.dropout,
         'text_vocab_size': len(text_tokenizer.vocab),
         'structural_vocab_size': 12,
-        'semantic_dim': 76,
+        'semantic_dim': SEMANTIC_VECTOR_DIM,
         'learning_rate': args.learning_rate,
         'batch_size': args.batch_size,
         'num_epochs': args.num_epochs,

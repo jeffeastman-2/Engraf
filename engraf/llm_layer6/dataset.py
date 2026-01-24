@@ -13,6 +13,10 @@ from torch.utils.data import Dataset, DataLoader
 from typing import Dict, List, Tuple
 
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.vector_space import VECTOR_LENGTH
+
+# Semantic vector dimension (from VECTOR_DIMENSIONS)
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH  # Currently 69
 
 
 # Structural vocabulary for Layer-6 tokens
@@ -166,7 +170,7 @@ class Layer6Dataset(Dataset):
         Returns:
             Dict with keys:
             - structural_tokens: (seq_len,) token IDs
-            - semantic_vectors: (seq_len, 76) float32 tensors
+            - semantic_vectors: (seq_len, SEMANTIC_VECTOR_DIM) float32 tensors
             - grounding_ids: (seq_len,) object IDs
             - target_ids: (tgt_len,) token IDs
             - question: original question string
@@ -178,18 +182,18 @@ class Layer6Dataset(Dataset):
         struct_ids = [STRUCTURAL_TOKEN_TO_ID.get(tok, STRUCTURAL_TOKEN_TO_ID['<PAD>']) 
                       for tok in struct_tokens]
         
-        # Semantic vectors - ensure all are 76-dim
+        # Semantic vectors - ensure all are SEMANTIC_VECTOR_DIM
         semantic_vecs = []
         for vec in ex['semantic_vectors']:
             if isinstance(vec, (list, tuple)):
                 vec_array = np.array(vec, dtype=np.float32)
-                # Pad to 76 dims if necessary
-                if len(vec_array) < 76:
-                    vec_array = np.pad(vec_array, (0, 76 - len(vec_array)), mode='constant', constant_values=0)
-                semantic_vecs.append(vec_array[:76])  # Also truncate if longer
+                # Pad to SEMANTIC_VECTOR_DIM if necessary
+                if len(vec_array) < SEMANTIC_VECTOR_DIM:
+                    vec_array = np.pad(vec_array, (0, SEMANTIC_VECTOR_DIM - len(vec_array)), mode='constant', constant_values=0)
+                semantic_vecs.append(vec_array[:SEMANTIC_VECTOR_DIM])  # Also truncate if longer
             else:
-                # Single value - pad to 76 dims
-                semantic_vecs.append(np.array([vec] + [0] * 75, dtype=np.float32))
+                # Single value - pad to SEMANTIC_VECTOR_DIM
+                semantic_vecs.append(np.array([vec] + [0] * (SEMANTIC_VECTOR_DIM - 1), dtype=np.float32))
         
         semantic_vecs = np.array(semantic_vecs, dtype=np.float32)
         
@@ -208,7 +212,7 @@ class Layer6Dataset(Dataset):
         if seq_len < self.max_structural_length:
             pad_len = self.max_structural_length - seq_len
             struct_ids.extend([STRUCTURAL_TOKEN_TO_ID['<PAD>']] * pad_len)
-            semantic_vecs = np.vstack([semantic_vecs, np.zeros((pad_len, 76), dtype=np.float32)])
+            semantic_vecs = np.vstack([semantic_vecs, np.zeros((pad_len, SEMANTIC_VECTOR_DIM), dtype=np.float32)])
             grounding_ids.extend([self.object_id_to_idx[None]] * pad_len)
         else:
             struct_ids = struct_ids[:self.max_structural_length]
@@ -583,11 +587,11 @@ class OnTheFlyLayer6Dataset(Dataset):
                 for vec in pair['semantic_vectors']:
                     if isinstance(vec, (list, tuple)):
                         vec_array = np.array(vec, dtype=np.float32)
-                        if len(vec_array) < 76:
-                            vec_array = np.pad(vec_array, (0, 76 - len(vec_array)))
-                        semantic_vecs.append(vec_array[:76])
+                        if len(vec_array) < SEMANTIC_VECTOR_DIM:
+                            vec_array = np.pad(vec_array, (0, SEMANTIC_VECTOR_DIM - len(vec_array)))
+                        semantic_vecs.append(vec_array[:SEMANTIC_VECTOR_DIM])
                     else:
-                        semantic_vecs.append(np.zeros(76, dtype=np.float32))
+                        semantic_vecs.append(np.zeros(SEMANTIC_VECTOR_DIM, dtype=np.float32))
                 semantic_vecs = np.array(semantic_vecs, dtype=np.float32)
                 
                 # Grounding - simplified object ID encoding
@@ -603,7 +607,7 @@ class OnTheFlyLayer6Dataset(Dataset):
                 if seq_len < self.max_structural_length:
                     pad_len = self.max_structural_length - seq_len
                     struct_ids.extend([STRUCTURAL_TOKEN_TO_ID['<PAD>']] * pad_len)
-                    semantic_vecs = np.vstack([semantic_vecs, np.zeros((pad_len, 76), dtype=np.float32)])
+                    semantic_vecs = np.vstack([semantic_vecs, np.zeros((pad_len, SEMANTIC_VECTOR_DIM), dtype=np.float32)])
                     grounding_ids.extend([0] * pad_len)
                 else:
                     struct_ids = struct_ids[:self.max_structural_length]
@@ -624,7 +628,7 @@ class OnTheFlyLayer6Dataset(Dataset):
         # Fallback: return a minimal valid example
         return {
             'structural_tokens': torch.zeros(self.max_structural_length, dtype=torch.long),
-            'semantic_vectors': torch.zeros(self.max_structural_length, 76, dtype=torch.float32),
+            'semantic_vectors': torch.zeros(self.max_structural_length, SEMANTIC_VECTOR_DIM, dtype=torch.float32),
             'grounding_ids': torch.zeros(self.max_structural_length, dtype=torch.long),
             'target_ids': torch.zeros(self.max_target_length, dtype=torch.long),
             'question': '',

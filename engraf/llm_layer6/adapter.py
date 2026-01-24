@@ -1,7 +1,7 @@
 """Adapter / encoder skeleton for Layer-6 inputs.
 
 This file provides a minimal `Layer6Encoder` skeleton that projects the
-76-dim LATN vectors and optional scene properties into a shared embedding
+LATN semantic vectors and optional scene properties into a shared embedding
 space and combines them with a small structural token embedding.
 
 The implementation is intentionally lightweight and dependency-free by
@@ -10,6 +10,11 @@ behind an import guard so the module can be imported where torch is
 unavailable (e.g., static analysis, tests).
 """
 from typing import Optional, Sequence
+
+from engraf.lexer.vector_space import VECTOR_LENGTH
+
+# Semantic vector dimension (from VECTOR_DIMENSIONS)
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH
 
 STRUCTURAL_VOCAB = ["[NP", "]NP", "[PP", "]PP", "[VP", "]VP", "[SP", "]SP", "<SEP>", "<BOS>", "<EOS>", "<OBJ>"]
 
@@ -30,10 +35,10 @@ try:
 
         Args:
             vocab_size: number of structural tokens (default 12)
-            latn_dim: LATN vector dimension (default 76)
+            latn_dim: LATN vector dimension (default SEMANTIC_VECTOR_DIM)
             embed_dim: resulting embedding dim (default 256)
         """
-        def __init__(self, vocab_size: int = None, latn_dim: int = 76, embed_dim: int = 256):
+        def __init__(self, vocab_size: int = None, latn_dim: int = SEMANTIC_VECTOR_DIM, embed_dim: int = 256):
             super().__init__()
             self.vocab_size = vocab_size or len(STRUCTURAL_VOCAB)
             self.latn_dim = latn_dim

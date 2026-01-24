@@ -7,7 +7,7 @@ LATN (Layer-Aware Tokenization Network) system, including Layer-6 LLM integratio
 
 Layer-6 uses a STRUCTURAL-ONLY representation where:
 - Tokens are purely structural markers: [NP, ]NP, [VP, ]VP, etc.
-- ALL semantics flow through 76-dim vectors (not token strings)
+- ALL semantics flow through VECTOR_LENGTH-dim vectors (not token strings)
 - Grounding IDs attach to closing brackets
 - Individual words (the, red, sphere) are NOT included
 """
@@ -18,7 +18,7 @@ import numpy as np
 
 # Import moved here to avoid circular imports
 from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
-from engraf.lexer.vector_space import VectorSpace
+from engraf.lexer.vector_space import VectorSpace, VECTOR_LENGTH
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.noun_phrase import NounPhrase
 
@@ -34,7 +34,7 @@ class TokenizationHypothesis:
     The layer6_* fields maintain a STRUCTURAL representation where:
     - Tokens are structural markers only: [NP, ]NP, [VP, ]VP, [PP, ]PP, [SP, ]SP
     - No individual words (the, red, sphere, above, etc.)
-    - All semantic content in 76-dim vectors
+    - All semantic content in VECTOR_LENGTH-dim vectors
     - SceneObject references on closing brackets
     """
     tokens: List[VectorSpace]
@@ -44,7 +44,7 @@ class TokenizationHypothesis:
     
     # Layer-6 structural representation (NEW)
     layer6_tokens: List[str] = field(default_factory=list)  # Pure structure: [NP, ]NP, etc.
-    layer6_vectors: List[np.ndarray] = field(default_factory=list)  # 76-dim semantic vectors
+    layer6_vectors: List[np.ndarray] = field(default_factory=list)  # VECTOR_LENGTH-dim semantic vectors
     layer6_scene_refs: List[Optional[Any]] = field(default_factory=list)  # SceneObject references
     
     def __len__(self):
@@ -98,7 +98,7 @@ class TokenizationHypothesis:
         
         Args:
             phrase_type: "NP", "PP", "VP", or "SP"
-            phrase_vector: The composite 76-dim vector for this phrase
+            phrase_vector: The composite VECTOR_LENGTH-dim vector for this phrase
             scene_object: Optional SceneObject reference (for grounded NPs)
         
         Example:
@@ -142,7 +142,7 @@ class TokenizationHypothesis:
             start_idx: Starting index in layer6_tokens to wrap
             end_idx: Ending index in layer6_tokens to wrap (inclusive)
             phrase_type: "PP", "VP", or "SP"
-            phrase_vector: The composite 76-dim vector for this phrase
+            phrase_vector: The composite VECTOR_LENGTH-dim vector for this phrase
             scene_object: Optional SceneObject reference
         
         Example:
@@ -168,14 +168,14 @@ class TokenizationHypothesis:
         self.layer6_scene_refs.insert(close_idx, scene_object)
     
     def _create_marker_vector(self, phrase_type: str, is_opening: bool) -> np.ndarray:
-        """Create a 76-dimensional vector for a structural marker.
+        """Create a VECTOR_LENGTH-dimensional vector for a structural marker.
         
         Args:
             phrase_type: "NP", "PP", "VP", or "SP"
             is_opening: True for "[NP", False for "]NP"
         
         Returns:
-            76-dimensional numpy array (mostly zeros, structural marker only)
+            VECTOR_LENGTH-dimensional numpy array (mostly zeros, structural marker only)
         """
         vec = np.zeros(len(VECTOR_DIMENSIONS))
         

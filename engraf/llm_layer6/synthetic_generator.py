@@ -22,8 +22,11 @@ from typing import List, Tuple, Dict, Any, Optional
 
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import vector_from_features
+from engraf.lexer.vector_space import vector_from_features, VECTOR_LENGTH
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
+
+# Semantic vector dimension
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH  # Currently 69
 
 
 # =============================================================================
@@ -398,7 +401,7 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
         # Add the main NP (direct object)
         if vp.noun_phrase:
             np_phrase = vp.noun_phrase
-            vec = np_phrase.vector.as_numpy_array() if hasattr(np_phrase.vector, 'as_numpy_array') else np.zeros(76)
+            vec = np_phrase.vector.as_numpy_array() if hasattr(np_phrase.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
             grounding = np_phrase.grounding if hasattr(np_phrase, 'grounding') else None
             scene_obj = None
             
@@ -412,12 +415,12 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
         
         # Add prepositional phrases
         for pp in vp.prepositions:
-            pp_vec = pp.vector.as_numpy_array() if hasattr(pp.vector, 'as_numpy_array') else np.zeros(76)
+            pp_vec = pp.vector.as_numpy_array() if hasattr(pp.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
             
             # First add the nested NP in the PP
             if pp.noun_phrase:
                 np_phrase = pp.noun_phrase
-                np_vec = np_phrase.vector.as_numpy_array() if hasattr(np_phrase.vector, 'as_numpy_array') else np.zeros(76)
+                np_vec = np_phrase.vector.as_numpy_array() if hasattr(np_phrase.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
                 np_grounding = np_phrase.grounding if hasattr(np_phrase, 'grounding') else None
                 np_scene_obj = None
                 
@@ -441,7 +444,7 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
         
         # Wrap everything with VP
         if len(hyp.layer6_tokens) > 0:
-            vp_vec = vp.vector.as_numpy_array() if hasattr(vp.vector, 'as_numpy_array') else np.zeros(76)
+            vp_vec = vp.vector.as_numpy_array() if hasattr(vp.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
             hyp.wrap_layer6_with_phrase(
                 start_idx=0,
                 end_idx=len(hyp.layer6_tokens) - 1,
@@ -452,7 +455,7 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
     
     # Wrap everything with SP
     if len(hyp.layer6_tokens) > 0:
-        sp_vec = hyp.tokens[0].as_numpy_array() if hasattr(hyp.tokens[0], 'as_numpy_array') else np.zeros(76)
+        sp_vec = hyp.tokens[0].as_numpy_array() if hasattr(hyp.tokens[0], 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
         hyp.wrap_layer6_with_phrase(
             start_idx=0,
             end_idx=len(hyp.layer6_tokens) - 1,
@@ -634,7 +637,7 @@ def create_mock_example(sentence: str, answer: str, obj_ids: List[str],
     for obj_id in obj_ids:
         if obj_id in obj_map:
             obj = obj_map[obj_id]
-            vec = obj.vector.as_numpy_array() if hasattr(obj.vector, 'as_numpy_array') else np.zeros(76)
+            vec = obj.vector.as_numpy_array() if hasattr(obj.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
             hyp.add_layer6_phrase("NP", vec, obj)
     
     # Wrap in VP then SP
@@ -643,14 +646,14 @@ def create_mock_example(sentence: str, answer: str, obj_ids: List[str],
             start_idx=0,
             end_idx=len(hyp.layer6_tokens) - 1,
             phrase_type="VP",
-            phrase_vector=np.zeros(76),
+            phrase_vector=np.zeros(SEMANTIC_VECTOR_DIM),
             scene_object=None
         )
         hyp.wrap_layer6_with_phrase(
             start_idx=0,
             end_idx=len(hyp.layer6_tokens) - 1,
             phrase_type="SP",
-            phrase_vector=np.zeros(76),
+            phrase_vector=np.zeros(SEMANTIC_VECTOR_DIM),
             scene_object=None
         )
     

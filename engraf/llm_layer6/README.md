@@ -1,26 +1,45 @@
 # Layer-6 LLM Integration (engraf/llm_layer6)
 
-This small package is a starting point for the Layer-6 LLM integration
-work on the `layer6-llm-integration` branch.
+This package provides Layer-6 LLM integration for the LATN system,
+enabling training and inference of small language models for spatial reasoning.
 
-Files
-- `dataset_extractor.py` — convert final Layer-6 hypotheses into JSONL
-  training pairs. Use `create_training_pair_from_hyp()` and `write_jsonl()`.
-- `adapter.py` — skeleton `Layer6Encoder` that projects LATN 76-d vectors
-  and structural tokens into a shared embedding space. A PyTorch-based
-  encoder is provided if `torch` is installed; otherwise `Layer6Encoder`
-  will be `None`.
+## Files
 
-Usage
-1. Parse questions through existing LATN pipeline to obtain final
-   hypotheses (Layer-5 final hypotheses exposing `get_layer6_representation()`
-   and `layer6_to_string()`).
-2. Use `dataset_extractor.create_training_pair_from_hyp(hyp, answer)` to
-   convert to a JSON-serializable example.
-3. Aggregate examples and write with `write_jsonl()`.
+### Core Modules
+- `dataset_extractor.py` — convert Layer-6 hypotheses into JSONL training pairs
+- `adapter.py` — skeleton encoder that projects LATN semantic vectors and structural tokens
+- `dataset.py` — PyTorch Dataset classes (file-based and on-the-fly generation)
+- `synthetic_generator.py` — comprehensive synthetic training data generator
 
-Next steps
-- Implement `TokenizationHypothesis` layer6 helper methods (`initialize_*`,
-  `add_layer6_phrase`, `wrap_layer6_with_phrase`) in the main codebase.
-- Add small CLI to synthesize scenes and generate a seed dataset.
-- Implement and train a tiny transformer using the adapter.
+### Models
+- `model.py` — full encoder-decoder Layer-6 LLM
+- `model_encoder_only.py` — encoder-only with fixed output positions  
+- `model_simple.py` — simplified encoder for smaller datasets
+
+### Training Scripts
+- `train.py` — train encoder-decoder model
+- `train_encoder_only.py` — train encoder-only model
+- `train_simple.py` — train simplified model (supports on-the-fly generation)
+
+## Usage
+
+### On-the-fly Training (Recommended)
+```bash
+# Train with 100k examples generated on-the-fly per epoch
+python train_simple.py --num_train_examples 100000 --num_epochs 10
+```
+
+### File-based Training
+```bash
+# Generate dataset file first (if needed)
+python synthetic_generator.py
+
+# Train from file
+python train_simple.py --dataset layer6_training_data.jsonl
+```
+
+## Vector Dimensions
+
+Semantic vectors use `VECTOR_LENGTH` from `engraf.lexer.vector_space`, 
+which is dynamically computed from `VECTOR_DIMENSIONS`. This ensures that
+if new dimensions are added, the models automatically adjust.

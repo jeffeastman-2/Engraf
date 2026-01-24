@@ -16,6 +16,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from engraf.lexer.vector_space import VECTOR_LENGTH
+
+# Semantic vector dimension (from VECTOR_DIMENSIONS)
+SEMANTIC_VECTOR_DIM = VECTOR_LENGTH
+
 
 class Layer6EncoderSimple(nn.Module):
     """Simplified encoder for small datasets."""
@@ -186,9 +191,9 @@ if __name__ == '__main__':
     
     # Test forward pass
     batch_token_ids = torch.randint(0, 12, (4, 20))
-    batch_sem_vecs = torch.randn(4, 20, 76)
+    batch_sem_vecs = torch.randn(4, 20, SEMANTIC_VECTOR_DIM)
     batch_ground_ids = torch.randint(0, 10, (4, 20))
     
     logits = model(batch_token_ids, batch_sem_vecs, batch_ground_ids)
     print(f"Output logits shape: {logits.shape}")
-    print(f"Expected: (4, 15, 27)")
+    print("Expected: (4, 15, 27)")
