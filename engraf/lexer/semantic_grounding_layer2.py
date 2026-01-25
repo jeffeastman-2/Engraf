@@ -77,13 +77,13 @@ class Layer2SemanticGrounder:
                 if len(resolved_objects) > 1:
                     alternative_matches = [(1.0, obj) for obj in resolved_objects[1:]]
                 confidence = 1.0  # High confidence for singular reference
-                description = f"Resolved singular pronoun '{np.pronoun}' to {resolved_objects[0].object_id}"
+                description = f"Resolved singular pronoun '{np.pronoun}' to {resolved_objects[0].entity_id}"
                 pronoun_type = 'singular'
             elif np.vector.isa("plural"):
                 # Plural pronouns: ground to all resolved objects equally
                 resolved_object_list = resolved_objects  # All objects
                 confidence = 1.0  # High confidence for plural reference to known objects
-                description = f"Resolved plural pronoun '{np.pronoun}' to {len(resolved_objects)} objects: {[obj.object_id for obj in resolved_objects]}"
+                description = f"Resolved plural pronoun '{np.pronoun}' to {len(resolved_objects)} entities: {[obj.entity_id for obj in resolved_objects]}"
                 pronoun_type = 'plural'
             else:
                 # Unknown grammatical number - fallback
@@ -91,7 +91,7 @@ class Layer2SemanticGrounder:
                 if len(resolved_objects) > 1:
                     alternative_matches = [(1.0, obj) for obj in resolved_objects[1:]]
                 confidence = 0.5
-                description = f"Resolved pronoun '{np.pronoun}' (unknown number) to {resolved_objects[0].object_id}"
+                description = f"Resolved pronoun '{np.pronoun}' (unknown number) to {resolved_objects[0].entity_id}"
                 pronoun_type = 'unknown'
             
             # Add grounding information to the NounPhrase

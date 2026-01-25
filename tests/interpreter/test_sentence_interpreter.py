@@ -199,12 +199,16 @@ class TestSentenceInterpreter:
     
     def test_complex_comparative_sentence(self):
         """Test complex comparative sentence parsing."""
+        # First create some objects so "them" and "the purple circle" can resolve
+        self.interpreter.interpret("draw a box at [0,0,0]")
+        self.interpreter.interpret("draw a sphere at [1,0,0]")
+        self.interpreter.interpret("draw a purple circle at [2,0,0]")
+        
         # This tests the parsing of comparative constructions with pronouns
         # and spatial relationships
         result = self.interpreter.interpret("make them more transparent than the purple circle at [3, 3, 3]")
         
-        # The sentence should parse successfully even if execution might fail
-        # due to missing objects to reference with "them"
+        # The sentence should parse successfully
         assert result['sentence_parsed'] is not None
         assert result['sentence_parsed'].predicate.verb == 'make'
         assert result['sentence_parsed'].predicate.noun_phrase.vector['pronoun'] == 1.0

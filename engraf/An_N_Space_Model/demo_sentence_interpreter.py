@@ -82,9 +82,10 @@ def demo_basic_commands():
             else:
                 print(f"   ❌ Failed: {result['message']}")
             
-            # Print Layer-6 structural representation
-            layer6_gen.scene = interpreter.scene  # Update scene reference
-            layer6_gen.print_layer6(sentence)
+            # Print Layer-6 structural representation using the parsed sentence phrase
+            # from the interpreter (which has resolved pronouns via scene context)
+            sentence_phrase = result.get('sentence_parsed')
+            layer6_gen.print_layer6(sentence, sentence_phrase)
                 
         except Exception as e:
             print(f"   💥 Error: {e}")

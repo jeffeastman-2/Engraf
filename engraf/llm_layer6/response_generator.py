@@ -22,6 +22,42 @@ class Layer6ResponseGenerator:
         """
         self.scene = scene
     
+    def get_layer6_from_parsed(self, sentence: str, sentence_phrase) -> Tuple[Optional[str], Optional[str]]:
+        """Get the Layer-6 input and expected response from an already-parsed sentence phrase.
+        
+        This method should be used when you have already parsed the sentence (e.g., via
+        the SentenceInterpreter) and want to generate Layer-6 output from that parse.
+        
+        Args:
+            sentence: The original sentence text
+            sentence_phrase: The parsed SentencePhrase from LATN Layer-5
+            
+        Returns:
+            Tuple of (layer6_input, expected_response) or (None, None) on failure
+        """
+        try:
+            if sentence_phrase is None:
+                return None, None
+            
+            # Create a minimal hypothesis to hold Layer-6 tokens
+            from engraf.lexer.hypothesis import TokenizationHypothesis
+            hyp = TokenizationHypothesis(tokens=[], confidence=1.0)
+            
+            # Populate Layer-6 from the sentence phrase
+            populate_layer6_from_sentence_phrase(hyp, sentence_phrase)
+            
+            # Get structural tokens
+            if not hasattr(hyp, 'layer6_tokens') or not hyp.layer6_tokens:
+                return None, None
+            
+            layer6_input = hyp.layer6_to_string() + " <SEP>"
+            expected_response = "<BOS> " + self.generate_response_from_parse(sentence, sentence_phrase) + " <EOS>"
+            
+            return layer6_input, expected_response
+            
+        except Exception:
+            return None, None
+    
     def get_layer6_representation(self, sentence: str) -> Tuple[Optional[str], Optional[str]]:
         """Get the Layer-6 input and expected response for a sentence.
         
@@ -32,8 +68,10 @@ class Layer6ResponseGenerator:
             Tuple of (layer6_input, expected_response) or (None, None) on failure
         """
         try:
-            executor = LATNLayerExecutor(self.scene)
-            result = executor.execute_layer5(sentence, report=False)
+            # Don't pass scene for Layer-6 parsing - we want syntactic structure only,
+            # not grounded interpretation (which would fail on unresolved pronouns)
+            executor = LATNLayerExecutor(scene_model=None)
+            result = executor.execute_layer5(sentence, tokenize_only=True, report=False)
             
             if not result.success or not result.hypotheses:
                 return None, None
@@ -120,13 +158,19 @@ class Layer6ResponseGenerator:
         # Default
         return f"Processing: {sentence}"
     
-    def print_layer6(self, sentence: str):
+    def print_layer6(self, sentence: str, sentence_phrase=None):
         """Print the Layer-6 representation for a sentence.
         
         Args:
             sentence: The sentence to process
+            sentence_phrase: Optional pre-parsed SentencePhrase. If provided, uses this
+                           instead of re-parsing the sentence (preferred for grounded
+                           interpretation where pronouns have been resolved).
         """
-        layer6_input, expected_response = self.get_layer6_representation(sentence)
+        if sentence_phrase is not None:
+            layer6_input, expected_response = self.get_layer6_from_parsed(sentence, sentence_phrase)
+        else:
+            layer6_input, expected_response = self.get_layer6_representation(sentence)
         
         if layer6_input and expected_response:
             print(f"   🧠 Layer-6 Input:    {layer6_input}")

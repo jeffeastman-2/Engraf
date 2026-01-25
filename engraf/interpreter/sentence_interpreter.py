@@ -17,6 +17,7 @@ from engraf.pos.verb_phrase import VerbPhrase
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.temporal_scenes import TemporalScenes
+from engraf.utils.debug import debug_print
 # VPython renderer will be imported conditionally to avoid hanging
 
 # Import specialized handlers
@@ -52,7 +53,7 @@ class SentenceInterpreter:
         # State tracking using references for handlers
         self._object_counter = [0]  # Use list for mutable reference
         self._execution_history = []  # Use underscore for consistency
-        self._last_acted_object = [None]  # Use list for mutable reference
+        self._last_acted_object: list[Optional[str]] = [None]  # Use list for mutable reference
         self._assembly_counter = [0]  # Assembly counter for unique IDs
         
         # Initialize specialized handlers
@@ -89,8 +90,8 @@ class SentenceInterpreter:
             elif "go forward in time" in sentence_lower:
                 return self.go_forward_in_time()
             
-            # Step 2: Parse the sentence using LATN
-            result = LATNLayerExecutor().execute_layer5(sentence)
+            # Step 2: Parse the sentence using LATN (with scene for pronoun resolution)
+            result = LATNLayerExecutor(self.scene).execute_layer5(sentence)
             best_hypothesis = None
             if result.success and result.hypotheses:
                 best_hypothesis = result.hypotheses[0]
@@ -104,9 +105,10 @@ class SentenceInterpreter:
             # Step 3: Validate semantic agreement with scene state
             is_valid, error_msg = self.semantic_validator.validate_command(self._current_sentence_parsed, sentence)
             if not is_valid:
-                return self.scene_manager.create_result(False, error_msg, sentence)
+                return self.scene_manager.create_result(False, error_msg or "Validation failed", sentence)
             
-            # Step 4: Execute the parsed sentence
+            # Step 4: Execute the parsed sentence (already validated non-None above)
+            assert self._current_sentence_parsed is not None
             result = self._execute_sentence(self._current_sentence_parsed, sentence)
             
             # Step 5: Update the visual scene
@@ -273,12 +275,12 @@ class SentenceInterpreter:
     
     def _handle_modification_verb(self, vp: VerbPhrase) -> list[str]:
         """Handle modification verbs using the ObjectModifier."""
-        print(f"🔧 _handle_modification_verb called with verb: {vp.verb}")
-        print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
+        debug_print(f"🔧 _handle_modification_verb called with verb: {vp.verb}")
+        debug_print(f"🔧 vp.noun_phrase: {vp.noun_phrase}")
         if vp.noun_phrase and vp.prepositions:
-            print(f"🔧 vp.prepositions: {vp.prepositions}")
+            debug_print(f"🔧 vp.prepositions: {vp.prepositions}")
         else:
-            print(f"🔧 No prepositional phrases found")
+            debug_print(f"🔧 No prepositional phrases found")
         
         modified_objects = []
         

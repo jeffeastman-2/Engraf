@@ -18,6 +18,7 @@ except ImportError:
 
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
+from engraf.utils.debug import debug_print
 from engraf.visualizer.transforms.transform_matrix import TransformMatrix
 
 
@@ -458,7 +459,7 @@ class VPythonRenderer(RendererBase):
         
         # Apply rotation using individual rotation values
         if obj.has_rotation():
-            print(f"🔧 Applying rotations: X={obj.rotation['x']}°, Y={obj.rotation['y']}°, Z={obj.rotation['z']}°")
+            debug_print(f"🔧 Applying rotations: X={obj.rotation['x']}°, Y={obj.rotation['y']}°, Z={obj.rotation['z']}°")
             
             # Get rotation in radians
             rot_radians = obj.get_rotation_radians()

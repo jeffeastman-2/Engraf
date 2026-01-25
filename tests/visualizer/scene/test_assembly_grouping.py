@@ -82,8 +82,10 @@ class TestAssemblyGrouping:
         group_result = interpreter.interpret("group them")
         
         # Should handle gracefully with an appropriate error message
+        # Either "no objects" (if parse succeeds) or "failed to parse" (if pronoun can't resolve)
         assert group_result['success'] is False
-        assert 'no objects' in group_result.get('message', '').lower()
+        msg = group_result.get('message', '').lower()
+        assert 'no objects' in msg or 'failed to parse' in msg
     
     def test_single_object_grouping(self):
         """Test grouping a single object."""

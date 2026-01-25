@@ -39,9 +39,18 @@ class Layer4SemanticGrounder:
         vp_has_pp  = len(vp.prepositions) > 0
         vp_has_adj = len(vp.adjective_complements) > 0
         vp_has_amount = vp.amount is not None
+        # Check if NP has embedded adjective semantics (e.g., "them more transparent")
+        np_has_adj_semantics = np.vector.isa("adj") if np.vector else False
+        # Check if PP is a comparative "than" construction
+        vp_has_comparative_pp = vp_has_pp and any(
+            pp.preposition == "than" or (pp.vector and pp.vector.isa("relational_comparison"))
+            for pp in vp.prepositions
+        )
+        
         if (vp_has_adj and vp_has_pp) or (vp_has_adj and vp_has_amount) or (vp_has_pp and vp_has_amount):
-            # multiple vp complements not allowed
-            return False
+            # multiple vp complements not allowed - BUT allow adj in NP + comparative PP
+            if not (np_has_adj_semantics and vp_has_comparative_pp):
+                return False
         np_preps_have_spatial_pp = False
         for prep in np.prepositions:
             if prep.vector.isa("spatial_location") or prep.vector.isa("spatial_proximity"):
@@ -50,11 +59,15 @@ class Layer4SemanticGrounder:
 
         # --- STYLE / STATE-CHANGE: make, color, texture ---
         # Expect: grounded NP + adjective complement (resulting state).
+        # Also accept: grounded NP with embedded adjective + comparative PP (e.g., "make them more transparent than X")
         # NOTE: color/texture carry both "transform" and "style"; prefer style rule.
         if vp.vector.isa("style") or (vp.vector.isa("transform") and not (
             vp.vector.isa("move") or vp.vector.isa("rotate") or vp.vector.isa("scale")
         )):
             if np.grounding and vp_has_adj:  # must operate on an existing object and needs adjective complement
+                return True
+            # Accept comparative construction: NP with adj semantics + "than" PP
+            if np.grounding and np_has_adj_semantics and vp_has_comparative_pp:
                 return True
 
         # TODO: refactor the below so that verbs may have multiple senses (e.g., "make" can be transform, style or create)
