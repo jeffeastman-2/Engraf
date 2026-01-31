@@ -7,11 +7,12 @@ Engraf combines advanced linguistic parsing with real-time 3D visualization, all
 ## ✨ Key Features
 
 ### 🧠 Advanced NLP Engine
-- **ATN (Augmented Transition Network)** parsing with hierarchical grammar support
-- **Semantic vector spaces** with 40+ dimensional embeddings for rich meaning representation
+- **LATN (Layered ATN)** 6-layer parsing pipeline with hypothesis generation and semantic grounding
+- **Semantic vector spaces** with 70+-dimensional embeddings for rich meaning representation
 - **Comparative/superlative adjective handling** (bigger, biggest, redder, reddest)
-- **Pronoun resolution** and contextual reference tracking
+- **Pronoun resolution** with scene-grounded anaphora tracking
 - **Multi-object coordination** with conjunction support
+- **Assembly grouping** for treating multiple objects as a single entity
 
 ### 🎬 3D Scene Generation
 - **Real-time VPython rendering** with interactive 3D visualizations
@@ -22,9 +23,15 @@ Engraf combines advanced linguistic parsing with real-time 3D visualization, all
 
 ### 🔧 Robust Architecture
 - **Modular interpreter system** with specialized handlers for different command types
-- **Scene state management** with object tracking and history
+- **Scene state management** with object tracking, assemblies, and temporal history
 - **Error handling** with graceful fallbacks and informative feedback
-- **Comprehensive test suite** with 220+ unit tests covering edge cases
+- **Comprehensive test suite** with 494+ unit tests covering edge cases
+
+### 🤖 Layer-6 LLM Integration
+- **On-the-fly training data generation** from parsed sentences automatically generated from randomly constructed 3D scenes
+- **Structural representation** with semantic tokens for LLM training
+- **Gerund-based response generation** ("Drawing the red cube.")
+- **Encoder-only and full transformer** model architectures
 
 ## 🚀 Quick Demo
 
@@ -60,10 +67,17 @@ engraf/
 │       ├── object_modifier.py   # Transformation handling
 │       ├── object_resolver.py   # Reference resolution
 │       └── scene_manager.py     # Scene state management
-├── lexer/                 # Tokenization and vocabulary
+├── lexer/                 # LATN tokenization and semantic grounding
+│   ├── latn_layer_executor.py    # 5-layer parsing orchestration
+│   ├── latn_tokenizer.py         # Multi-hypothesis tokenization
+│   ├── semantic_grounding_layer2.py  # NP grounding to scene objects
+│   ├── semantic_grounding_layer3.py  # PP spatial validation
+│   ├── semantic_grounding_layer4.py  # VP semantic validation
+│   ├── semantic_grounding_layer5.py  # Sentence-level grounding
 │   ├── token_stream.py    # Token processing pipeline
 │   ├── vocabulary.py      # Semantic vector space definitions
-│   └── vector_space.py    # Multi-dimensional embeddings
+│   ├── vector_space.py    # 70+-dimensional embeddings
+│   └── hypothesis.py      # Tokenization hypothesis management
 ├── pos/                   # Part-of-speech phrase structures
 │   ├── noun_phrase.py     # NP data structures
 │   ├── verb_phrase.py     # VP data structures
@@ -77,12 +91,20 @@ engraf/
 │   │   └── scene_object.py      # 3D object representations
 │   └── transforms/        # Geometric transformations
 │       └── transform_matrix.py       # Matrix operations
+├── llm_layer6/            # Layer-6 LLM integration
+│   ├── response_generator.py    # Layer-6 output generation
+│   ├── synthetic_generator.py   # Training data synthesis
+│   ├── dataset.py               # PyTorch dataset wrapper
+│   ├── model.py                 # Transformer architecture
+│   ├── model_encoder_only.py    # Encoder-only variant
+│   └── train.py                 # Training pipeline
 └── utils/                 # Utility functions
-    ├── actions.py         # Action definitions
+    ├── debug.py           # Debug output control
+    ├── verb_inflector.py  # Gerund/tense handling
     ├── noun_inflector.py  # Plural/singular handling
-    └── predicates.py      # Logical predicates
+    └── spatial_validation.py  # Spatial relationship validation
 
-tests/                     # Comprehensive test suite (220+ tests)
+tests/                     # Comprehensive test suite (494+ tests)
 ├── interpreter/           # Interpreter integration tests
 ├── visualizer/           # Rendering and scene tests
 └── [linguistic_tests]/   # Grammar and parsing tests
@@ -126,20 +148,34 @@ Engraf understands a rich variety of natural language constructs:
 
 ## 🧬 Technical Highlights
 
+### LATN (Layered ATN) Architecture
+Engraf uses a 6-layer parsing pipeline that progressively builds structure:
+
+| Layer | Function | Output |
+|-------|----------|--------|
+| **Layer 1** | Lexical tokenization | Multi-hypothesis token streams |
+| **Layer 2** | NP parsing + grounding | Noun phrases bound to scene objects |
+| **Layer 3** | PP parsing + spatial validation | Prepositional phrases with attachment |
+| **Layer 4** | VP parsing + semantic validation | Verb phrases with validated arguments |
+| **Layer 5** | Sentence parsing | Complete sentence structures |
+| **Layer 6** | LLM integration | Structural tokens + expected responses |
+
+Layers 1-5 generate multiple hypotheses ranked by confidence, with semantic grounding eliminating invalid interpretations based on scene state. Layer 6 produces training data for LLMs including structural tokens (`<SENTENCE>`, `<VP verb=draw>`, `<NP noun=cube adj=red>`) and gerund-form expected responses ("Drawing the red cube.").
+
 ### Semantic Vector Spaces
-Each word is represented in a 40+ dimensional semantic space capturing:
-- **Grammatical properties**: part-of-speech, number, case
-- **Spatial semantics**: location, scale, rotation coordinates  
+Each word is represented in a 70+-dimensional semantic space capturing:
+- **Grammatical properties**: part-of-speech, number, definiteness
+- **Spatial semantics**: location (X/Y/Z), scale, rotation coordinates  
 - **Visual properties**: color (RGB), texture, transparency
 - **Verb semantics**: create, transform, style, organize, edit, select
-- **Relational meaning**: spatial relationships, comparisons, possession
+- **Relational meaning**: spatial relationships, comparisons, proximity
 
 ### Advanced Parsing
 - **Hierarchical ATN grammar** with recursive phrase structures
-- **Contextual disambiguation** using semantic vectors
-- **Pronoun resolution** with scene state tracking
+- **Multi-hypothesis generation** with confidence-based ranking
+- **Scene-grounded pronoun resolution** for "it", "them", "they"
 - **Comparative forms** with automatic base form lookup and intensity scaling
-- **Coordinate parsing** for precise spatial positioning
+- **Coordinate parsing** for precise spatial positioning `[x, y, z]`
 
 ### 3D Rendering Pipeline
 - **VPython integration** for real-time browser-based visualization
@@ -239,11 +275,12 @@ Contributions welcome! Areas of active development:
 
 ## 📊 Project Stats
 
-- **220+ unit tests** with comprehensive coverage
-- **40+ semantic dimensions** in vector space
-- **12+ grammatical constructs** supported
+- **494+ unit tests** with comprehensive coverage
+- **70+ semantic dimensions** in vector space
+- **6-layer LATN parsing** pipeline with LLM integration
 - **6+ 3D object types** with extensible architecture
-- **4+ coordinate systems** (Cartesian, relative, spatial relationships)
+- **Assembly grouping** for multi-object manipulation
+- **Layer-6 LLM training** data generation
 
 ## 📜 License
 
