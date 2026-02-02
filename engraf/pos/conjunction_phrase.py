@@ -1,10 +1,12 @@
 
 
+from typing import List
+
 class ConjunctionPhrase:
-    def __init__(self, tok, phrases=[]):
+    def __init__(self, tok, phrases=None):
         self.conjunction = tok.word
         self.vector = tok
-        self.phrases = phrases # NPs or PPs or VPs or SPsf
+        self.phrases: List = phrases if phrases is not None else []  # NPs or PPs or VPs or SPs
 
     def __repr__(self):
         return f"ConjunctionPhrase({self.conjunction} {self.phrases})"

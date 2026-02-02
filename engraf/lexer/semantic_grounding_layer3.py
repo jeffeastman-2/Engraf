@@ -38,7 +38,7 @@ class Layer3SemanticGrounder:
     def __init__(self, scene_model: SceneModel):
         self.scene_model = scene_model
     
-    def ground_layer3(self, layer3_hypotheses):
+    def ground_layer3(self, layer3_hypotheses) -> List[TokenizationHypothesis]:
         """Two-pass PP attachment resolution with spatial validation and semantic grounding.
         
         Args:
@@ -88,7 +88,7 @@ class Layer3SemanticGrounder:
                 break
         return okay
    
-    def _validate_spatial_attachments(self, attachment_hypotheses) -> bool:
+    def _validate_spatial_attachments(self, attachment_hypotheses) -> List[TokenizationHypothesis]:
         """Validate PP attachments using spatial reasoning and return valid hypotheses.
             A hypothesis is valid if all its grounded NPs have PPs with valid spatial relationships.
             Should also cull PPs with invalid groundings within them

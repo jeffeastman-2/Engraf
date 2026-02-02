@@ -41,7 +41,7 @@ class Layer6ResponseGenerator:
             
             # Create a minimal hypothesis to hold Layer-6 tokens
             from engraf.lexer.hypothesis import TokenizationHypothesis
-            hyp = TokenizationHypothesis(tokens=[], confidence=1.0)
+            hyp = TokenizationHypothesis(tokens=[], confidence=1.0, description="layer6_response")
             
             # Populate Layer-6 from the sentence phrase
             populate_layer6_from_sentence_phrase(hyp, sentence_phrase)

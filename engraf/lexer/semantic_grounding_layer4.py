@@ -140,7 +140,7 @@ class Layer4SemanticGrounder:
             return ok
         return vp.vector.isa("tobe")  # allow "tobe" without NP (e.g. "is above the table")
 
-    def ground_layer4(self, hypotheses: List[TokenizationHypothesis]) -> List[Layer4GroundingResult]:
+    def ground_layer4(self, hypotheses: List[TokenizationHypothesis]) -> List[TokenizationHypothesis]:
         """Semantically ground verb phrases by analyzing their meaning and scene context.
 
         This performs semantic analysis of verb phrases without executing actions.
@@ -158,16 +158,17 @@ class Layer4SemanticGrounder:
             valid = True
             for token in hyp.tokens:
                 if token.isa("VP"):
-                    if token.isa("conj"):
-                        vps = token.phrase.phrases
-                        for vp in vps:
-                            if not self.validate_vp(vp):
+                    if token.phrase:  # Ensure phrase exists
+                        if token.isa("conj"):
+                            vps = token.phrase.phrases
+                            for vp in vps:  # type: ignore
+                                if not self.validate_vp(vp):
+                                    valid = False
+                                    break
+                        else:
+                            if not self.validate_vp(token.phrase):
                                 valid = False
                                 break
-                    else:
-                        if not self.validate_vp(token.phrase):
-                            valid = False
-                            break
                 elif token.isa("NP"):
                     continue
                 elif token.isa("conj"):

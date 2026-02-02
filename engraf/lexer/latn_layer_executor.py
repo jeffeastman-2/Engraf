@@ -285,7 +285,7 @@ class LATNLayerExecutor:
             # Layer 3 grounding - process PP attachments with spatial validation
             if not tokenize_only and self.layer3_grounder:
                 # Process PP attachment combinations with spatial validation
-                grounded_hypotheses = self.layer3_grounder.ground_layer3(layer3_hypotheses)
+                grounded_hypotheses: List[TokenizationHypothesis] = self.layer3_grounder.ground_layer3(layer3_hypotheses)
                 if report:
                     print(f"Layer 3 grounding produced {len(grounded_hypotheses)} hypotheses for: '{sentence}'")
                     self.enumerate_hypotheses(grounded_hypotheses, layer="3g")
@@ -360,15 +360,14 @@ class LATNLayerExecutor:
                 print(f"Layer 4 tokenization produced {len(layer4_hypotheses)} hypotheses for: '{sentence}'")
                 self.enumerate_hypotheses(layer4_hypotheses, layer="4t")
 
-            final_hypotheses = []
-            grounded_hypotheses = []
+            final_hypotheses: List[TokenizationHypothesis] = []
+            grounded_hypotheses: List[TokenizationHypothesis] = []
             # Layer 4 grounding - process VP attachments with semantic validation
             if not tokenize_only and self.layer4_grounder:
                 # Process VP attachment combinations with spatial validation
                 grounded_hypotheses = self.layer4_grounder.ground_layer4(layer4_hypotheses)
                 if report:
                     print(f"Layer 4 grounding produced {len(grounded_hypotheses)} hypotheses for: '{sentence}'")
-                    self.enumerate_hypotheses(grounded_hypotheses, layer="4g")
                 # Use the grounded hypotheses as the final result
                 final_hypotheses = grounded_hypotheses
             else:
@@ -386,7 +385,7 @@ class LATNLayerExecutor:
                 layer3_result=layer3_result,
                 hypotheses=final_hypotheses,
                 verb_phrases=verb_phrases,
-                grounding_results=grounded_hypotheses,
+                grounding_results=[],
                 success=True,
                 confidence=overall_confidence,
                 description=f"Layer 4 processed {len(verb_phrases)} verb phrases"
@@ -397,7 +396,7 @@ class LATNLayerExecutor:
                 layer3_result=layer3_result,
                 hypotheses=[],
                 verb_phrases=[],
-
+                grounding_results=[],
                 success=False,
                 confidence=0.0,
                 description=f"Layer 4 failed: {e}"
@@ -462,15 +461,18 @@ class LATNLayerExecutor:
                 layer4_result=layer4_result,
                 hypotheses=grounded_hypotheses,
                 sentence_phrases=sentence_phrases,
-                grounding_results=None,
+                grounding_results=[],
                 success=True,
                 confidence=overall_confidence,
                 description=description
             )
             
         except Exception as e:
+            # Get a valid layer4_result for error case
+            if 'layer4_result' not in locals() or layer4_result is None:
+                layer4_result = self.execute_layer4(sentence, tokenize_only=True, report=False)
             return Layer5Result(
-                layer4_result=layer4_result if 'layer4_result' in locals() else None,
+                layer4_result=layer4_result,
                 hypotheses=[],
                 sentence_phrases=[],
                 grounding_results=[],
@@ -565,9 +567,11 @@ def extract_verb_phrases(hypothesis: TokenizationHypothesis) -> List[VerbPhrase]
         if vp and isinstance(vp, VerbPhrase):
             verb_phrases.append(vp)
         elif vp and isinstance(vp, ConjunctionPhrase):
-            for part in vp.phrases:
-                if isinstance(part, VerbPhrase):
-                    verb_phrases.append(part)
+            # ConjunctionPhrase.phrases is a List, safe to iterate
+            if hasattr(vp, 'phrases') and vp.phrases:
+                for part in vp.phrases:  # type: ignore
+                    if isinstance(part, VerbPhrase):
+                        verb_phrases.append(part)
     return verb_phrases
 
 def tokenize_best(sentence):
