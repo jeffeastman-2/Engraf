@@ -10,7 +10,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional, Any
 
 from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import VECTOR_LENGTH
@@ -120,7 +120,7 @@ class Layer6Dataset(Dataset):
     
     def __init__(self, 
                  jsonl_path: str,
-                 text_tokenizer: Layer6TextTokenizer = None,
+                 text_tokenizer: Optional[Layer6TextTokenizer] = None,
                  max_structural_length: int = 100,
                  max_target_length: int = 100):
         """
@@ -228,7 +228,7 @@ class Layer6Dataset(Dataset):
         }
 
 
-def collate_batch(batch: List[Dict]) -> Dict[str, torch.Tensor]:
+def collate_batch(batch: List[Dict]) -> Dict[str, Any]:
     """Collate function for DataLoader."""
     return {
         'structural_tokens': torch.stack([ex['structural_tokens'] for ex in batch]),
@@ -242,7 +242,7 @@ def collate_batch(batch: List[Dict]) -> Dict[str, torch.Tensor]:
 def create_dataloaders(jsonl_path: str,
                       batch_size: int = 4,
                       train_split: float = 0.8,
-                      num_workers: int = 0) -> Tuple[DataLoader, DataLoader]:
+                      num_workers: int = 0) -> Tuple[DataLoader, DataLoader, Layer6TextTokenizer]:
     """Create train and validation dataloaders.
     
     Args:
@@ -430,7 +430,7 @@ class OnTheFlyLayer6Dataset(Dataset):
                  sentences_per_scene: int = 1000,
                  max_structural_length: int = 50,
                  max_target_length: int = 50,
-                 seed: int = None):
+                 seed: Optional[int] = None):
         
         self.num_examples = num_examples
         self.objects_per_scene = objects_per_scene
@@ -631,7 +631,7 @@ class OnTheFlyLayer6Dataset(Dataset):
             'semantic_vectors': torch.zeros(self.max_structural_length, SEMANTIC_VECTOR_DIM, dtype=torch.float32),
             'grounding_ids': torch.zeros(self.max_structural_length, dtype=torch.long),
             'target_ids': torch.zeros(self.max_target_length, dtype=torch.long),
-            'question': '',
+            'question': '',  # type: ignore
         }
 
 
