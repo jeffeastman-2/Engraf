@@ -1,0 +1,25 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+.mypy_cache/
+.pytest_cache/
+
+# Ignore model checkpoint files
+*.pt
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore large data files
+*.jsonl
+*.h5
+*.ckpt
+
+# Ignore virtual environment folders
+venv/
+.env/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
