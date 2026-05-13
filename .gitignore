@@ -23,3 +23,6 @@ venv/
 # Ignore OS files
 .DS_Store
 Thumbs.db
+
+#Ignore .txt versions of .pdf files
+.pdf.txt
