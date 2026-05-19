@@ -15,7 +15,7 @@ from engraf.lexer.vector_space import VectorSpace
 from engraf.lexer.hypothesis import TokenizationHypothesis
 from engraf.utils.debug import debug_print
 from engraf.utils.spatial_validation import SpatialValidator
-from engraf.visualizer.scene.scene_model import SceneModel
+from engraf.lexer.scene_adapter import SceneAdapter
 
 
 @dataclass
@@ -35,7 +35,7 @@ class Layer3GroundingResult:
 class Layer3SemanticGrounder:
     """Semantic grounding for LATN Layer 3 PrepositionalPhrase tokens."""
     
-    def __init__(self, scene_model: SceneModel):
+    def __init__(self, scene_model: SceneAdapter):
         self.scene_model = scene_model
     
     def ground_layer3(self, layer3_hypotheses) -> List[TokenizationHypothesis]:

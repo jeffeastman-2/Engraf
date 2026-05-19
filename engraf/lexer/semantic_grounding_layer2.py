@@ -12,8 +12,7 @@ import copy
 from itertools import product
 
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.visualizer.scene.scene_object import SceneObject
+from engraf.lexer.scene_adapter import SceneAdapter, GroundedEntity
 from engraf.lexer.hypothesis import TokenizationHypothesis
 
 
@@ -22,10 +21,10 @@ class Layer2GroundingResult:
     """Result of Layer 2 semantic grounding operation."""
     success: bool
     confidence: float
-    resolved_objects: List[SceneObject] = None  # Changed to list to support plural pronouns
+    resolved_objects: List[GroundedEntity] = None  # Changed to list to support plural pronouns
     grounded_noun_phrase: Optional[NounPhrase] = None  # The NP with grounding info added
     description: str = ""
-    alternative_matches: List[Tuple[float, SceneObject]] = None
+    alternative_matches: List[Tuple[float, GroundedEntity]] = None
     
     def __post_init__(self):
         if self.resolved_objects is None:
@@ -36,7 +35,7 @@ class Layer2GroundingResult:
 class GroundingOption:
     original_np: NounPhrase
     confidence: float
-    resolved_objects: Optional[List[SceneObject]]
+    resolved_objects: Optional[List[GroundedEntity]]
     grounded_np: Optional[NounPhrase]    
 
     def __init__(self, original_np=None, confidence=0.0, resolved_objects=None, grounded_np=None):
@@ -48,7 +47,7 @@ class GroundingOption:
 class Layer2SemanticGrounder:
     """Semantic grounding for LATN Layer 2 NounPhrase tokens."""
     
-    def __init__(self, scene_model: SceneModel):
+    def __init__(self, scene_model: SceneAdapter):
         self.scene_model = scene_model
 
     def ground_pronoun(self, np: NounPhrase) -> Layer2GroundingResult:
@@ -60,9 +59,8 @@ class Layer2SemanticGrounder:
         Returns:
             Layer2GroundingResult with resolved object(s) and confidence information
         """
-        from engraf.visualizer.scene.scene_model import resolve_pronoun
         try:
-            resolved_objects = resolve_pronoun(np.pronoun, self.scene_model)
+            resolved_objects = self.scene_model.resolve_pronoun(np.pronoun)
             if not resolved_objects:
                 return Layer2GroundingResult(
                     success=False,
@@ -136,7 +134,7 @@ class Layer2SemanticGrounder:
             return self.ground_pronoun(np)
         else:
             # Handle regular NPs using SceneModel - get all matching objects
-            candidates = self.scene_model.find_noun_phrase(np, return_all_matches=True)            
+            candidates = self.scene_model.resolve_noun_phrase(np)
             if not candidates:
                 return Layer2GroundingResult(
                     success=False,

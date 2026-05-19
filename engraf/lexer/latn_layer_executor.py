@@ -27,7 +27,7 @@ from engraf.lexer.semantic_grounding_layer3 import Layer3SemanticGrounder, Layer
 from engraf.lexer.semantic_grounding_layer4 import Layer4SemanticGrounder, Layer4GroundingResult
 from engraf.lexer.semantic_grounding_layer5 import Layer5SemanticGrounder, Layer5GroundingResult
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
-from engraf.visualizer.scene.scene_model import SceneModel
+from engraf.lexer.scene_adapter import SceneAdapter
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.verb_phrase import VerbPhrase
@@ -102,7 +102,7 @@ class Layer5Result:
 class LATNLayerExecutor:
     """Coordinates execution across all LATN layers with clean delegation to grounders."""
     
-    def __init__(self, scene_model: Optional[SceneModel] = None):
+    def __init__(self, scene_model: Optional[SceneAdapter] = None):
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None
         self.layer3_grounder = Layer3SemanticGrounder(scene_model) if scene_model else None
@@ -486,7 +486,7 @@ class LATNLayerExecutor:
         """Compatibility property for tests that expect scene_model attribute."""
         return self.scene
     
-    def update_scene_model(self, scene_model: Optional[SceneModel]):
+    def update_scene_model(self, scene_model: Optional[SceneAdapter]):
         """Update the scene model and reinitialize grounders."""
         self.scene = scene_model
         self.layer2_grounder = Layer2SemanticGrounder(scene_model) if scene_model else None

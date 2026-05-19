@@ -244,7 +244,16 @@ class SceneModel:
         else:
             # Legacy behavior: return single best match
             return candidates[0][1]
-    
+
+    # --- SceneAdapter protocol (engraf.lexer.scene_adapter) ---
+    # Thin, behavior-preserving wrappers so the LATN core depends on the
+    # protocol, not on SceneModel directly.
+    def resolve_noun_phrase(self, np):
+        return self.find_noun_phrase(np, return_all_matches=True)
+
+    def resolve_pronoun(self, pronoun):
+        return resolve_pronoun(pronoun, self)
+
     def copy(self):
         """
         Create a deep copy of the scene model.

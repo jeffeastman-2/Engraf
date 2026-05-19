@@ -12,8 +12,7 @@ from dataclasses import dataclass
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.noun_phrase import NounPhrase
 from engraf.pos.verb_phrase import VerbPhrase
-from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.visualizer.scene.scene_object import SceneObject
+from engraf.lexer.scene_adapter import SceneAdapter
 from engraf.lexer.hypothesis import TokenizationHypothesis
 
 
@@ -32,7 +31,7 @@ class Layer4SemanticGrounder:
     and context within the scene. It does NOT execute actions or modify the scene.
     """
     
-    def __init__(self, scene_model: SceneModel):
+    def __init__(self, scene_model: SceneAdapter):
         self.scene_model = scene_model
         
     def validate_vp_with_np(self, vp: VerbPhrase, np: NounPhrase) -> bool:

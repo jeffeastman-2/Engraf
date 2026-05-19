@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from engraf.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.pos.sentence_phrase import SentencePhrase
-from engraf.visualizer.scene.scene_model import SceneModel
+from engraf.lexer.scene_adapter import SceneAdapter
 from engraf.lexer.hypothesis import TokenizationHypothesis
 
 
@@ -32,7 +32,7 @@ class Layer5SemanticGrounder:
     or do not align with the current scene context.
     """
 
-    def __init__(self, scene_model: SceneModel):
+    def __init__(self, scene_model: SceneAdapter):
         self.scene_model = scene_model
         
     
