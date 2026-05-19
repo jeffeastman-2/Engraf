@@ -1,25 +1,25 @@
 from engraf.lexer.vector_space import VectorSpace
 from engraf.utils.noun_inflector import singularize_noun
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.lexicon import get_active_lexicon
 
 
 def add_to_vocabulary(word, vector_space):
     """Add or update a word in the runtime vocabulary."""
     word = word.lower()
-    SEMANTIC_VECTOR_SPACE[word] = vector_space
+    get_active_lexicon()[word] = vector_space
 
 
 def get_from_vocabulary(word: str) -> VectorSpace:
     """Safely retrieves a vector from the vocabulary."""
-    return SEMANTIC_VECTOR_SPACE.get(word.lower())
+    return get_active_lexicon().get(word.lower())
 
 
 def has_word(word: str) -> bool:
-    return word.lower() in SEMANTIC_VECTOR_SPACE
+    return word.lower() in get_active_lexicon()
 
 
 def vector_from_word(word: str) -> VectorSpace:
-    base_vector = SEMANTIC_VECTOR_SPACE.get(word.lower())
+    base_vector = get_active_lexicon().get(word.lower())
     if base_vector:
         copy = base_vector.copy()
         copy.word = word
@@ -28,7 +28,7 @@ def vector_from_word(word: str) -> VectorSpace:
     # Try singularizing in case it's a plural noun
     singular, is_plural = singularize_noun(word)
     if singular != word:
-        base_vector = SEMANTIC_VECTOR_SPACE.get(singular.lower())
+        base_vector = get_active_lexicon().get(singular.lower())
         if base_vector:
             v = base_vector.copy()
             v.word = word  # Preserve the original word
@@ -41,7 +41,7 @@ def vector_from_word(word: str) -> VectorSpace:
     from engraf.utils.adjective_inflector import find_root_adjective
     base_adj, form_type, found_adjective = find_root_adjective(word)
     if found_adjective and base_adj != word:
-        base_vector = SEMANTIC_VECTOR_SPACE.get(base_adj.lower())
+        base_vector = get_active_lexicon().get(base_adj.lower())
         if base_vector:
             v = base_vector.copy()
             v.word = word

@@ -1,6 +1,5 @@
 import numpy as np
 from engraf.lexer.token_stream import TokenStream
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
     is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_vector, \
         is_conjunction, is_number, is_unknown, is_negation, is_punctuation

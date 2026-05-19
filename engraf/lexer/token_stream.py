@@ -4,7 +4,6 @@
 import re
 import warnings
 from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_best, latn_tokenize_layer1, TokenizationHypothesis
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import VectorSpace
 
 

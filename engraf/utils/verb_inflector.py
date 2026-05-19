@@ -1,5 +1,5 @@
 import re
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.lexicon import get_active_lexicon
 
 # Common verb inflection patterns
 VERB_INFLECTION_PATTERNS = [
@@ -48,15 +48,15 @@ def find_root_verb(inflected_word):
     word_lower = inflected_word.lower()
     
     # Check if it's already a known word
-    if word_lower in SEMANTIC_VECTOR_SPACE:
+    if word_lower in get_active_lexicon():
         return word_lower, None, True
     
     # Check irregular forms first
     if word_lower in IRREGULAR_VERB_FORMS:
         root, inflection_type = IRREGULAR_VERB_FORMS[word_lower]
-        if root in SEMANTIC_VECTOR_SPACE:
+        if root in get_active_lexicon():
             # Check if root has verb or tobe dimension (both are verb-like)
-            root_vector = SEMANTIC_VECTOR_SPACE[root]
+            root_vector = get_active_lexicon()[root]
             if root_vector["verb"] > 0 or root_vector["tobe"] > 0:
                 return root, inflection_type, True
     
@@ -67,9 +67,9 @@ def find_root_verb(inflected_word):
             # Try each possible root form
             candidates = root_candidates_func(match)
             for candidate in candidates:
-                if candidate in SEMANTIC_VECTOR_SPACE:
+                if candidate in get_active_lexicon():
                     # Check if candidate has verb or tobe dimension
-                    candidate_vector = SEMANTIC_VECTOR_SPACE[candidate]
+                    candidate_vector = get_active_lexicon()[candidate]
                     if candidate_vector["verb"] > 0 or candidate_vector["tobe"] > 0:
                         return candidate, inflection_type, True
     
@@ -80,7 +80,7 @@ def is_verb_inflection(word):
     Check if a word appears to be a verb inflection that could have a root form.
     """
     _, _, found = find_root_verb(word)
-    return found and word.lower() not in SEMANTIC_VECTOR_SPACE
+    return found and word.lower() not in get_active_lexicon()
 
 
 def verb_to_gerund(verb: str) -> str:

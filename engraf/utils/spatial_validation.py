@@ -13,7 +13,6 @@ Key patterns factored out:
 """
 
 from typing import Tuple, Optional, Union
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 from engraf.lexer.vector_space import VectorSpace
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase

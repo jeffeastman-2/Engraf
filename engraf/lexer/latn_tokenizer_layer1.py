@@ -5,7 +5,7 @@ This module implements multi-hypothesis tokenization that returns ranked alterna
 instead of committing early to a single tokenization.
 """
 
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from engraf.lexer.lexicon import get_active_lexicon
 from engraf.lexer.vocabulary_builder import vector_from_word
 from engraf.lexer.vector_space import VectorSpace, vector_from_features
 from engraf.lexer.hypothesis import TokenizationHypothesis
@@ -144,7 +144,7 @@ def process_token_group(tok: str, group_size: int) -> Tuple[VectorSpace, float, 
         lookup_word = singular_form.lower()
         
         # Try vocabulary lookup with singular form
-        if lookup_word in SEMANTIC_VECTOR_SPACE:
+        if lookup_word in get_active_lexicon():
             vs = vector_from_word(lookup_word)
             vs.word = singular_form
             
