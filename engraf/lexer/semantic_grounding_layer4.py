@@ -2,18 +2,18 @@
 """
 LATN Layer 4 Semantic Grounding
 
-This module provides semantic grounding capabilities for LATN Layer 4 VerbPhrase tokens.
-It handles verb phrase extraction and action execution.
+This module provides semantic grounding for LATN Layer 4 VerbPhrase tokens.
+The per-VP validity verdict is delegated to the active VPGroundingPolicy
+(engraf.lexer.vp_policy); this module owns only hypothesis iteration. It
+does NOT execute actions or modify the scene.
 """
 
-from typing import List, Optional
+from typing import List
 from dataclasses import dataclass
 
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
-from engraf.pos.noun_phrase import NounPhrase
-from engraf.pos.verb_phrase import VerbPhrase
 from engraf.lexer.scene_adapter import SceneAdapter
 from engraf.lexer.hypothesis import TokenizationHypothesis
+from engraf.lexer.vp_policy import get_active_vp_policy
 
 
 @dataclass
@@ -26,131 +26,26 @@ class Layer4GroundingResult:
 
 class Layer4SemanticGrounder:
     """Semantic grounding for LATN Layer 4 VerbPhrase tokens.
-    
-    Layer 4 performs semantic grounding of verb phrases - understanding their meaning
-    and context within the scene. It does NOT execute actions or modify the scene.
+
+    Layer 4 understands the meaning/context of verb phrases; it does not
+    execute actions. The per-VP validity rule is supplied by the active
+    VPGroundingPolicy so non-Engraf domains are not fail-closed-rejected.
     """
-    
+
     def __init__(self, scene_model: SceneAdapter):
         self.scene_model = scene_model
-        
-    def validate_vp_with_np(self, vp: VerbPhrase, np: NounPhrase) -> bool:
-        vp_has_pp  = len(vp.prepositions) > 0
-        vp_has_adj = len(vp.adjective_complements) > 0
-        vp_has_amount = vp.amount is not None
-        # Check if NP has embedded adjective semantics (e.g., "them more transparent")
-        np_has_adj_semantics = np.vector.isa("adj") if np.vector else False
-        # Check if PP is a comparative "than" construction
-        vp_has_comparative_pp = vp_has_pp and any(
-            pp.preposition == "than" or (pp.vector and pp.vector.isa("relational_comparison"))
-            for pp in vp.prepositions
-        )
-        
-        if (vp_has_adj and vp_has_pp) or (vp_has_adj and vp_has_amount) or (vp_has_pp and vp_has_amount):
-            # multiple vp complements not allowed - BUT allow adj in NP + comparative PP
-            if not (np_has_adj_semantics and vp_has_comparative_pp):
-                return False
-        np_preps_have_spatial_pp = False
-        for prep in np.prepositions:
-            if prep.vector.isa("spatial_location") or prep.vector.isa("spatial_proximity"):
-                np_preps_have_spatial_pp = True
-                break
-
-        # --- STYLE / STATE-CHANGE: make, color, texture ---
-        # Expect: grounded NP + adjective complement (resulting state).
-        # Also accept: grounded NP with embedded adjective + comparative PP (e.g., "make them more transparent than X")
-        # NOTE: color/texture carry both "transform" and "style"; prefer style rule.
-        if vp.vector.isa("style") or (vp.vector.isa("transform") and not (
-            vp.vector.isa("move") or vp.vector.isa("rotate") or vp.vector.isa("scale")
-        )):
-            if np.grounding and vp_has_adj:  # must operate on an existing object and needs adjective complement
-                return True
-            # Accept comparative construction: NP with adj semantics + "than" PP
-            if np.grounding and np_has_adj_semantics and vp_has_comparative_pp:
-                return True
-
-        # TODO: refactor the below so that verbs may have multiple senses (e.g., "make" can be transform, style or create)
-        # and we can try multiple interpretations e.g. "make the box red" -> style, "make a box on the table" -> create
-
-        # --- MOTION / ORIENTATION / SIZE: move, rotate, scale (incl. x/y/zrotate) ---
-        # Expect: grounded NP + PP (to/by/around/etc.). Adjective complements not appropriate here.
-        if vp.vector.isa("move") or vp.vector.isa("rotate") or vp.vector.isa("scale"):
-            if not np.grounding:
-                return False
-            if not vp_has_pp:
-                return False
-            if vp_has_adj:
-                return False
-            return True
-
-        # --- ORGANIZE: align, position, group, ungroup ---
-        # Expect: grounded NP; PP often present (align with, position at, group into) but not required.
-        if vp.vector.isa("organize"):
-            if not np.grounding:
-                return False
-            return True
-
-        # --- EDIT / SELECT / NAMING: delete/copy/remove/paste, select, call/name ---
-        # Expect: grounded NP; PP optional (e.g., remove from, paste into). Adjective complement not used.
-        if vp.vector.isa("edit") or vp.vector.isa("select") or vp.vector.isa("naming"):
-            if not np.grounding:
-                return False
-            return True
-
-        # --- CREATE: create, draw, build, place (introduce new object) ---
-        # Expect: UNgrounded NP (type introduction). Adj complement disallowed here;
-        # PP (on/in/above) is allowed but not required.
-        if vp.vector.isa("create"):
-            if np.grounding:
-                is_ok = False
-                if vp_has_pp:
-                    if vp.prepositions[0].vector.isa("spatial_location") or vp.prepositions[0].vector.isa("spatial_proximity"):
-                        # grounded NP with spatial PP - probably a location specifier, not object type
-                        # unground the NP and allow further processing
-                        np.grounding = None
-                        is_ok = True
-                if not is_ok:
-                    return False
-            if vp_has_adj:
-                return False
-            # PP optional for placement; both "draw a cube" and "draw a cube on the table" are ok.
-            # if not vp_has_pp and np_preps_have_spatial_pp the PP was 
-            # probably intended to specify location, so reject if missing.
-            if not vp_has_pp and np_preps_have_spatial_pp:
-                return False
-            return True
-        if vp.vector.isa("tobe"):
-            # "is" can be used with or without NP
-            if vp_has_adj and np.grounding:
-                return True
-            if vp_has_pp and np.grounding:
-                return True
-            if not vp_has_adj and not vp_has_pp and np.grounding:
-                # simple "is" with grounded NP, e.g. "the box is"
-                return True
-            return False
-        # Fallback: fail if no specific constraints apply.
-        return False
-        
-    def validate_vp(self, vp: VerbPhrase) -> bool:
-        np = vp.noun_phrase
-        if np:
-            ok = np.evaluate_boolean_function(lambda np: self.validate_vp_with_np(vp, np)) 
-            return ok
-        return vp.vector.isa("tobe")  # allow "tobe" without NP (e.g. "is above the table")
 
     def ground_layer4(self, hypotheses: List[TokenizationHypothesis]) -> List[TokenizationHypothesis]:
-        """Semantically ground verb phrases by analyzing their meaning and scene context.
+        """Eliminate hypotheses whose verb phrases are invalid under the
+        active VPGroundingPolicy. Does not execute actions.
 
-        This performs semantic analysis of verb phrases without executing actions.
-        Eliminate verb phrase hypotheses that do not have valid verb phrases.
-        
         Args:
             hypotheses: List of TokenizationHypothesis objects to ground
 
         Returns:
             Processed hypotheses with validated VP semantic grounding
         """
+        policy = get_active_vp_policy()
         result_hypotheses = []
         for hyp in hypotheses:
             # Validate the verb phrases in the hypothesis (can have >= 0)
@@ -161,11 +56,11 @@ class Layer4SemanticGrounder:
                         if token.isa("conj"):
                             vps = token.phrase.phrases
                             for vp in vps:  # type: ignore
-                                if not self.validate_vp(vp):
+                                if not policy.validate_vp(vp):
                                     valid = False
                                     break
                         else:
-                            if not self.validate_vp(token.phrase):
+                            if not policy.validate_vp(token.phrase):
                                 valid = False
                                 break
                 elif token.isa("NP"):
