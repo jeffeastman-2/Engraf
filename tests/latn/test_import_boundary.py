@@ -20,10 +20,6 @@ FORBIDDEN = re.compile(
 # Couplings that later phase-1 seams remove. Each MUST cite its seam so this
 # list shrinks deliberately, never silently grows.
 KNOWN_REMAINING = {
-    # seam #4: stale `SceneObject` import; unused on the L3 path (serves the
-    # interpreter-only calculate_spatial_position). Removed when SpatialValidator
-    # is parameterized.
-    "utils/spatial_validation.py",
     # non-core example scripts, not library code; excluded at the physical split.
     "An_N_Space_Model/demo_scene_setup.py",
     "An_N_Space_Model/demo_sentence_interpreter.py",

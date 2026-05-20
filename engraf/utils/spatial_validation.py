@@ -7,28 +7,34 @@ This module factors out common spatial reasoning logic used by both:
 
 Key patterns factored out:
 - Preposition vector interpretation (locX, locY, locZ)
-- Object dimension calculations 
+- Object dimension calculations
 - Spatial relationship validation logic
 - Position calculation based on object bounds
+
+The per-pair spatial verdict for L3 grounding is supplied by the active
+SpatialPolicy (engraf.lexer.spatial_policy); validate_spatial_relationship
+below owns only the obj1s x obj2s iteration. The interpreter-side helpers
+(get_object_half_scale, extract_direction_factors, calculate_spatial_position)
+remain here and are out of scope for the LATN extraction.
 """
 
 from typing import Tuple, Optional, Union
+from engraf.lexer.spatial_policy import get_active_spatial_policy
 from engraf.lexer.vector_space import VectorSpace
 from engraf.pos.prepositional_phrase import PrepositionalPhrase
 from engraf.pos.noun_phrase import NounPhrase
-from engraf.visualizer.scene.scene_object import SceneObject
 
 
 class SpatialValidator:
     """Shared spatial validation and calculation utilities."""
-    
+
     @staticmethod
     def get_object_half_scale(obj) -> Tuple[float, float, float]:
         """Get the half-scale of an object based on its type and size.
-        
+
         Args:
             obj: SceneObject with vector containing scale dimensions
-            
+
         Returns:
             tuple: (half_height, half_breadth, half_depth) representing the object's half-dimensions
         """
@@ -48,52 +54,52 @@ class SpatialValidator:
             half_height = obj.vector['scaleY'] / 2.0
             half_breadth = obj.vector['scaleX'] / 2.0
             half_depth = obj.vector['scaleZ'] / 2.0
-            
+
         return half_height, half_breadth, half_depth
-    
+
     @staticmethod
     def extract_direction_factors(preposition_vector) -> Tuple[float, float, float]:
         """Extract directional factors from a preposition vector.
-        
+
         Args:
             preposition_vector: VectorSpace object containing locX, locY, locZ values
-            
+
         Returns:
             tuple: (x_factor, y_factor, z_factor) representing spatial direction
         """
         x_factor = preposition_vector['locX'] if 'locX' in preposition_vector and preposition_vector['locX'] != 0.0 else 0.0
         y_factor = preposition_vector['locY'] if 'locY' in preposition_vector and preposition_vector['locY'] != 0.0 else 0.0
         z_factor = preposition_vector['locZ'] if 'locZ' in preposition_vector and preposition_vector['locZ'] != 0.0 else 0.0
-        
+
         return x_factor, y_factor, z_factor
-    
+
     @staticmethod
     def calculate_spatial_position(moving_obj, ref_obj, preposition_vector) -> Tuple[float, float, float]:
         """Calculate the position for spatial relationships like 'above', 'below', 'beside', etc.
-        
+
         Uses the preposition vector to determine spatial direction and object dimensions
         for proper spacing.
-        
+
         Args:
             moving_obj: Object being positioned
             ref_obj: Reference object for spatial relationship
             preposition_vector: VectorSpace with locX, locY, locZ direction factors
-            
+
         Returns:
             tuple: (new_x, new_y, new_z) position for the moving object
         """
         # Get direction factors from the preposition vector
         x_factor, y_factor, z_factor = SpatialValidator.extract_direction_factors(preposition_vector)
-        
+
         # Get reference object's position and size
         ref_x = ref_obj.vector['locX']
-        ref_y = ref_obj.vector['locY'] 
+        ref_y = ref_obj.vector['locY']
         ref_z = ref_obj.vector['locZ']
-        
+
         # Calculate object dimensions for proper spacing
         refHeight, refBreadth, refDepth = SpatialValidator.get_object_half_scale(ref_obj)
         movingHeight, movingBreadth, movingDepth = SpatialValidator.get_object_half_scale(moving_obj)
-        
+
         # Start with reference object's position as base
         new_x = ref_x
         new_y = ref_y
@@ -124,50 +130,27 @@ class SpatialValidator:
             new_z = ref_z - refDepth - movingDepth - abs(z_factor)
 
         return new_x, new_y, new_z
-    
+
     @staticmethod
     def validate_spatial_relationship(pp_token, obj1s, obj2s) -> list[bool]:
-        """Validate a spatial relationship between two objects using proper spatial calculations.
-        
+        """Validate a spatial relationship between two objects using the active SpatialPolicy.
+
         Args:
             pp_token: PP token containing spatial features (VectorSpace with locX, locY, locZ) or preposition string
             obj1s: Reference objects (obj2s are positioned relative to obj1s)
             obj2s: Objects being positioned relative to obj1s
         Returns:
-            list[bool]: Validation for each obj1 against all
+            list[bool]: Validation for each obj1 against all obj2s
         """
-        results = []
         if not isinstance(pp_token, VectorSpace):
             return [False]
+        policy = get_active_spatial_policy()
+        results = []
         for o1 in obj1s:
             all_valid = True
             for o2 in obj2s:
-                if not SpatialValidator.validate_single_relationship(pp_token, o1, o2):
+                if not policy.validate(pp_token, o1, o2):
                     all_valid = False
                     break
             results.append(all_valid)
         return results
-
-    @staticmethod
-    def validate_single_relationship(pp_token, obj1, obj2) -> bool:
-        try:
-            # Get positions 
-            pos1 = obj1.position                
-            pos2 = obj2.position
-
-            dx, dy, dz = pos1['x'] - pos2['x'], pos1['y'] - pos2['y'], pos1['z'] - pos2['z']
-            px = pp_token['locX']
-            py = pp_token['locY']  
-            pz = pp_token['locZ']
-            
-            if pp_token.isa("spatial_location"):
-                # spatial relationships: prepositions affecting object positioning
-                dot = (dx * px + dy * py + dz * pz)
-                return True if dot > 0 else False
-            elif pp_token.isa("spatial_proximity"):
-                # proximity relationships: near (+), at (specific), in (containment)
-                distance = (dx*dx + dy*dy + dz*dz) ** 0.5
-                return True if distance < 1.0 else False
-            else: return False
-        except Exception:
-            return False
