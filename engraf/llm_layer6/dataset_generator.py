@@ -176,42 +176,43 @@ def create_mock_hypothesis_for_question(question, answer, obj_ids, scene):
     """
     from engraf.lexer.hypothesis import TokenizationHypothesis
     from engraf.lexer.vector_space import VectorSpace
+    from engraf.llm_layer6.structure import Layer6Structure
     import numpy as np
-    
+
     # Create a hypothesis
     hyp = TokenizationHypothesis(
         tokens=[VectorSpace() for _ in range(len(question.split()))],
         confidence=0.95,
         description=f"Synthetic: {question}"
     )
-    
-    # Initialize Layer-6
-    hyp.initialize_layer6_structural()
-    
+
+    # Attach Layer-6 structure
+    hyp.l6 = Layer6Structure()
+
     # Mock: add NPs for each grounded object
     obj_map = {obj.object_id: obj for obj in scene.objects}
     for obj_id in obj_ids:
         if obj_id in obj_map:
             obj = obj_map[obj_id]
             # Add a mock NP phrase
-            hyp.add_layer6_phrase(
+            hyp.l6.add_phrase(
                 phrase_type="NP",
                 phrase_vector=obj.vector.as_numpy_array() if hasattr(obj.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM),
                 scene_object=obj
             )
-    
+
     # Wrap in VP then SP
-    if len(hyp.layer6_tokens) > 0:
-        hyp.wrap_layer6_with_phrase(
+    if len(hyp.l6.tokens) > 0:
+        hyp.l6.wrap_with_phrase(
             start_idx=0,
-            end_idx=len(hyp.layer6_tokens) - 1,
+            end_idx=len(hyp.l6.tokens) - 1,
             phrase_type="VP",
             phrase_vector=np.random.randn(SEMANTIC_VECTOR_DIM),
             scene_object=None
         )
-        hyp.wrap_layer6_with_phrase(
+        hyp.l6.wrap_with_phrase(
             start_idx=0,
-            end_idx=len(hyp.layer6_tokens) - 1,
+            end_idx=len(hyp.l6.tokens) - 1,
             phrase_type="SP",
             phrase_vector=np.random.randn(SEMANTIC_VECTOR_DIM),
             scene_object=None

@@ -571,7 +571,7 @@ class OnTheFlyLayer6Dataset(Dataset):
                 # Process through LATN
                 hyp = self.process_through_layer5(executor, sentence, scene)
                 
-                if hyp is None or not hyp.layer6_tokens:
+                if hyp is None or not getattr(hyp, 'l6', None) or not hyp.l6.tokens:
                     continue
                 
                 # Create training pair

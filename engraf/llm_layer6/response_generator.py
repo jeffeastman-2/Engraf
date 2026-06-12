@@ -47,17 +47,17 @@ class Layer6ResponseGenerator:
             populate_layer6_from_sentence_phrase(hyp, sentence_phrase)
             
             # Get structural tokens
-            if not hasattr(hyp, 'layer6_tokens') or not hyp.layer6_tokens:
+            if not getattr(hyp, 'l6', None) or not hyp.l6.tokens:
                 return None, None
-            
-            layer6_input = hyp.layer6_to_string() + " <SEP>"
+
+            layer6_input = hyp.l6.to_string() + " <SEP>"
             expected_response = "<BOS> " + self.generate_response_from_parse(sentence, sentence_phrase) + " <EOS>"
-            
+
             return layer6_input, expected_response
-            
+
         except Exception:
             return None, None
-    
+
     def get_layer6_representation(self, sentence: str) -> Tuple[Optional[str], Optional[str]]:
         """Get the Layer-6 input and expected response for a sentence.
         
@@ -86,10 +86,10 @@ class Layer6ResponseGenerator:
                     populate_layer6_from_sentence_phrase(hyp, sentence_phrase)
             
             # Get structural tokens
-            if not hasattr(hyp, 'layer6_tokens') or not hyp.layer6_tokens:
+            if not getattr(hyp, 'l6', None) or not hyp.l6.tokens:
                 return None, None
-            
-            layer6_input = hyp.layer6_to_string() + " <SEP>"
+
+            layer6_input = hyp.l6.to_string() + " <SEP>"
             expected_response = "<BOS> " + self.generate_response_from_parse(sentence, sentence_phrase) + " <EOS>"
             
             return layer6_input, expected_response

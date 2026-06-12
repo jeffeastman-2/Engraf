@@ -127,12 +127,12 @@ class TestLayer6Inference:
         for sentence, answer, obj_ids in sentences:
             hyp = process_through_layer5(executor, sentence, scene)
             
-            if hyp is not None and hyp.layer6_tokens:
+            if hyp is not None and hyp.l6.tokens:
                 # Should have structural tokens
-                assert len(hyp.layer6_tokens) > 0
+                assert len(hyp.l6.tokens) > 0
                 
                 # Tokens should be valid
-                for token in hyp.layer6_tokens:
+                for token in hyp.l6.tokens:
                     assert token in STRUCTURAL_TOKEN_TO_ID, f"Unknown token: {token}"
     
     def test_training_pair_creation(self):
@@ -144,7 +144,7 @@ class TestLayer6Inference:
         sentence, answer, obj_ids = generator.generate_imperatives()[0]
         hyp = process_through_layer5(executor, sentence, scene)
         
-        if hyp and hyp.layer6_tokens:
+        if hyp and hyp.l6.tokens:
             pair = create_training_pair_from_hyp(hyp, answer)
             
             assert 'structural_tokens' in pair
@@ -184,7 +184,7 @@ class TestLayer6Inference:
         # Process through LATN
         hyp = process_through_layer5(executor, sentence, scene)
         
-        if hyp and hyp.layer6_tokens:
+        if hyp and hyp.l6.tokens:
             pair = create_training_pair_from_hyp(hyp, expected_answer)
             
             # Convert to tensors
@@ -288,7 +288,7 @@ class TestLayer6WithTrainedModel:
         sentence, expected_answer, obj_ids = generator.generate_imperatives()[0]
         hyp = process_through_layer5(executor, sentence, scene)
         
-        if hyp and hyp.layer6_tokens:
+        if hyp and hyp.l6.tokens:
             pair = create_training_pair_from_hyp(hyp, expected_answer)
             
             # Convert to tensor
@@ -340,7 +340,7 @@ class TestLayer6WithTrainedModel:
             for sentence, expected, obj_ids in sentences:
                 hyp = process_through_layer5(executor, sentence, scene)
                 
-                if hyp and hyp.layer6_tokens:
+                if hyp and hyp.l6.tokens:
                     pair = create_training_pair_from_hyp(hyp, expected)
                     
                     struct_ids = [STRUCTURAL_TOKEN_TO_ID.get(tok, 11) for tok in pair['structural_tokens']]

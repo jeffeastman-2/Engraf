@@ -24,6 +24,7 @@ from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.lexer.vector_space import vector_from_features, VECTOR_LENGTH
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
+from engraf.llm_layer6.structure import Layer6Structure
 
 # Semantic vector dimension
 SEMANTIC_VECTOR_DIM = VECTOR_LENGTH  # Currently 69
@@ -392,7 +393,7 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
         hyp: TokenizationHypothesis to populate
         sentence_phrase: SentencePhrase from Layer 5
     """
-    hyp.initialize_layer6_structural()
+    hyp.l6 = Layer6Structure()
     
     # Process the predicate (which contains NPs and PPs)
     if sentence_phrase.predicate:
@@ -411,7 +412,7 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
                 elif 'scene_object' in grounding:
                     scene_obj = grounding['scene_object']
             
-            hyp.add_layer6_phrase("NP", vec, scene_obj)
+            hyp.l6.add_phrase("NP", vec, scene_obj)
         
         # Add prepositional phrases
         for pp in vp.prepositions:
@@ -430,35 +431,35 @@ def populate_layer6_from_sentence_phrase(hyp, sentence_phrase):
                     elif 'scene_object' in np_grounding:
                         np_scene_obj = np_grounding['scene_object']
                 
-                hyp.add_layer6_phrase("NP", np_vec, np_scene_obj)
+                hyp.l6.add_phrase("NP", np_vec, np_scene_obj)
             
             # Now wrap the NP with PP
-            if len(hyp.layer6_tokens) >= 2:
-                hyp.wrap_layer6_with_phrase(
-                    start_idx=len(hyp.layer6_tokens) - 2,
-                    end_idx=len(hyp.layer6_tokens) - 1,
+            if len(hyp.l6.tokens) >= 2:
+                hyp.l6.wrap_with_phrase(
+                    start_idx=len(hyp.l6.tokens) - 2,
+                    end_idx=len(hyp.l6.tokens) - 1,
                     phrase_type="PP",
                     phrase_vector=pp_vec,
                     scene_object=None
                 )
         
         # Wrap everything with VP
-        if len(hyp.layer6_tokens) > 0:
+        if len(hyp.l6.tokens) > 0:
             vp_vec = vp.vector.as_numpy_array() if hasattr(vp.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
-            hyp.wrap_layer6_with_phrase(
+            hyp.l6.wrap_with_phrase(
                 start_idx=0,
-                end_idx=len(hyp.layer6_tokens) - 1,
+                end_idx=len(hyp.l6.tokens) - 1,
                 phrase_type="VP",
                 phrase_vector=vp_vec,
                 scene_object=None
             )
     
     # Wrap everything with SP
-    if len(hyp.layer6_tokens) > 0:
+    if len(hyp.l6.tokens) > 0:
         sp_vec = hyp.tokens[0].as_numpy_array() if hasattr(hyp.tokens[0], 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
-        hyp.wrap_layer6_with_phrase(
+        hyp.l6.wrap_with_phrase(
             start_idx=0,
-            end_idx=len(hyp.layer6_tokens) - 1,
+            end_idx=len(hyp.l6.tokens) - 1,
             phrase_type="SP",
             phrase_vector=sp_vec,
             scene_object=None
@@ -489,7 +490,7 @@ def process_through_layer5(executor, sentence: str, scene: SceneModel):
             sentence_phrase = hyp.tokens[0].phrase
             populate_layer6_from_sentence_phrase(hyp, sentence_phrase)
             
-            if hyp.layer6_tokens:
+            if hyp.l6.tokens:
                 return hyp
         
         return None
@@ -575,7 +576,7 @@ def generate_synthetic_dataset(
                 if process_through_latn:
                     hyp = process_through_layer5(executor, sentence, scene)
                     
-                    if hyp and hyp.layer6_tokens:
+                    if hyp and hyp.l6.tokens:
                         pair = create_training_pair_from_hyp(hyp, answer)
                         pair['question'] = sentence
                         pair['expected_objects'] = obj_ids
@@ -630,7 +631,7 @@ def create_mock_example(sentence: str, answer: str, obj_ids: List[str],
     )
     
     # Initialize Layer-6
-    hyp.initialize_layer6_structural()
+    hyp.l6 = Layer6Structure()
     
     # Add NPs for each referenced object
     obj_map = {obj.object_id: obj for obj in scene.objects}
@@ -638,20 +639,20 @@ def create_mock_example(sentence: str, answer: str, obj_ids: List[str],
         if obj_id in obj_map:
             obj = obj_map[obj_id]
             vec = obj.vector.as_numpy_array() if hasattr(obj.vector, 'as_numpy_array') else np.zeros(SEMANTIC_VECTOR_DIM)
-            hyp.add_layer6_phrase("NP", vec, obj)
+            hyp.l6.add_phrase("NP", vec, obj)
     
     # Wrap in VP then SP
-    if len(hyp.layer6_tokens) > 0:
-        hyp.wrap_layer6_with_phrase(
+    if len(hyp.l6.tokens) > 0:
+        hyp.l6.wrap_with_phrase(
             start_idx=0,
-            end_idx=len(hyp.layer6_tokens) - 1,
+            end_idx=len(hyp.l6.tokens) - 1,
             phrase_type="VP",
             phrase_vector=np.zeros(SEMANTIC_VECTOR_DIM),
             scene_object=None
         )
-        hyp.wrap_layer6_with_phrase(
+        hyp.l6.wrap_with_phrase(
             start_idx=0,
-            end_idx=len(hyp.layer6_tokens) - 1,
+            end_idx=len(hyp.l6.tokens) - 1,
             phrase_type="SP",
             phrase_vector=np.zeros(SEMANTIC_VECTOR_DIM),
             scene_object=None

@@ -91,7 +91,7 @@ def expand_dataset(source_file, output_file, num_variations=3):
                 try:
                     hyp = process_through_layer5(executor, question, scene)
                     
-                    if hyp and hyp.layer6_tokens:
+                    if hyp and getattr(hyp, 'l6', None) and hyp.l6.tokens:
                         pair = create_training_pair_from_hyp(hyp, answer)
                         pair['question'] = question
                         

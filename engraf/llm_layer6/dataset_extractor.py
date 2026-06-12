@@ -17,15 +17,15 @@ def create_training_pair_from_hyp(final_hyp: Any, answer: str) -> Dict[str, Any]
     """Create a training example from a Layer-6 final hypothesis.
 
     Args:
-        final_hyp: object exposing `get_layer6_representation()` and
-                   `layer6_to_string()` as described in the Layer-6 guides.
+        final_hyp: object with `.l6` attribute (a Layer6Structure) exposing
+                   .tokens, .vectors, .scene_refs, and .to_string().
         answer: gold answer string (natural language)
 
     Returns:
         dict suitable for JSON serialization containing structural tokens,
         latent vectors (as lists), scene refs (as object IDs), and input/target strings.
     """
-    tokens, vectors, scene_refs = final_hyp.get_layer6_representation()
+    tokens, vectors, scene_refs = final_hyp.l6.tokens, final_hyp.l6.vectors, final_hyp.l6.scene_refs
 
     # Convert numpy arrays to lists if necessary
     conv_vecs: List[List[float]] = []
@@ -48,7 +48,7 @@ def create_training_pair_from_hyp(final_hyp: Any, answer: str) -> Dict[str, Any]
         else:
             conv_refs.append(str(ref))
 
-    input_string = final_hyp.layer6_to_string() + " <SEP>"
+    input_string = final_hyp.l6.to_string() + " <SEP>"
     target_string = "<BOS> " + answer + " <EOS>"
 
     return {
