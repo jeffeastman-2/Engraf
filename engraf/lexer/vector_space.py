@@ -6,15 +6,19 @@ from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
 
 
 
+# Initial size at import. Domains may grow the schema at runtime via
+# vector_dimensions.register_dimensions(); construction below reads
+# len(VECTOR_DIMENSIONS) live so registered dims are always reflected, and
+# register_dimensions rebinds this constant for any importer that caches it.
 VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
 
 class VectorSpace:
     def __init__(self, array=None, word=None):
         if array is None:
-            self.vector = np.zeros(VECTOR_LENGTH)
+            self.vector = np.zeros(len(VECTOR_DIMENSIONS))
         else:
-            if len(array) != VECTOR_LENGTH:
-                raise ValueError(f"Expected vector of length {VECTOR_LENGTH}, got {len(array)}")
+            if len(array) != len(VECTOR_DIMENSIONS):
+                raise ValueError(f"Expected vector of length {len(VECTOR_DIMENSIONS)}, got {len(array)}")
             self.vector = np.array(array, dtype=float)
         self.word = word          # the word this vector represents
         self.phrase = None        # Set when creating VP, PP, or Sentence tokens

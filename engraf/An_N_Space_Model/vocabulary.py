@@ -190,14 +190,14 @@ SEMANTIC_VECTOR_SPACE = {
     'will': vector_from_features("verb modal"),
     'would': vector_from_features("verb modal"),
     
-    # Question markers
-    'who': vector_from_features("question"),
-    'what': vector_from_features("question"),
-    'where': vector_from_features("question"),
-    'when': vector_from_features("question"),
-    'why': vector_from_features("question"),
-    'how': vector_from_features("question"),
-    'which': vector_from_features("question"),
+    # wh-words    
+    'who': vector_from_features("wh"),
+    'what': vector_from_features("wh"),
+    'where': vector_from_features("wh"),
+    'when': vector_from_features("wh"),
+    'why': vector_from_features("wh"),
+    'how': vector_from_features("wh"),    
+    'which': vector_from_features("wh"),
     
     # To be verbs
     'is': vector_from_features("tobe"),

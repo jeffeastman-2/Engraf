@@ -28,7 +28,7 @@ VECTOR_DIMENSIONS = [
     "and",       # (and)
     "neg",       # negation (not, no)
     "modal",     # modal verbs (can, could, may, might, must, shall, should, will, would)
-    "question",  # question markers (who, what, where, when, why,
+    "wh",        # wh-words (who, what, where, when, why)
     "unit",      # measurement units (degree, meter, pixel)
     
     # Verb inflection forms
@@ -82,7 +82,7 @@ POS_DIMENSIONS = {
     "verb", "tobe", "action", "prep", "det", "def", "adv", "adj", "noun", 
     "proper_noun", "pronoun", "assembly", "unknown", "NP", "SO", "PP", "VP",
     "number", "vector", "singular", "plural", "conj", "disj", "neg", "modal", 
-    "question", "unit", "verb_past", "verb_past_part", "verb_present_part",
+    "wh", "unit", "verb_past", "verb_past_part", "verb_present_part",
     "comp", "super", "quoted"
 }
 
@@ -107,3 +107,31 @@ def get_semantic_mask():
 def get_pos_mask():
     """Return a boolean mask for POS dimensions only."""
     return [dim in POS_DIMENSIONS for dim in VECTOR_DIMENSIONS]
+
+
+def register_dimensions(names, *, semantic=True):
+    """Append domain-specific dimensions to the schema at runtime.
+
+    A domain (e.g. Driftmoor) extends this by-design vector space with its
+    own dimensions WITHOUT editing this file — the dimension *names* live in
+    the domain's own code and are registered here at startup. Only one domain
+    is live per process, so a single process-global schema extended once is
+    sufficient; no per-instance schemas are needed.
+
+    Call once at startup, before constructing any VectorSpace. Appends
+    preserve existing indices (so prior vectors keep their meaning); new dims
+    join SEMANTIC_DIMENSIONS (engine-meaningful, used by similarity) unless
+    ``semantic=False`` (then POS_DIMENSIONS). Idempotent on names already
+    present. Returns the new total dimension count.
+    """
+    for name in names:
+        if name in VECTOR_DIMENSIONS:
+            continue
+        VECTOR_DIMENSIONS.append(name)
+        (SEMANTIC_DIMENSIONS if semantic else POS_DIMENSIONS).add(name)
+    # Keep the back-compat constant in vector_space in sync for any importer
+    # that read it as `vector_space.VECTOR_LENGTH` (construction itself reads
+    # len(VECTOR_DIMENSIONS) live and never goes stale).
+    from engraf.lexer import vector_space as _vs
+    _vs.VECTOR_LENGTH = len(VECTOR_DIMENSIONS)
+    return len(VECTOR_DIMENSIONS)
