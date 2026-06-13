@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "engraf"
+version = "0.1.0"
+description = "ENGRAF: a Layered ATN (LATN) natural-language parser with a by-design vector space, plus a CAD scene application built on it."
+readme = "README.md"
+requires-python = ">=3.9"
+# The LATN core (engraf.lexer / atn / pos / An_N_Space_Model / utils) needs
+# only numpy. The CAD/visualizer and the Layer-6 experiment are optional
+# extras, so a consumer of just the parser (e.g. Driftmoor) installs light.
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+viz = ["vpython"]
+llm = ["torch"]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+# Install only the engraf package (not the tests/ or papers dirs at the root).
+include = ["engraf*"]
