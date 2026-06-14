@@ -2,7 +2,8 @@ import numpy as np
 from engraf.lexer.token_stream import TokenStream
 from engraf.utils.predicates import any_of, is_verb, is_adverb, is_noun, is_tobe, \
     is_determiner, is_pronoun, is_adjective, is_preposition, is_none, is_vector, \
-        is_conjunction, is_number, is_unknown, is_negation, is_punctuation
+        is_conjunction, is_number, is_unknown, is_negation, is_punctuation, \
+        is_proper_noun
 from engraf.atn.core import ATNState, noop
 from engraf.pos.noun_phrase import NounPhrase
 
@@ -28,6 +29,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     start.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
     start.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), det)  # "very" -> DET state to handle "very big sphere"
     start.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)     # Allow bare nouns like "sphere"
+    # Allow a proper noun as an NP head ("Amara", "Sir Roderick"). Reuses
+    # apply_noun (sets noun/vector/consumed_tokens); the token's proper_noun
+    # POS rides into the NP vector. Distinct from apply_proper_noun, which is
+    # the naming-syntax directive ("call it 'Charlie'").
+    start.add_arc(is_proper_noun, lambda _, tok: np.apply_noun(tok), noun)
 
     # ADJ → ADJ / NOUN
     det.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), det)
@@ -78,9 +84,10 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Also end on prepositions and numbers that might follow pronouns
     adj_after_pronoun.add_arc(any_of(is_preposition, is_number), noop, end)
 
-    # ADJ or DET → NOUN
+    # ADJ or DET → NOUN (proper noun also accepted as head: "the dwarf Amara")
     for state in [det, adj, adj_conj]:
         state.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)
+        state.add_arc(is_proper_noun, lambda _, tok: np.apply_noun(tok), noun)
 
     # Allow ADJ state to end on various conditions
     adj.add_arc(is_none, noop, end)
