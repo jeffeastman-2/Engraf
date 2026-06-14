@@ -280,7 +280,20 @@ class SceneModel:
     
 
 def resolve_pronoun(word, scene: SceneModel):
-    """Resolve pronouns to entities in the scene."""
+    """Resolve pronouns to entities in the scene.
+
+    TODO(pronoun-anaphora): this resolves EAGERLY against the scene's current
+    recency, so a pronoun whose antecedent is created/referenced by an earlier
+    clause of the SAME sentence can't bind. E.g.
+    ``execute_layer4("create a box and move it to [1,2,3]")`` on an empty scene
+    yields 0 VPs — "it" doesn't ground, the move VP fails policy, the parse is
+    dropped (vs "move it" with the box pre-existing, which grounds). Agreed
+    fix: make a pronoun an *always-deferred grounding promise* forced by the
+    executor against the recency at force-time (seeded with scene recency,
+    extended per executed clause), so single-clause and conjunction cases are
+    uniform. The executor (interpreter / a downstream resolver) supplies the
+    running recency.
+    """
     word = word.lower()
     if word == "it":
         if scene.recent:
