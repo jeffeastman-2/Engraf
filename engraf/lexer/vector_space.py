@@ -22,7 +22,23 @@ class VectorSpace:
             self.vector = np.array(array, dtype=float)
         self.word = word          # the word this vector represents
         self.phrase = None        # Set when creating VP, PP, or Sentence tokens
-        
+
+    def _conform(self):
+        """Zero-extend this vector to the current schema length.
+
+        A vector built before a later register_dimensions() keeps its shorter
+        array; the newly registered (higher-index) dims are simply absent.
+        Treat them as zero so old vectors stay valid — and arithmetic between
+        a pre-registration vector and a post-registration one doesn't raise on
+        a shape mismatch — as the schema grows at runtime.
+        """
+        n = len(VECTOR_DIMENSIONS)
+        if self.vector.shape[0] < n:
+            self.vector = np.concatenate(
+                [self.vector, np.zeros(n - self.vector.shape[0])]
+            )
+        return self.vector
+
     # Add optional __str__ override for easier debugging
     def __repr__(self):
         # Only show non-zero dimensions for cleaner output
@@ -30,15 +46,17 @@ class VectorSpace:
         return f"{self.word!r} = {{ {non_zero_dims} }}"
 
     def to_array(self):
-        return self.vector
+        return self._conform()
 
     def __getitem__(self, key):
+        self._conform()
         if isinstance(key, int):
             return self.vector[key]
         idx = VECTOR_DIMENSIONS.index(key)
         return self.vector[idx]
 
     def __setitem__(self, key, value):
+        self._conform()
         if isinstance(key, int):
             self.vector[key] = value
         else:
@@ -56,30 +74,33 @@ class VectorSpace:
 
     def __iadd__(self, other):
         if isinstance(other, VectorSpace):
-            self.vector += other.vector
+            self._conform()
+            self.vector += other._conform()
         else:
             raise TypeError("Can only add another VectorSpace instance")
         return self
 
     def __add__(self, other):
         if isinstance(other, VectorSpace):
-            return VectorSpace(self.vector + other.vector)
+            return VectorSpace(self._conform() + other._conform())
         else:
             raise TypeError("Can only add another VectorSpace instance")
 
     def __mul__(self, scalar):
-        return VectorSpace(self.vector * scalar)
+        return VectorSpace(self._conform() * scalar)
 
     def __rmul__(self, scalar):
         return self.__mul__(scalar)
     
     def non_zero_dims(self) -> str:
+        self._conform()
         non_zero_dims = [f'{k}={self[k]:.2f}' for k in VECTOR_DIMENSIONS if self[k] != 0.0]
         vec_str = ', '.join(non_zero_dims)
         return vec_str
 
     def isa(self, category: str) -> bool:
         """Returns True if the category is 'active' in this vector."""
+        self._conform()
         try:
             # Try exact match first
             idx = VECTOR_DIMENSIONS.index(category)
@@ -95,8 +116,8 @@ class VectorSpace:
     def cosine_similarity(self, other):
         """Calculate cosine similarity between this vector and another vector."""
         # Use numpy arrays for proper cosine similarity calculation
-        dot = np.dot(self.vector, other.vector)
-        norm_self = np.linalg.norm(self.vector) 
+        dot = np.dot(self._conform(), other._conform())
+        norm_self = np.linalg.norm(self.vector)
         norm_other = np.linalg.norm(other.vector)
         
         if norm_self == 0 or norm_other == 0:
@@ -155,7 +176,7 @@ class VectorSpace:
         from engraf.An_N_Space_Model.vector_dimensions import get_semantic_mask
         
         semantic_mask = get_semantic_mask()
-        masked_array = self.vector * np.array(semantic_mask, dtype=float)
+        masked_array = self._conform() * np.array(semantic_mask, dtype=float)
         
         result = VectorSpace(masked_array, word=self.word, data=self.data.copy() if self.data else None)
         return result
@@ -168,7 +189,7 @@ class VectorSpace:
         from engraf.An_N_Space_Model.vector_dimensions import get_pos_mask
         
         pos_mask = get_pos_mask()
-        masked_array = self.vector * np.array(pos_mask, dtype=float)
+        masked_array = self._conform() * np.array(pos_mask, dtype=float)
         
         result = VectorSpace(masked_array, word=self.word, data=self.data.copy() if self.data else None)
         return result
@@ -178,13 +199,14 @@ class VectorSpace:
         return self.vector.shape
 
     def scalar_projection(self, dim="adv"):
+        self._conform()
         i = VECTOR_DIMENSIONS.index(dim)
         return self.vector[i]
 
     def copy(self):
         new_vs = VectorSpace()
         new_vs.word = self.word
-        new_vs.vector = self.vector.copy()
+        new_vs.vector = self._conform().copy()
         return new_vs
 
     def __eq__(self, other):
