@@ -20,6 +20,11 @@ FUNCTION_WORDS = {
     'it': vector_from_features("pronoun singular"),
     'they': vector_from_features("pronoun plural"),
     'them': vector_from_features("pronoun plural"),
+    'i': vector_from_features("pronoun singular"),
+    'me': vector_from_features("pronoun singular"),
+    'you': vector_from_features("pronoun"),
+    'we': vector_from_features("pronoun plural"),
+    'us': vector_from_features("pronoun plural"),
 
     # Degree adverbs (intensifiers)
     'very': vector_from_features("adv", adverb=1.5),
@@ -44,6 +49,14 @@ FUNCTION_WORDS = {
     'ten': vector_from_features("det def plural", number=10.0),
     'a': vector_from_features("det singular", number=1.0),
     'an': vector_from_features("det singular", number=1.0),
+    # Possessive determiners
+    'my': vector_from_features("det"),
+    'your': vector_from_features("det"),
+    'his': vector_from_features("det"),
+    'her': vector_from_features("det"),
+    'its': vector_from_features("det"),
+    'our': vector_from_features("det"),
+    'their': vector_from_features("det"),
 
     # Prepositions — spatial location relationships
     'over': vector_from_features("prep spatial_location", locY=1.0),    # higher
@@ -63,6 +76,11 @@ FUNCTION_WORDS = {
 
     # Prepositions — directional / movement
     'to': vector_from_features("prep", directional_target=1.0),    # toward destination
+    'toward': vector_from_features("prep", directional_target=1.0),   # toward destination
+    'towards': vector_from_features("prep", directional_target=1.0),  # toward destination
+    'into': vector_from_features("prep", directional_target=1.0),     # movement into
+    'onto': vector_from_features("prep", directional_target=1.0),     # movement onto
+    'through': vector_from_features("prep", directional_target=1.0),  # movement via/through
     'from': vector_from_features("prep", directional_target=-1.0),  # away from source
 
     # Prepositions — agency / instrumentality
