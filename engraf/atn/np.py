@@ -12,7 +12,41 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Helper function to check if token is a non-comparative adjective
     def is_non_comparative_adjective(tok):
         return is_adjective(tok) and tok.scalar_projection("comp") == 0.0
-    
+
+    def is_adjective_modifier(tok):
+        """True when an adjective-typed token should be consumed as a MODIFIER
+        rather than the noun head.
+
+        A pure adjective is always a modifier. A word typed as BOTH adj and
+        noun (common in domain lexicons — "mace", "dwarf", "rocky chamber") is
+        a modifier only when another noun-capable word follows it; if a
+        non-noun follows (a preposition, end of stream, a verb, ...), the dual
+        word is itself the NP's noun head, so this arc declines and the is_noun
+        arc takes it. Lookahead over the token stream picks the head as the
+        last dual word in a run. The NP vector accumulates the same dims
+        whether the word is applied as adj or noun, so nothing is lost.
+        """
+        if not is_adjective(tok):
+            return False
+        if not is_noun(tok):
+            return True  # pure adjective: always a modifier
+        nxt = ts.tokens[ts.position + 1] if ts.position + 1 < len(ts.tokens) else None
+        return bool(nxt and (is_noun(nxt) or is_proper_noun(nxt)))
+
+    def is_noun_modifier(tok):
+        """A noun acting as a pre-head modifier in a noun-noun compound: a noun
+        immediately followed by another noun-capable word, so it modifies a
+        later head ("passage mouth", "low shadow", "echo chamber arch"). The
+        last noun in the run is the head -- this declines for it so the is_noun
+        arc takes it. apply_noun and apply_adjective accumulate the same vector
+        dims, so consuming a modifier noun as a noun loses nothing. Domain
+        lexicons have many noun-noun compounds; Engraf's CAD vocab has none, so
+        this is inert for Engraf."""
+        if not is_noun(tok):
+            return False
+        nxt = ts.tokens[ts.position + 1] if ts.position + 1 < len(ts.tokens) else None
+        return bool(nxt and (is_noun(nxt) or is_proper_noun(nxt)))
+
     start = ATNState("NP-START")
     det = ATNState("NP-DET")
     adj = ATNState("NP-ADJ")
@@ -26,8 +60,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     start.add_arc(is_vector, lambda _, tok: np.apply_vector(tok), end)
     
     # LATN Extension: Allow NPs to start with adjectives, adverbs, or nouns
-    start.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    start.add_arc(is_adjective_modifier, lambda _, tok: np.apply_adjective(tok), adj)
     start.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), det)  # "very" -> DET state to handle "very big sphere"
+    # A noun that modifies a following noun (compound) routes to ADJ to keep
+    # looking for the head; a lone/final noun falls through to the head arc.
+    start.add_arc(is_noun_modifier, lambda _, tok: np.apply_noun(tok), adj)
     start.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)     # Allow bare nouns like "sphere"
     # Allow a proper noun as an NP head ("Amara", "Sir Roderick"). Reuses
     # apply_noun (sets noun/vector/consumed_tokens); the token's proper_noun
@@ -37,11 +74,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
 
     # ADJ → ADJ / NOUN
     det.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), det)
-    det.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    det.add_arc(is_adjective_modifier, lambda _, tok: np.apply_adjective(tok), adj)
     # Terminate on unknown tokens after determiners
     det.add_arc(is_unknown, noop, end)
 
-    adj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    adj.add_arc(is_adjective_modifier, lambda _, tok: np.apply_adjective(tok), adj)
     # Handle adverbs that modify subsequent adjectives (e.g., "small bright blue")
     adj.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj)
     # Handle conjunctions between adjectives (e.g., "tall and red") - but NOT noun phrase coordination
@@ -59,7 +96,7 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     
     # After conjunction, expect another adjective (possibly with adverb modifier)
     adj_conj.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_conj)
-    adj_conj.add_arc(is_adjective, lambda _, tok: np.apply_adjective(tok), adj)
+    adj_conj.add_arc(is_adjective_modifier, lambda _, tok: np.apply_adjective(tok), adj)
 
     adj_after_pronoun.add_arc(is_adverb, lambda _, tok: np.apply_adverb(tok), adj_after_pronoun)
     # Allow adjectives after pronouns, but NOT comparative adjectives (let VP handle those)
@@ -84,8 +121,11 @@ def build_np_atn(np: NounPhrase, ts: TokenStream):
     # Also end on prepositions and numbers that might follow pronouns
     adj_after_pronoun.add_arc(any_of(is_preposition, is_number), noop, end)
 
-    # ADJ or DET → NOUN (proper noun also accepted as head: "the dwarf Amara")
+    # ADJ or DET → NOUN (proper noun also accepted as head: "the dwarf Amara").
+    # A noun that modifies a following noun (compound) routes back to ADJ to
+    # keep looking for the head; the final noun falls through to the head arc.
     for state in [det, adj, adj_conj]:
+        state.add_arc(is_noun_modifier, lambda _, tok: np.apply_noun(tok), adj)
         state.add_arc(is_noun, lambda _, tok: np.apply_noun(tok), noun)
         state.add_arc(is_proper_noun, lambda _, tok: np.apply_noun(tok), noun)
 

@@ -48,31 +48,29 @@ class Layer5SemanticGrounder:
         if not hypotheses:
             return []
 
+        from engraf.lexer.sp_policy import get_active_sp_policy
+        policy = get_active_sp_policy()
         grounded_hypotheses = []
-        
+
         for hypothesis in hypotheses:
-            # Extract and verify sentences from this hypothesis. Reject
-            # hypotheses with anything other than SPs or CPs of SPs
+            # Extract the sentence phrases this hypothesis produced, and note
+            # whether EVERY token folded into one (no leftover non-SP tokens).
+            # The keep/reject verdict belongs to the active SP policy:
+            # EngrafSPPolicy demands full coverage (strict, default);
+            # PermissiveSPPolicy keeps any hypothesis with >= 1 SP.
             sentence_phrases = []
+            all_tokens_are_sp = True
             for token in hypothesis.tokens:
                 sp = token.phrase if hasattr(token, 'phrase') else None
                 if sp and isinstance(sp, SentencePhrase):
                     sentence_phrases.append(sp)
-                elif sp and isinstance(sp, ConjunctionPhrase):
-                    for part in sp.phrases:
-                        if isinstance(part, SentencePhrase):
-                            sentence_phrases.append(part)
-                        else:
-                            sentence_phrases = []
-                            break # Stop processing if not a recognized phrase
+                elif sp and isinstance(sp, ConjunctionPhrase) and \
+                        all(isinstance(p, SentencePhrase) for p in sp.phrases):
+                    sentence_phrases.extend(sp.phrases)
                 else:
-                    sentence_phrases = []
-                    break   # Stop processing if not a recognized phrase
-            if sentence_phrases:
+                    all_tokens_are_sp = False
+            if policy.accept_hypothesis(sentence_phrases, all_tokens_are_sp):
                 grounded_hypotheses.append(hypothesis)
-            else:
-                # No sentences found - reject original hypothesis
-                continue
 
         return grounded_hypotheses
 
