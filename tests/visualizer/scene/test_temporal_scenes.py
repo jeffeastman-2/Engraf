@@ -6,7 +6,7 @@ import pytest
 from engraf.visualizer.scene.temporal_scenes import TemporalScenes
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 
 
 class TestTemporalScenes:

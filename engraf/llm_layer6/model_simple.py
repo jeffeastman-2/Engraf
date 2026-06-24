@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.lexer.vector_space import VECTOR_LENGTH
 
 # Semantic vector dimension (from VECTOR_DIMENSIONS)
 SEMANTIC_VECTOR_DIM = VECTOR_LENGTH

@@ -6,11 +6,11 @@ including transformations like movement, rotation, and scaling.
 """
 
 from typing import List, Union
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.pos.verb_phrase import VerbPhrase
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.visualizer.scene.scene_assembly import SceneAssembly
-from engraf.lexer.vector_space import VectorSpace
-from engraf.utils.debug import debug_print
+from latn.lexer.vector_space import VectorSpace
+from latn.utils.debug import debug_print
 
 
 class ObjectModifier:
@@ -216,7 +216,7 @@ class ObjectModifier:
         
         Uses the shared spatial validation utilities for consistent positioning logic.
         """
-        from engraf.utils.spatial_validation import SpatialValidator
+        from latn.utils.spatial_validation import SpatialValidator
         
         new_x, new_y, new_z = SpatialValidator.calculate_spatial_position(
             moving_obj, ref_obj, preposition_vector
@@ -230,7 +230,7 @@ class ObjectModifier:
         
         Uses the shared spatial validation utilities for consistency.
         """
-        from engraf.utils.spatial_validation import SpatialValidator
+        from latn.utils.spatial_validation import SpatialValidator
         return SpatialValidator.get_object_half_scale(obj)
 
 

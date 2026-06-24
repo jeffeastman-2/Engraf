@@ -8,7 +8,7 @@ like "above", "below", "next to", etc.
 import unittest
 from engraf.interpreter.sentence_interpreter import SentenceInterpreter
 from engraf.visualizer.renderers.vpython_renderer import MockVPythonRenderer
-from engraf.utils.debug import set_debug
+from latn.utils.debug import set_debug
 
 
 class TestObjectMovement(unittest.TestCase):
@@ -51,7 +51,7 @@ class TestObjectMovement(unittest.TestCase):
         self.interpreter.interpret('draw a big blue sphere at [3, 0, 0]')
         
         # Test parsing of movement command using LATNLayerExecutor
-        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        from latn.lexer.latn_layer_executor import LATNLayerExecutor
         
         sentence = 'move the sphere above the cube'
         executor = LATNLayerExecutor()
@@ -153,7 +153,7 @@ class TestObjectMovement(unittest.TestCase):
     
     def test_spatial_relationship_parsing(self):
         """Test that spatial relationships are parsed correctly."""
-        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        from latn.lexer.latn_layer_executor import LATNLayerExecutor
         
         # Test different spatial prepositions
         spatial_commands = [
@@ -211,8 +211,8 @@ class TestObjectResolver(unittest.TestCase):
     
     def test_resolve_by_noun_type(self):
         """Test resolving objects by their noun type."""
-        from engraf.pos.noun_phrase import NounPhrase
-        from engraf.lexer.vector_space import VectorSpace
+        from latn.pos.noun_phrase import NounPhrase
+        from latn.lexer.vector_space import VectorSpace
         
         # Create noun phrase for "sphere"
         sphere_vector = VectorSpace(word='sphere')
@@ -235,8 +235,8 @@ class TestObjectResolver(unittest.TestCase):
     
     def test_resolve_by_color(self):
         """Test resolving objects by color."""
-        from engraf.pos.noun_phrase import NounPhrase
-        from engraf.lexer.vector_space import VectorSpace
+        from latn.pos.noun_phrase import NounPhrase
+        from latn.lexer.vector_space import VectorSpace
         
         # Create noun phrase for "red cube"
         cube_vector = VectorSpace(word='cube')
@@ -263,8 +263,8 @@ class TestObjectResolver(unittest.TestCase):
         # Add another cube
         self.interpreter.interpret('draw a yellow cube at [6, 0, 0]')
         
-        from engraf.pos.noun_phrase import NounPhrase
-        from engraf.lexer.vector_space import VectorSpace
+        from latn.pos.noun_phrase import NounPhrase
+        from latn.lexer.vector_space import VectorSpace
         
         # Create noun phrase for just "cube" (no color specified)
         cube_vector = VectorSpace(word='cube')

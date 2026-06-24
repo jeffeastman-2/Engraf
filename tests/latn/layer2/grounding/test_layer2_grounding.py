@@ -5,8 +5,8 @@ LATN Layer 2 Grounding Test Suite
 Tests semantic grounding of NP tokens to existing scene objects.
 """
 
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.vector_space import vector_from_features
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.vector_space import vector_from_features
 from engraf.visualizer.scene.scene_model import SceneModel, SceneObject
 
 
@@ -63,7 +63,7 @@ class TestLayer2Grounding:
 
         # With our improved architecture, the result.noun_phrases should contain grounded NPs
         grounded_np = result.noun_phrases[0]
-        from engraf.pos.noun_phrase import NounPhrase
+        from latn.pos.noun_phrase import NounPhrase
         assert isinstance(grounded_np, NounPhrase), "Grounded NP should be NounPhrase"
         assert grounded_np.grounding is not None, "NounPhrase should have grounding info"
         assert grounded_np.grounding['scene_objects'][0] == red_box, "Should resolve to red box"

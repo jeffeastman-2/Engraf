@@ -1,4 +1,4 @@
-from engraf.lexer.vocabulary_builder import vector_from_word
+from latn.lexer.vocabulary_builder import vector_from_word
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 

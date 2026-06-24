@@ -12,8 +12,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from typing import Dict, List, Tuple, Optional, Any
 
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from latn.lexer.vector_space import VECTOR_LENGTH
 
 # Semantic vector dimension (from VECTOR_DIMENSIONS)
 SEMANTIC_VECTOR_DIM = VECTOR_LENGTH  # Currently 69
@@ -504,7 +504,7 @@ class OnTheFlyLayer6Dataset(Dataset):
     
     def _warm_cache(self, num_scenes: int):
         """Pre-generate scenes and their sentence pools."""
-        from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+        from latn.lexer.latn_layer_executor import LATNLayerExecutor
         
         for _ in range(num_scenes):
             scene = self.generate_random_scene(self.objects_per_scene)
@@ -533,7 +533,7 @@ class OnTheFlyLayer6Dataset(Dataset):
         
         if sent_idx >= len(sentences):
             # Exhausted this scene's sentences - regenerate scene
-            from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+            from latn.lexer.latn_layer_executor import LATNLayerExecutor
             
             scene = self.generate_random_scene(self.objects_per_scene)
             executor = LATNLayerExecutor(scene)

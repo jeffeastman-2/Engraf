@@ -6,10 +6,10 @@ including scene summary, clearing, and result formatting.
 """
 
 from typing import Dict, Any, Union
-from engraf.pos.sentence_phrase import SentencePhrase
-from engraf.pos.noun_phrase import NounPhrase
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
-from engraf.lexer.vector_space import VectorSpace
+from latn.pos.sentence_phrase import SentencePhrase
+from latn.pos.noun_phrase import NounPhrase
+from latn.pos.conjunction_phrase import ConjunctionPhrase
+from latn.lexer.vector_space import VectorSpace
 from engraf.visualizer.scene.scene_object import SceneObject
 
 

@@ -6,9 +6,9 @@ structural representations and for extracting Layer-6 from parsed sentences.
 
 from typing import Optional, Tuple
 
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.llm_layer6.synthetic_generator import populate_layer6_from_sentence_phrase
-from engraf.utils.verb_inflector import verb_to_gerund
+from latn.utils.verb_inflector import verb_to_gerund
 
 
 class Layer6ResponseGenerator:
@@ -40,7 +40,7 @@ class Layer6ResponseGenerator:
                 return None, None
             
             # Create a minimal hypothesis to hold Layer-6 tokens
-            from engraf.lexer.hypothesis import TokenizationHypothesis
+            from latn.lexer.hypothesis import TokenizationHypothesis
             hyp = TokenizationHypothesis(tokens=[], confidence=1.0, description="layer6_response")
             
             # Populate Layer-6 from the sentence phrase

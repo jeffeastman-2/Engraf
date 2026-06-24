@@ -9,15 +9,15 @@ Refactored for better maintainability and separation of concerns.
 """
 
 from typing import Dict, Any, Union, Optional
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.token_stream import TokenStream, tokenize
-from engraf.atn.subnet_sentence import run_sentence
-from engraf.pos.sentence_phrase import SentencePhrase
-from engraf.pos.verb_phrase import VerbPhrase
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.token_stream import TokenStream, tokenize
+from latn.atn.subnet_sentence import run_sentence
+from latn.pos.sentence_phrase import SentencePhrase
+from latn.pos.verb_phrase import VerbPhrase
+from latn.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.temporal_scenes import TemporalScenes
-from engraf.utils.debug import debug_print
+from latn.utils.debug import debug_print
 # VPython renderer will be imported conditionally to avoid hanging
 
 # Import specialized handlers

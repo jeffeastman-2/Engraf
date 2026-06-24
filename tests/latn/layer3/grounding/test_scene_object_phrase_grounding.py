@@ -17,7 +17,7 @@ Layer 3 job: Determine which PPSO attends to which SO/PPSO based on scene validi
 """
 
 import unittest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from tests.latn.dummy_test_scene import DummyTestScene
 
 class TestLayer3SpatialValidation(unittest.TestCase):

@@ -6,9 +6,9 @@ Tests the VP tokenization functionality that builds on Layers 1-3.
 """
 
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.pos.verb_phrase import VerbPhrase
 
 
 class TestLayer4VPTokenization:

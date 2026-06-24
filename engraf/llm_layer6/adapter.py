@@ -11,7 +11,7 @@ unavailable (e.g., static analysis, tests).
 """
 from typing import Optional, Sequence
 
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.lexer.vector_space import VECTOR_LENGTH
 
 # Semantic vector dimension (from VECTOR_DIMENSIONS)
 SEMANTIC_VECTOR_DIM = VECTOR_LENGTH

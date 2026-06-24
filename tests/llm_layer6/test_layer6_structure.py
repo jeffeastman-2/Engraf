@@ -7,7 +7,7 @@ to_string renders the structural sequence. Self-contained (no torch).
 
 import numpy as np
 
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.lexer.vector_space import VECTOR_LENGTH
 from engraf.llm_layer6.structure import Layer6Structure
 
 

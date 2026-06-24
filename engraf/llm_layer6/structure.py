@@ -25,7 +25,7 @@ from typing import Any, List, Optional
 
 import numpy as np
 
-from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+from latn.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
 
 
 class Layer6Structure:

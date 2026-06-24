@@ -1,5 +1,5 @@
 import pytest
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 from engraf.visualizer.scene.scene_object import SceneObject, scene_object_from_np
 
 

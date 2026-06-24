@@ -1,5 +1,5 @@
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.visualizer.scene.scene_model import SceneModel
 from tests.latn.dummy_test_scene import DummyTestScene
 

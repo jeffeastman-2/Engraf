@@ -8,7 +8,7 @@ import pytest
 import math
 from engraf.visualizer.scene.scene_assembly import SceneAssembly
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 
 
 class TestSceneAssembly:

@@ -27,8 +27,8 @@ from engraf.llm_layer6.synthetic_generator import (
     process_through_layer5,
     create_training_pair_from_hyp
 )
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.vector_space import VECTOR_LENGTH
 
 # Semantic vector dimension (from VECTOR_DIMENSIONS)
 SEMANTIC_VECTOR_DIM = VECTOR_LENGTH

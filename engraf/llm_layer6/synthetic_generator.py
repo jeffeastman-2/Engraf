@@ -22,7 +22,7 @@ from typing import List, Tuple, Dict, Any, Optional
 
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import vector_from_features, VECTOR_LENGTH
+from latn.lexer.vector_space import vector_from_features, VECTOR_LENGTH
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
 from engraf.llm_layer6.structure import Layer6Structure
 
@@ -541,7 +541,7 @@ def generate_synthetic_dataset(
     executor = None
     if process_through_latn:
         try:
-            from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+            from latn.lexer.latn_layer_executor import LATNLayerExecutor
             # We'll create executor per scene
         except ImportError:
             print("Warning: LATNLayerExecutor not available, using mock hypotheses")
@@ -557,7 +557,7 @@ def generate_synthetic_dataset(
         
         # Create executor for this scene
         if process_through_latn:
-            from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+            from latn.lexer.latn_layer_executor import LATNLayerExecutor
             executor = LATNLayerExecutor(scene)
         
         # Generate sentences
@@ -620,8 +620,8 @@ def create_mock_example(sentence: str, answer: str, obj_ids: List[str],
     
     Used as fallback when LATN executor is not available.
     """
-    from engraf.lexer.hypothesis import TokenizationHypothesis
-    from engraf.lexer.vector_space import VectorSpace
+    from latn.lexer.hypothesis import TokenizationHypothesis
+    from latn.lexer.vector_space import VectorSpace
     
     # Create hypothesis with mock tokens
     hyp = TokenizationHypothesis(

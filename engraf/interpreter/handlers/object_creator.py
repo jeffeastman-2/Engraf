@@ -6,10 +6,10 @@ It extracts object information, generates descriptive IDs, and applies default p
 """
 
 from typing import Optional, List, Dict, Any, Union
-from engraf.pos.noun_phrase import NounPhrase
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from latn.pos.noun_phrase import NounPhrase
+from latn.pos.conjunction_phrase import ConjunctionPhrase
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 
 
 class ObjectCreator:

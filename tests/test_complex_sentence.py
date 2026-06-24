@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.pos.conjunction_phrase import ConjunctionPhrase
 
 def test_complex_sentence():
     """Test parsing of 'color a tall box green and move it to [7, 7, 7]'"""

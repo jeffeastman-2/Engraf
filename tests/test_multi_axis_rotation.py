@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import Mock, MagicMock
 from engraf.interpreter.sentence_interpreter import SentenceInterpreter
 from engraf.visualizer.renderers.mock_renderer import MockRenderer
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 from engraf.visualizer.scene.scene_object import SceneObject
 
 

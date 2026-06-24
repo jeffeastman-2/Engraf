@@ -8,7 +8,7 @@ SceneObjects into a single unit that can be manipulated as one entity.
 from typing import List, Optional, Dict, Any
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.visualizer.scene.scene_entity import SceneEntity
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 import math
 
 

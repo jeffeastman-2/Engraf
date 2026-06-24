@@ -6,10 +6,10 @@ including pronoun resolution and semantic matching.
 """
 
 from typing import List, Tuple
-from engraf.pos.verb_phrase import VerbPhrase
-from engraf.pos.noun_phrase import NounPhrase
+from latn.pos.verb_phrase import VerbPhrase
+from latn.pos.noun_phrase import NounPhrase
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 
 
 class ObjectResolver:

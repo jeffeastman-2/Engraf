@@ -11,8 +11,8 @@ sys.path.insert(0, '/Users/jeff/Python/Engraf')
 
 import json
 from pathlib import Path
-from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.llm_layer6.synthetic_generator import process_through_layer5, populate_layer6_from_sentence_phrase
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
 

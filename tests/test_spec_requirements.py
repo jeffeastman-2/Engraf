@@ -7,10 +7,10 @@ This tests the specific examples mentioned in the specification:
 2. "Draw a blue box and a green sphere" - Imperative with coordinated objects
 """
 
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
-from engraf.pos.noun_phrase import NounPhrase
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.pos.conjunction_phrase import ConjunctionPhrase
+from latn.pos.noun_phrase import NounPhrase
+from latn.pos.verb_phrase import VerbPhrase
 
 
 def parse_sentence(text):

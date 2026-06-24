@@ -1,7 +1,7 @@
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from tests.latn.dummy_test_scene import DummyTestScene
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.pos.verb_phrase import VerbPhrase
 
 class TestLATNLayer4VPCoordination:
 

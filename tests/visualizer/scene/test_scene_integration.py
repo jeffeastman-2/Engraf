@@ -6,8 +6,8 @@ Tests the interaction between parsing and scene object creation.
 import pytest
 from engraf.visualizer.scene.scene_object import SceneObject, scene_object_from_np
 from engraf.visualizer.scene.scene_model import SceneModel, resolve_pronoun
-from engraf.lexer.vector_space import VectorSpace
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.vector_space import VectorSpace
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 
 
 def parse_sentence(text):

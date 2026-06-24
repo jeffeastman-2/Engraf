@@ -1,8 +1,8 @@
 from py_compile import main
 import numpy as np
-from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.vector_space import VectorSpace, vector_from_features
+from latn.lexer.token_stream import TokenStream
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.vector_space import VectorSpace, vector_from_features
 
 input = [
 "DRAW A ROUGH RED CIRCLE AT [-1, 2.2, 5.55]",

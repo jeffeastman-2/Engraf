@@ -268,7 +268,7 @@ class TestSpatialPositioning(unittest.TestCase):
         # Import the real components
         from engraf.interpreter.sentence_interpreter import SentenceInterpreter
         from engraf.visualizer.renderers.vpython_renderer import MockVPythonRenderer
-        from engraf.utils.debug import set_debug
+        from latn.utils.debug import set_debug
         
         # Enable debug to see positioning calculations
         set_debug(True)
@@ -440,7 +440,7 @@ class TestSpatialPositioning(unittest.TestCase):
         
         from engraf.interpreter.sentence_interpreter import SentenceInterpreter
         from engraf.visualizer.renderers.vpython_renderer import MockVPythonRenderer
-        from engraf.utils.debug import set_debug
+        from latn.utils.debug import set_debug
         
         # Enable debug
         set_debug(True)

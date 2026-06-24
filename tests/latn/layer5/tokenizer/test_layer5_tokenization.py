@@ -6,10 +6,10 @@ Tests the Sentence tokenization functionality that builds on Layers 1-4.
 """
 
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.pos.sentence_phrase import SentencePhrase
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.pos.sentence_phrase import SentencePhrase
 from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.pos.verb_phrase import VerbPhrase
 from tests.latn.dummy_test_scene import DummyTestScene
 
 

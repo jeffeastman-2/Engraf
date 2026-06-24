@@ -6,13 +6,13 @@ Tests for the LATN layer executor that provides entry points at each layer.
 """
 
 import pytest
-from engraf.lexer.latn_layer_executor import (
+from latn.lexer.latn_layer_executor import (
     LATNLayerExecutor, Layer1Result, Layer2Result, Layer3Result
 )
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import vector_from_features
-from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+from latn.lexer.vector_space import vector_from_features
+from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
 
 
 class TestLATNLayerExecutor:

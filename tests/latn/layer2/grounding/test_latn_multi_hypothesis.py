@@ -6,12 +6,12 @@ This test demonstrates how LATN generates multiple NP resolution hypotheses
 when queries are underspecified, with confidence scores based on semantic similarity.
 """
 
-from engraf.lexer.vector_space import vector_from_features
+from latn.lexer.vector_space import vector_from_features
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1
-from engraf.atn.subnet_np import run_np
+from latn.lexer.token_stream import TokenStream
+from latn.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1
+from latn.atn.subnet_np import run_np
 
 
 def test_latn_multi_hypothesis_generation():

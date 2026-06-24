@@ -9,11 +9,11 @@ using a standardized scene and test phrases.
 
 import sys
 import os
-from engraf.utils.debug import set_debug
+from latn.utils.debug import set_debug
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info, get_common_test_phrases, process_test_phrase_category
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info, get_common_test_phrases, process_test_phrase_category
 
 def run_layer_and_summarize(executor, layer, phrase, enable_semantic_grounding):
     # Call the executor method

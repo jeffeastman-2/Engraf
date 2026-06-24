@@ -7,7 +7,7 @@ allowed when there are at least 3 circles in the scene.
 """
 
 from engraf.visualizer.scene.scene_model import SceneModel
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
+from latn.pos.conjunction_phrase import ConjunctionPhrase
 
 
 class SemanticAgreementValidator:

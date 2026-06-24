@@ -14,7 +14,7 @@ from engraf.visualizer.renderers.vpython_renderer import (
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.visualizer.transforms.transform_matrix import TransformMatrix
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 
 
 class TestMockVPythonRenderer:

@@ -22,7 +22,7 @@ import json
 
 from engraf.llm_layer6.model import Layer6LLM
 from engraf.llm_layer6.dataset import create_dataloaders
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.lexer.vector_space import VECTOR_LENGTH
 
 # Semantic vector dimension (from VECTOR_DIMENSIONS)
 SEMANTIC_VECTOR_DIM = VECTOR_LENGTH

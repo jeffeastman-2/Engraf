@@ -6,7 +6,7 @@ Tests the core scene management functionality without parsing dependencies.
 import pytest
 from engraf.visualizer.scene.scene_model import SceneModel, resolve_pronoun
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 
 
 class TestSceneModel:

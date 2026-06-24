@@ -12,9 +12,9 @@ through LATN Layers 1-5. For now, it shows the *intended* workflow.
 import sys
 sys.path.insert(0, '/Users/jeff/Python/Engraf')
 
-from engraf.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info
+from latn.An_N_Space_Model.demo_scene_setup import setup_demo_scene, print_scene_info
 from engraf.llm_layer6.dataset_extractor import create_training_pair_from_hyp, write_jsonl
-from engraf.lexer.vector_space import VECTOR_LENGTH
+from latn.lexer.vector_space import VECTOR_LENGTH
 import itertools
 
 # Semantic vector dimension (from VECTOR_DIMENSIONS)
@@ -174,8 +174,8 @@ def create_mock_hypothesis_for_question(question, answer, obj_ids, scene):
     Returns:
         dict: Training pair (input as mock, since we don't have LATN yet)
     """
-    from engraf.lexer.hypothesis import TokenizationHypothesis
-    from engraf.lexer.vector_space import VectorSpace
+    from latn.lexer.hypothesis import TokenizationHypothesis
+    from latn.lexer.vector_space import VectorSpace
     from engraf.llm_layer6.structure import Layer6Structure
     import numpy as np
 

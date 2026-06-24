@@ -7,10 +7,10 @@ Layer 3 grounding should attach PPs to NPs only when the scene supports the spat
 """
 
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from engraf.visualizer.scene.scene_model import SceneModel
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import vector_from_features
+from latn.lexer.vector_space import vector_from_features
 
 
 class TestLayer3Grounding:

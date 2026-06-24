@@ -1,7 +1,7 @@
 from engraf.visualizer.scene.scene_object import SceneObject
 from engraf.visualizer.scene.scene_assembly import SceneAssembly
 from engraf.visualizer.scene.scene_entity import SceneEntity
-from engraf.lexer.vector_space import VectorSpace
+from latn.lexer.vector_space import VectorSpace
 from typing import List, Optional, Union
 import copy
 
@@ -245,7 +245,7 @@ class SceneModel:
             # Legacy behavior: return single best match
             return candidates[0][1]
 
-    # --- SceneAdapter protocol (engraf.lexer.scene_adapter) ---
+    # --- SceneAdapter protocol (latn.lexer.scene_adapter) ---
     # Thin, behavior-preserving wrappers so the LATN core depends on the
     # protocol, not on SceneModel directly.
     def resolve_noun_phrase(self, np):

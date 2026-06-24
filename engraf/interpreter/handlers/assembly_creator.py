@@ -6,11 +6,11 @@ through grouping operations like "group them as an 'arch'".
 """
 
 from typing import List, Dict, Any, Optional
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.pos.verb_phrase import VerbPhrase
 from engraf.visualizer.scene.scene_assembly import SceneAssembly
 from engraf.visualizer.scene.scene_object import SceneObject
-from engraf.lexer.vector_space import VectorSpace
-from engraf.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
+from latn.lexer.vector_space import VectorSpace
+from latn.An_N_Space_Model.vector_dimensions import VECTOR_DIMENSIONS
 
 
 class AssemblyCreator:

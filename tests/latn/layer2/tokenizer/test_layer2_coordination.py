@@ -1,5 +1,5 @@
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
 from tests.latn.dummy_test_scene import DummyTestScene
 
 def test_adverb_adjective_in_coordinated_np():

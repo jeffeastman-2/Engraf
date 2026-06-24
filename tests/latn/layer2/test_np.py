@@ -1,11 +1,11 @@
 import numpy as np
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.lexer.token_stream import TokenStream
-from engraf.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1, latn_tokenize_best
-from engraf.atn.subnet_np import run_np
-from engraf.lexer.vector_space import VectorSpace
-from engraf.pos.conjunction_phrase import ConjunctionPhrase
-from engraf.pos.noun_phrase import NounPhrase
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.lexer.token_stream import TokenStream
+from latn.lexer.latn_tokenizer_layer1 import latn_tokenize_layer1, latn_tokenize_best
+from latn.atn.subnet_np import run_np
+from latn.lexer.vector_space import VectorSpace
+from latn.pos.conjunction_phrase import ConjunctionPhrase
+from latn.pos.noun_phrase import NounPhrase
 
  
 def test_simple_np():
@@ -111,8 +111,8 @@ def test_latn_multiple_hypotheses_with_np():
 
 def test_latn_ambiguous_compound_with_np():
     """Test LATN with potentially ambiguous compounds in NP context."""
-    from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-    from engraf.lexer.vector_space import vector_from_features
+    from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+    from latn.lexer.vector_space import vector_from_features
     
     # Set up vocabulary for red/cube vs "red cube" compound ambiguity
     originals = {}
@@ -169,8 +169,8 @@ def test_latn_ambiguous_compound_with_np():
 
 def test_latn_with_adverb_adjective_np():
     """Test LATN tokenizer with adverb-adjective scaling in NP."""
-    from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-    from engraf.lexer.vector_space import vector_from_features
+    from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+    from latn.lexer.vector_space import vector_from_features
     
     # Set up vocabulary for adverb-adjective test
     originals = {}
@@ -227,8 +227,8 @@ def test_latn_with_adverb_adjective_np():
 
 def test_latn_semantic_grounding_ambiguous_objects():
     """Test LATN Layer 2 semantic grounding with ambiguous scene objects using SceneModel."""
-    from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-    from engraf.lexer.vector_space import vector_from_features
+    from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+    from latn.lexer.vector_space import vector_from_features
     from engraf.visualizer.scene.scene_object import SceneObject
     from engraf.visualizer.scene.scene_model import SceneModel
     
@@ -391,8 +391,8 @@ def test_latn_vs_original_tokenizer():
 
 def test_latn_ambiguous_light_house():
     """Test LATN tokenizer with the classic 'green box' ambiguity (using available vocabulary)."""
-    from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-    from engraf.lexer.vector_space import vector_from_features
+    from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+    from latn.lexer.vector_space import vector_from_features
     
     # Ensure we have both interpretations in vocabulary
     original_green = 'green' in SEMANTIC_VECTOR_SPACE
@@ -445,8 +445,8 @@ def test_latn_ambiguous_light_house():
 
 def test_latn_three_way_ambiguity_with_np():
     """Test LATN with three-way ambiguity: 'very big box'."""
-    from engraf.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
-    from engraf.lexer.vector_space import vector_from_features
+    from latn.An_N_Space_Model.vocabulary import SEMANTIC_VECTOR_SPACE
+    from latn.lexer.vector_space import vector_from_features
     
     # Set up vocabulary for three-way ambiguity using words we know exist or can add
     originals = {}

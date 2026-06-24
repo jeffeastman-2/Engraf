@@ -1,6 +1,6 @@
 import pytest
-from engraf.lexer.latn_layer_executor import LATNLayerExecutor
-from engraf.pos.verb_phrase import VerbPhrase
+from latn.lexer.latn_layer_executor import LATNLayerExecutor
+from latn.pos.verb_phrase import VerbPhrase
 from engraf.visualizer.scene.scene_model import SceneModel
 
 class TestLayer5ActionExecution:
